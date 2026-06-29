@@ -1,0 +1,40 @@
+[project]
+name = "yahir-reusable-bot"
+version = "0.1.0"
+description = "Reusable, app-agnostic bot core (channels, reliability, scheduler, registry, Discord adapter) — the clean module future bots import."
+requires-python = ">=3.12"
+dependencies = [
+    # EXACT pin — moved verbatim from WeatherBot's pyproject (the live-panel
+    # custom_id / persistent-view wire contract is valid only against this exact
+    # registered version; do NOT loosen to a range). D-03.
+    "discord.py==2.7.1",
+    "httpx>=0.28.1",
+    "structlog>=26.1.0",
+    "tenacity>=9.1.4",
+]
+
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+# NO [project.scripts] — the module ships a library only (D-02). The only console
+# script in the two-repo system stays app-side (weatherbot = "weatherbot.cli:main").
+
+[tool.hatch.build.targets.wheel]
+packages = ["yahir_reusable_bot"]   # ONLY the module package (Pitfall 7 — verify the built wheel)
+
+[dependency-groups]
+# The module ships its own test/hygiene suite as a GSD project (D-03 discretion),
+# so it duplicates the dev tooling rather than borrowing the app's.
+dev = [
+    "pytest>=9.0.3",
+    "ruff>=0.15.16",
+    "syrupy>=5.3.4",
+    "time-machine>=2.16",
+    "grimp>=3.14",                  # import-hygiene gate (dev-only)
+]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+pythonpath = ["."]
+addopts = "-ra"
