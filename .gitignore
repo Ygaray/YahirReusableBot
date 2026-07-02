@@ -5,3 +5,10 @@ dist/
 .grimp_cache/
 *.pyc
 .pytest_cache/
+
+# Secrets — never commit (this module ships no secrets; guard against future accidents)
+.env
+.env.*
+!.env.example
+*.pem
+*.key
