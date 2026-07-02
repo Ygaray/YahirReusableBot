@@ -20,6 +20,9 @@ jurisdiction, and where code goes. The essentials:
 - Public: `github.com/Ygaray/YahirReusableBot`, import root `yahir_reusable_bot`, PyPI name
   `yahir-reusable-bot`. Semver tags; tags are immutable. This repo is its own GSD project
   (`.planning/`).
+- **Spinning up a new consumer bot? Run `python3 scripts/new_consumer.py <BotName>` — never
+  hand-wire it.** The scaffolder pins the hub, writes the consumer's `CLAUDE.md` pointer + the
+  `_promotable/` quarantine, and registers it in `ECOSYSTEM.md` §1 (see §8).
 
 ## Toolchain
 

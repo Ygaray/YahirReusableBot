@@ -201,18 +201,38 @@ solid.
 
 ---
 
-## 8. Onboarding a new consumer
+## 8. Onboarding a new consumer — run the scaffolder, don't hand-wire
 
-When you spin up a new bot on this infrastructure (e.g. ReminderBot):
+**The canonical way to start a consumer is one command from the hub.** It does everything in this
+section deterministically, reading the hub's live latest tag + remote URL so the new repo is
+*born* already wired into the ecosystem:
 
-1. New repo, its own GSD project. Add `yahir-reusable-bot` to `dependencies` + a
-   `[tool.uv.sources]` git tag pin (copy WeatherBot's `pyproject.toml` shape).
-2. Add a row to the §1 consumers table here in the hub.
-3. Paste the **consumer pointer block** into the new repo's `CLAUDE.md` (template below) so its
-   agents auto-load the ecosystem rules.
-4. Create an empty `_promotable/` only when you first have hub-candidate code (§6).
+```bash
+# from the hub repo:
+python3 scripts/new_consumer.py <BotName> [--pin vX.Y.Z] [--create-remote {public,private}]
 
-### Consumer `CLAUDE.md` pointer block (paste verbatim, adjust the pin)
+# e.g.
+python3 scripts/new_consumer.py ReminderBot
+```
+
+It creates the consumer skeleton with: the hub **pin** (`[tool.uv.sources]` at the latest hub
+tag), a **`CLAUDE.md`** carrying the ecosystem pointer block (pin filled in), the `<pkg>/` package
++ its **`_promotable/` quarantine** (with the contract README from §6), a `wiring.py`
+composition-root stub, `tests/`, and a secrets-guarding `.gitignore`; runs `git init`; and
+**registers the consumer in the §1 table above** (insert-or-update). `--create-remote` also
+`gh repo create`s it and wires `origin`. After it runs:
+
+```bash
+cd ../<BotName> && uv sync        # resolve the hub from the pin
+# then /gsd-new-project to start the GSD project
+# co-dev on the hub live: uv pip install -e ../YahirReusableBot  (revert: uv sync --frozen)
+# and commit + push the hub — the §1 table row was updated.
+```
+
+**Agents: do not hand-wire a consumer — run the scaffolder.** The pointer block it writes into the
+consumer's `CLAUDE.md` is shown below for reference / manual fallback only.
+
+### Consumer `CLAUDE.md` pointer block (written by the scaffolder; shown for reference)
 
 ```markdown
 ## Ecosystem — consumer of `yahir_reusable_bot`
