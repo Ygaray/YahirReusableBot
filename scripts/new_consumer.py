@@ -262,8 +262,8 @@ def main() -> None:
           f"{imp}/ (+ _promotable/), tests/, .gitignore")
 
     if not (target / ".git").exists():
-        sh("git", "init", "-q", cwd=target)
-        print("  ✓ git init")
+        sh("git", "init", "-q", "-b", "main", cwd=target)
+        print("  ✓ git init (branch: main)")
 
     repo_disp = f"`github.com/{owner}/{bot}`"
     register_in_ecosystem(bot, repo_disp, str(target), pin)
