@@ -22,6 +22,7 @@ existing non-empty target dir; updates (not duplicates) the consumers-table row.
 from __future__ import annotations
 
 import argparse
+import os
 import re
 import subprocess
 import sys
@@ -97,7 +98,7 @@ pythonpath = ["."]
 """
 
 
-def claude_md(bot: str, imp: str, hub_url: str, pin: str) -> str:
+def claude_md(bot: str, imp: str, hub_url: str, pin: str, rel_hub: str) -> str:
     return f"""\
 # CLAUDE.md — {bot}
 
@@ -107,15 +108,15 @@ code lives in `{imp}/`; all reusable mechanism comes from the hub.
 ## Ecosystem — consumer of `yahir_reusable_bot`
 
 This repo is a **consumer** in a multi-repo bot ecosystem. It depends on the shared hub
-`yahir_reusable_bot` (repo `{hub_url}`, dev checkout `../YahirReusableBot`), pinned via
+`yahir_reusable_bot` (repo `{hub_url}`, dev checkout `{rel_hub}`), pinned via
 `[tool.uv.sources]` at tag **`{pin}`**.
 
-**Before working across repos, read `../YahirReusableBot/ECOSYSTEM.md`.** Key rules:
+**Before working across repos, read `{rel_hub}/ECOSYSTEM.md`.** Key rules:
 - **Cross-repo jurisdiction:** if a bug is actually in the hub, fix it upstream in the hub — but
   cutting a hub tag + repinning + deploying is a **human-gated** step (surface it, don't ship it
   autonomously).
 - **This app runs the *pinned* hub, not its source.** For live cross-repo dev use the editable
-  overlay: `uv pip install -e ../YahirReusableBot` (uncommitted; revert with `uv sync --frozen`).
+  overlay: `uv pip install -e {rel_hub}` (uncommitted; revert with `uv sync --frozen`).
 - **Placement:** reusable mechanism → hub; build new reusable impls in this repo's `{imp}/_promotable/`
   quarantine (hub-clean), promote via `git mv`; app-specific wiring/config/domain → stays here.
   Litmus: "could a different bot reuse this with zero domain assumptions?"
@@ -126,7 +127,7 @@ PROMOTABLE_README = """\
 # `_promotable/` — hub-candidate quarantine
 
 Code here is slated to be **promoted to the hub** (`yahir_reusable_bot`) via a `git mv`. It obeys
-the hub contract so promotion is a *move, not a rewrite*. See `../../ECOSYSTEM.md` §6 (in the hub).
+the hub contract so promotion is a *move, not a rewrite*. See the hub's `ECOSYSTEM.md` §6.
 
 **Every file in here MUST:**
 1. Import only the hub's public ports + stdlib/third-party. **No imports from this app's own code.**
@@ -232,7 +233,9 @@ def main() -> None:
     pin = args.pin or hub_latest_tag()
     hub_url = hub_remote_url()
     owner = hub_url.rstrip("/").split("/")[-2]
-    target = Path(args.dir).resolve() if args.dir else (HUB_ROOT.parent / bot)
+    # Consumers live top-level under ~/Projects (NOT inside the hub's parent, which may be a
+    # Reusable/ container). Override with --dir.
+    target = Path(args.dir).resolve() if args.dir else (Path.home() / "Projects" / bot)
 
     if target.exists() and any(target.iterdir()):
         sys.exit(f"FATAL: {target} exists and is not empty — refusing to overwrite.")
@@ -246,12 +249,13 @@ def main() -> None:
     (target / "tests").mkdir(exist_ok=True)
 
     name_pkg = re.sub(r"[^a-z0-9]+", "-", bot.lower()).strip("-")
+    rel_hub = os.path.relpath(HUB_ROOT, target)  # consumer -> hub, correct wherever the hub lives
     (target / "pyproject.toml").write_text(
         pyproject(name_pkg, imp, bot, hub_url, pin, str(HUB_ROOT)))
-    (target / "CLAUDE.md").write_text(claude_md(bot, imp, hub_url, pin))
+    (target / "CLAUDE.md").write_text(claude_md(bot, imp, hub_url, pin, rel_hub))
     (target / ".gitignore").write_text(GITIGNORE)
     (target / "README.md").write_text(f"# {bot}\n\nA bot on the yahir_reusable_bot infrastructure. "
-                                      f"See CLAUDE.md and ../YahirReusableBot/ECOSYSTEM.md.\n")
+                                      f"See CLAUDE.md and {rel_hub}/ECOSYSTEM.md.\n")
     (pkg / "__init__.py").write_text("")
     (pkg / "cli.py").write_text(CLI_STUB)
     (pkg / "wiring.py").write_text(wiring_stub(imp))

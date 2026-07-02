@@ -44,10 +44,10 @@ hub assembles nothing of its own. This is enforced in the hub by an import-hygie
 A consumer does **not** run the hub *source*. It runs the **pinned, installed copy**:
 `[tool.uv.sources]` names a git tag, `uv.lock` freezes the exact resolved sha, and `uv sync`
 installs that. So "the hub" a running consumer sees is a wheel built from a frozen commit — not
-your local `../YahirReusableBot` working tree.
+your local `../Reusable/YahirReusableBot` working tree.
 
 **This is the single most important thing to understand before you edit the hub from a
-consumer.** If you fix a bug in `../YahirReusableBot` source, then re-run the consumer's tests,
+consumer.** If you fix a bug in `../Reusable/YahirReusableBot` source, then re-run the consumer's tests,
 they will **still fail** — because the consumer is running the old pinned wheel, not your edit.
 
 Two mechanisms bridge that gap:
@@ -56,7 +56,7 @@ Two mechanisms bridge that gap:
   install the hub editable *over* the pin:
   ```bash
   # from the consumer repo:
-  uv pip install -e /home/yahir/Projects/YahirReusableBot
+  uv pip install -e /home/yahir/Projects/Reusable/YahirReusableBot
   ```
   Now the consumer imports your live hub source. This is **uncommitted and local only** — never
   add a path source to `[tool.uv.sources]` (uv ships no path-override feature; a committed path
@@ -225,7 +225,7 @@ composition-root stub, `tests/`, and a secrets-guarding `.gitignore`; runs `git 
 ```bash
 cd ../<BotName> && uv sync        # resolve the hub from the pin
 # then /gsd-new-project to start the GSD project
-# co-dev on the hub live: uv pip install -e ../YahirReusableBot  (revert: uv sync --frozen)
+# co-dev on the hub live: uv pip install -e ../Reusable/YahirReusableBot  (revert: uv sync --frozen)
 # and commit + push the hub — the §1 table row was updated.
 ```
 
@@ -239,14 +239,14 @@ consumer's `CLAUDE.md` is shown below for reference / manual fallback only.
 
 This repo is a **consumer** in a multi-repo bot ecosystem. It depends on the shared hub
 `yahir_reusable_bot` (repo `github.com/Ygaray/YahirReusableBot`, dev checkout
-`../YahirReusableBot`), pinned via `[tool.uv.sources]` at tag **`vX.Y.Z`**.
+`../Reusable/YahirReusableBot`), pinned via `[tool.uv.sources]` at tag **`vX.Y.Z`**.
 
-**Before working across repos, read `../YahirReusableBot/ECOSYSTEM.md`.** Key rules:
+**Before working across repos, read `../Reusable/YahirReusableBot/ECOSYSTEM.md`.** Key rules:
 - **Cross-repo jurisdiction:** if a bug is actually in the hub, fix it upstream in the hub — but
   cutting a hub tag + repinning + deploying is a **human-gated** step (surface it, don't ship it
   autonomously).
 - **The consumer runs the *pinned* hub, not its source.** For live cross-repo dev use the
-  editable overlay: `uv pip install -e ../YahirReusableBot` (uncommitted; revert with
+  editable overlay: `uv pip install -e ../Reusable/YahirReusableBot` (uncommitted; revert with
   `uv sync --frozen`).
 - **Placement:** reusable mechanism → hub; build new reusable impls in this repo's `_promotable/`
   quarantine (hub-clean), promote via `git mv`; app-specific wiring/config/domain → stays here.

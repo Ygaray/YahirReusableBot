@@ -10,9 +10,10 @@ file is just the steps.
 2. **`/gsd-new-project`** (step 5) — plans *what the bot is* (its own GSD project). Deliberately
    kept separate: it's interactive and you drive it.
 
-> **Hub location:** this repo currently lives at `~/Projects/YahirReusableBot`. Commands below use
-> `../YahirReusableBot` for a consumer that is a *sibling* directory. If the hub moves, update that
-> relative path everywhere (the scaffolder writes it into each new consumer's `CLAUDE.md`).
+> **Layout:** the hub lives at `~/Projects/Reusable/YahirReusableBot`; consumers live top-level at
+> `~/Projects/<Bot>`. So from a consumer, the hub is `../Reusable/YahirReusableBot` (used in the
+> commands below). The scaffolder computes this relative path per consumer and writes it into each
+> new consumer's `CLAUDE.md`, so it stays correct even if the hub moves again.
 
 Example bot name throughout: **ReminderBot**.
 
@@ -21,7 +22,7 @@ Example bot name throughout: **ReminderBot**.
 ## 1. Scaffold the consumer (from the hub)
 
 ```bash
-cd ~/Projects/YahirReusableBot
+cd ~/Projects/Reusable/YahirReusableBot
 python3 scripts/new_consumer.py ReminderBot --create-remote private
 #   --create-remote {public,private}  also does `gh repo create` + sets origin
 #   omit it to scaffold locally only;  --pin vX.Y.Z to pin a specific hub tag (default: latest)
@@ -38,7 +39,7 @@ consumers table in `ECOSYSTEM.md` §1**.
 The scaffolder edited `ECOSYSTEM.md` §1 — that change is uncommitted **in the hub**:
 
 ```bash
-cd ~/Projects/YahirReusableBot
+cd ~/Projects/Reusable/YahirReusableBot
 git add ECOSYSTEM.md && git commit -m "docs: register ReminderBot consumer" && git push
 ```
 
@@ -81,7 +82,7 @@ independent GSD project.
 - **Wire the hub's engines/adapters** → `reminderbot/wiring.py` (the composition root — the one
   place app specifics are injected into hub mechanisms).
 - **Editing the hub live while building?** Overlay an editable install (uncommitted):
-  `uv pip install -e ../YahirReusableBot` — revert with `uv sync --frozen`.
+  `uv pip install -e ../Reusable/YahirReusableBot` — revert with `uv sync --frozen`.
 
 ---
 
