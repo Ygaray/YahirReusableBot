@@ -109,9 +109,16 @@ def build_client(
         else:
             _log.info("inbound bot ready", user=str(client.user))
 
+    # Capture the injected app handler BEFORE the @client.event below rebinds the name
+    # ``on_message`` in this scope (the event MUST be named ``on_message`` for discord.py to
+    # dispatch to it). Without this capture, ``await on_message(...)`` resolved to the event
+    # function itself → infinite recursion (RecursionError) — a live-only failure the
+    # mocked-Discord suites never dispatched a real message to trigger.
+    _dispatch_message = on_message
+
     @client.event
     async def on_message(message: discord.Message) -> None:
-        await on_message(message)
+        await _dispatch_message(message)
 
     return client
 
