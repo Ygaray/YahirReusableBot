@@ -1,6 +1,6 @@
 [project]
 name = "yahir-reusable-bot"
-version = "0.1.0"
+version = "0.1.1"
 description = "Reusable, app-agnostic bot core (channels, reliability, scheduler, registry, Discord adapter) — the clean module future bots import."
 requires-python = ">=3.12"
 dependencies = [
