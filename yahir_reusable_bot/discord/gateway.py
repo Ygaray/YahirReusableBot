@@ -98,6 +98,13 @@ def build_client(
         # call (no network/await) → safe before connect. The view is injected, so NO app
         # import is needed here (the deferred back-edge that used to live here is gone).
         client.add_view(view)
+        # Startup diagnostic: the exact custom_ids registered for post-restart re-bind. Compared
+        # against a live interaction's custom_id, this pins any registration/matching mismatch
+        # (the class of bug that only surfaces against the real gateway, never a mocked add_view).
+        _log.info(
+            "persistent view registered",
+            custom_ids=[getattr(c, "custom_id", None) for c in view.children],
+        )
 
     @client.event
     async def on_ready() -> None:
