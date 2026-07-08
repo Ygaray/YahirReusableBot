@@ -6,6 +6,11 @@ dist/
 *.pyc
 .pytest_cache/
 
+# Graphify knowledge-graph artifacts — regenerated locally via /gsd-graphify build.
+# Large generated JSON/HTML + build cache; not source of truth, don't commit.
+graphify-out/
+.planning/graphs/
+
 # Secrets — never commit (this module ships no secrets; guard against future accidents)
 .env
 .env.*
