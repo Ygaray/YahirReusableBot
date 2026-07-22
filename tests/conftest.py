@@ -25,7 +25,7 @@ import pytest
 class _InstantStopEvent:
     """A `threading.Event`-shaped double whose `.wait()` returns immediately.
 
-    `build_retrying` (yahir_reusable_bot/reliability/retry.py:241) wires
+    `build_retrying` (yahir_reusable_bot/reliability/retry.py:265) wires
     `sleep=stop_event.wait` as the LOCKED interruptible-sleep constraint — the
     entire two-burst schedule sleeps via this callable, never the blocking
     stdlib `time.sleep`. The production default `MID_PAUSE_S` is 2700 seconds;
