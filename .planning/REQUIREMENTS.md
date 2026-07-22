@@ -23,13 +23,15 @@ regression test** — the test must fail against current source before the fix l
 
 ### Reliability (`reliability/retry.py`)
 
-- [ ] **RELY-01** (H02, high): A transient httpx network failure that arrives as
+- [x] **RELY-01** (H02, high): A transient httpx network failure that arrives as
   `RemoteProtocolError` (server disconnected mid-response) or `WriteError` is classified transient,
   so the two-burst retry fires and exhaustion reports `transient_exhausted` — not `internal_error`.
   Broaden to `(TimeoutException, NetworkError, RemoteProtocolError)`; **not** a blanket
   `TransportError`, so client-side `LocalProtocolError` stays non-retryable. → Phase 1
+
 - [ ] **RELY-02** (H09, low): A caller configuring `burst_size == 1` gets a degraded wait rather
   than a `ZeroDivisionError` raised from inside the tenacity wait callable. → Phase 3
+
 - [ ] **RELY-03** (H10, low): A caller pairing standalone `two_burst_wait` with its own
   `stop_after_attempt(N)` cannot silently desync the mid-pause — `burst_size` is coupled to the
   stop bound, or the precondition is asserted loudly. → Phase 3
@@ -39,10 +41,13 @@ regression test** — the test must fail against current source before the fix l
 - [ ] **LIFE-01** (H01, high): The process-identity guard matches `python -m <marker>` at the exact
   argv position, so a recycled PID running the marker as a *positional* arg is never signalled, and
   a genuine daemon started with an interpreter flag before `-m` is still detected as running. → Phase 1
+
 - [ ] **LIFE-02** (H14, low): `write_pid_atomic` never closes an fd twice, so a failing
   `os.replace` cannot silently close an unrelated descriptor that reused the integer. → Phase 3
+
 - [ ] **LIFE-03** (H15, low): The documented non-Linux "degrade to True" behavior holds even when
   the consumer supplies a path-shaped `proc_marker`. → Phase 3
+
 - [ ] **LIFE-04** (H18, enhancement): `ReadyGate.run` returns a distinct fatal outcome a consumer
   can branch on directly, instead of forcing consumers to overload the `stop` Event to escape a
   fatal probe result. → Phase 4
@@ -57,19 +62,25 @@ regression test** — the test must fail against current source before the fix l
 - [ ] **DISC-01** (H04, medium): A non-recoverable gateway disconnect does not leave the bot
   permanently dead with no operator signal — either a bounded supervised reconnect or liveness the
   host park-loop can act on. **Open design decision: the retry/backoff contract.** → Phase 2
+
 - [ ] **DISC-02** (H05, medium): Re-summoning a panel never leaves two live pinned panels or a
   fresh-but-unpinned panel — delete-then-pin ordering plus per-item handling of `HTTPException` /
   `NotFound`, not just `Forbidden`. → Phase 2
+
 - [ ] **DISC-03** (H07, low): `stop()` does not raise `RuntimeError` when the bot loop stops
   between the `is_running()` check and the cross-thread schedule. → Phase 2
+
 - [ ] **DISC-04** (H08, low): The `SelectedContext` concurrency contract is explicit about
   re-reading across an `await`, and the hub offers a snapshot-safe way to consume a selection.
   **Scope note: the observed defect's fix site is consumer-side** (`wiring.py` re-reads post-await);
   the hub side is contract + API only. → Phase 2
+
 - [ ] **DISC-05** (H11, low): `interaction_check` returns False cleanly when `interaction.user` is
   absent, instead of raising `AttributeError` outside `View.on_error`'s reach. → Phase 3
+
 - [ ] **DISC-06** (H12, low): An empty `marker` is rejected at construction, so `is_owned_panel`
   can never claim every bot-authored pinned message and have `summon_panel` delete unrelated pins. → Phase 3
+
 - [ ] **SURF-01** (H17, cleanup): `from yahir_reusable_bot.discord import summon_panel` works, or
   the package docstring stops advertising it — docstring, `gateway.__all__`, and the package
   `__init__` agree. → Phase 4
@@ -79,6 +90,7 @@ regression test** — the test must fail against current source before the fix l
 - [ ] **MATCH-01** (H06, medium): A command argument is extracted correctly when the keyword's
   casefold changes length (`ß`→`ss`, `ﬁ`→`fi`) — the arg is sliced from a string consistent with
   the string the prefix test matched. **Lands with MATCH-02.** → Phase 3
+
 - [ ] **MATCH-02** (H13, low): `spec.name` is validated at registration so an empty name cannot
   claim blank input, and an uppercase name cannot be permanently unmatchable against casefolded
   input. **Lands with MATCH-01.** → Phase 3
@@ -115,4 +127,5 @@ Per build-in-consumer-then-promote / rule of three. See `EXTENSION-GUIDE.md`.
 
 - Publishing `yahir-reusable-bot` to PyPI / a private index (the git dependency is the v2.0
   distribution mechanism).
+
 - Slash-command / non-text adapters; weather-pattern analysis (WeatherBot-app concerns).
