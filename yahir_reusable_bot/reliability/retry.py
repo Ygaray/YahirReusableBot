@@ -80,11 +80,35 @@ REASON_INTERNAL_ERROR = "internal_error"
 def is_transient(exc: BaseException) -> bool:
     """True for retryable failures: network errors and transient HTTP statuses.
 
-    Timeouts / connect / read errors and ``HTTPStatusError`` whose status is in
-    :data:`TRANSIENT` (429 / 5xx) are retryable; everything else (incl. 4xx in
-    :data:`PERMANENT`) is not (D-08, RELY-02).
+    Timeouts, network errors (connect/read/write/close), a remote hangup
+    mid-response, and ``HTTPStatusError`` whose status is in :data:`TRANSIENT`
+    (429 / 5xx) are retryable; everything else (incl. 4xx in :data:`PERMANENT`)
+    is not (D-08, RELY-02).
+
+    **Deny-by-default is the LOCKED posture (D-02, RELY-01).** An httpx
+    exception type not explicitly named here classifies non-transient. A wrong
+    retry silently burns roughly 75 minutes of the delivery window, and this
+    library cannot see its consumers' failure modes, so an unrecognized future
+    exception type must fail closed rather than retry blind.
+
+    Rejected alternative (D-02): a blanket ``httpx.TransportError`` rule — with
+    or without a deny-list — was considered and rejected. It would sweep in
+    ``httpx.ProxyError`` and ``httpx.UnsupportedProtocol``, neither of which
+    resolves by waiting, and it would silently start retrying any future
+    exception type added under that parent.
+
+    Concrete gap closed here, verified against the installed httpx 0.28.1
+    class tree (D-03): the previous tuple's real misses were
+    ``httpx.WriteError``, ``httpx.CloseError``, and ``httpx.RemoteProtocolError``
+    — a routine mid-response server hangup (``RemoteProtocolError``) never
+    drove the two-burst retry. ``httpx.PoolTimeout`` was already covered via
+    ``httpx.TimeoutException`` and remains so.
+
+    ``httpx.LocalProtocolError`` stays non-transient: it signals a client-side
+    request-construction bug, not a network condition, so retrying it would
+    never succeed and would only burn the delivery window.
     """
-    if isinstance(exc, (httpx.TimeoutException, httpx.ConnectError, httpx.ReadError)):
+    if isinstance(exc, (httpx.TimeoutException, httpx.NetworkError, httpx.RemoteProtocolError)):
         return True
     if isinstance(exc, httpx.HTTPStatusError):
         return exc.response.status_code in TRANSIENT
