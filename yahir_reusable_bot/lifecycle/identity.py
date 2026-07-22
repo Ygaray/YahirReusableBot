@@ -141,11 +141,11 @@ def _argv_matches_marker(cmdline: bytes, *, proc_marker: bytes) -> bool:
 
     THE rule for the ``-m`` form (D-06, not a heuristic): the FIRST ``-m``
     token in argv wins, and the marker must be the token immediately after
-    it. This mirrors Python's own CLI grammar — everything after
-    ``-m <module>`` belongs to the module's own argv — which is exactly what
-    makes ``python -m pytest -m <marker>`` resolve correctly: pytest's own
-    ``-m`` marker-selector flag is never the interpreter's, so it must never
-    win the scan.
+    it. This handles the space-separated ``-m <module>`` form of Python's CLI
+    grammar — everything after ``-m <module>`` belongs to the module's own
+    argv — which is exactly what makes ``python -m pytest -m <marker>``
+    resolve correctly: pytest's own ``-m`` marker-selector flag is never the
+    interpreter's, so it must never win the scan.
 
     A fixed-position check (``argv[1] == b"-m" and argv[2] == proc_marker``,
     the shape originally prescribed) is REJECTED on evidence (D-05): it fails
@@ -159,6 +159,18 @@ def _argv_matches_marker(cmdline: bytes, *, proc_marker: bytes) -> bool:
     positive (a non-Python program taking ``-m <marker>``) at the cost of
     breaking legitimate daemons on pypy or a custom-named interpreter — this
     library must not assume its consumer's runtime.
+
+    KNOWN LIMITATION: CPython also accepts the ATTACHED form with no
+    separating space — ``python -m<module>`` (verified: ``python3
+    -mjson.tool`` runs identically to ``python3 -m json.tool``). This scan
+    only matches the standalone ``b"-m"`` token, so a daemon launched with
+    the attached form presents argv as a single token (e.g.
+    ``b"-mexamplebot"``), which never equals ``b"-m"`` — the loop never
+    matches it and a live daemon is reported as NOT running (a false
+    negative). This is an INHERITED pre-existing gap, not a regression: the
+    prior fixed-position check had the identical blind spot. Unlike D-05 and
+    D-07 above, there is no recorded decision rejecting the attached form as
+    out of scope — this is a tracked gap, not a deliberate exclusion.
 
     Like the rest of this guard, this branch degrades to False and never
     raises: the bounds check on the token after ``-m`` (there may be none) is
