@@ -22,3 +22,17 @@ two files this plan touches (`tests/test_retry.py`,
 `yahir_reusable_bot/reliability/retry.py`) passes clean. Not fixed here — out of scope.
 Candidate for a future housekeeping pass or Phase 3/4 if any of these land in a plan's
 `files_modified`.
+
+## Update from Plan 03 (Task 2) — `yahir_reusable_bot/lifecycle/identity.py:121` E731 confirmed still pre-existing, unrelated to this plan's fix
+
+Plan 03 modified `yahir_reusable_bot/lifecycle/identity.py`, one of the four files already
+listed above with a pre-existing `ruff` error (`E731` lambda assignment at line 121). This
+plan's fix touches only `_argv_matches_marker`'s final return (originally line 149, now the
+first-`-m` scan added below the existing docstring); line 121's `cmdline_reader = lambda p:
+...` inside `is_running_process` is untouched — confirmed via `git diff HEAD~1 HEAD --
+yahir_reusable_bot/lifecycle/identity.py`, which shows no change to that line. `uv run ruff
+check` scoped to this plan's two files (`tests/test_identity.py`,
+`yahir_reusable_bot/lifecycle/identity.py`) still reports exactly this one pre-existing
+E731 and nothing new. Not fixed here (out of Task 2's scope — the lambda is not part of the
+D-04 fix); recorded here to avoid a duplicate entry, per instruction to append rather than
+re-log the same finding.

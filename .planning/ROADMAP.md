@@ -29,7 +29,7 @@ adversarial case gets added rather than a new happy path.
 **Goal:** Close the only two defects live and unmitigated in a real consumer today.
 **Requirements:** RELY-01 (H02), LIFE-01 (H01)
 **Depends on:** —
-**Plans:** 2/4 plans executed
+**Plans:** 3/4 plans executed
 
 Success criteria:
 
@@ -55,7 +55,7 @@ full-suite gate):
   first fixtures, D-09/D-10)
 
 - [x] 01-02-PLAN.md — RELY-01: `tests/test_retry.py` committed RED, then the `is_transient` fix
-- [ ] 01-03-PLAN.md — LIFE-01: `tests/test_identity.py` committed RED, then the
+- [x] 01-03-PLAN.md — LIFE-01: `tests/test_identity.py` committed RED, then the
   `_argv_matches_marker` first-`-m` scan fix
 
 - [ ] 01-04-PLAN.md — Phase gate audit, RED-first history proof, authorized merge to `main`

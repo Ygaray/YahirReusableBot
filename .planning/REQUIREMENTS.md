@@ -38,7 +38,7 @@ regression test** — the test must fail against current source before the fix l
 
 ### Lifecycle (`lifecycle/identity.py`, `lifecycle/ready_gate.py`)
 
-- [ ] **LIFE-01** (H01, high): The process-identity guard matches `python -m <marker>` at the exact
+- [x] **LIFE-01** (H01, high): The process-identity guard matches `python -m <marker>` at the exact
   argv position, so a recycled PID running the marker as a *positional* arg is never signalled, and
   a genuine daemon started with an interpreter flag before `-m` is still detected as running. → Phase 1
 

@@ -5,15 +5,15 @@ milestone_name: — Hub hardening
 current_phase: 01
 current_phase_name: reachable-reliability
 status: executing
-stopped_at: Completed 01-02-PLAN.md
-last_updated: "2026-07-22T21:55:17.621Z"
+stopped_at: Completed 01-03-PLAN.md
+last_updated: "2026-07-22T22:00:13.111Z"
 last_activity: 2026-07-22
 last_activity_desc: Phase 01 execution started
 progress:
   total_phases: 4
   completed_phases: 0
   total_plans: 4
-  completed_plans: 2
+  completed_plans: 3
   percent: 0
 ---
 
@@ -22,14 +22,14 @@ progress:
 ## Current Position
 
 Phase: 01 (reachable-reliability) — EXECUTING
-Plan: 3 of 4
+Plan: 4 of 4
 Status: Ready to execute
 Last activity: 2026-07-22 — Phase 01 execution started
 
 ## Session
 
-**Last session:** 2026-07-22T21:55:17.613Z
-**Stopped at:** Completed 01-02-PLAN.md
+**Last session:** 2026-07-22T22:00:13.101Z
+**Stopped at:** Completed 01-03-PLAN.md
 **Resume file:** None
 
 ## Performance Metrics
@@ -38,6 +38,7 @@ Last activity: 2026-07-22 — Phase 01 execution started
 |-------|------|----------|-------|
 | Phase 01 P01 | 15min | 2 tasks | 1 files |
 | Phase 01 P02 | ~20min | 2 tasks | 2 files |
+| Phase 01 P03 | ~20min | 2 tasks | 2 files |
 
 ## Decisions
 
@@ -47,3 +48,5 @@ Last activity: 2026-07-22 — Phase 01 execution started
 - [Phase ?]: RELY-01 fixed: is_transient broadened to (TimeoutException, NetworkError, RemoteProtocolError) per D-01/D-02/D-03, deny-by-default preserved
 - [Phase ?]: RED-first two-commit proof recorded for RELY-01: test-only commit e7c959d is the direct parent of fix commit f6e4fb2 (D-13)
 - [Phase ?]: D-17 hub-scoped restatement encoded literally in the exhaustion test: exhausted RemoteProtocolError must escape Retrying.__call__ as itself, not tenacity.RetryError
+- [Phase ?]: LIFE-01 fixed: _argv_matches_marker replaced overlapping-slice membership with a first-`-m`-wins scan (D-04/D-06), bounds-checked, never raises
+- [Phase ?]: RED-first two-commit proof recorded for LIFE-01: test-only commit 0f0a9ad is the direct parent of fix commit 5273c13 (D-13)
