@@ -82,7 +82,10 @@ def test_classification_is_pure_and_repeatable():
     SAME exception instance returns the same boolean every time and writes no
     module-level state. This is the idempotency contract the classifier must
     hold across the two bursts of a single retry schedule (edge probe:
-    RELY-01)."""
+    RELY-01). RED pre-fix — pre-fix is_transient(RemoteProtocolError) returns
+    False for every call, failing this assertion; this also guards that a
+    future refactor doesn't introduce per-call nondeterminism (e.g. caching
+    keyed on identity) into the classifier."""
     exc = httpx.RemoteProtocolError("server hung up mid-response")
     results = [is_transient(exc), is_transient(exc), is_transient(exc)]
     assert results == [True, True, True]
