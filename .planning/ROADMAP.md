@@ -29,15 +29,18 @@ adversarial case gets added rather than a new happy path.
 **Goal:** Close the only two defects live and unmitigated in a real consumer today.
 **Requirements:** RELY-01 (H02), LIFE-01 (H01)
 **Depends on:** —
-**Plans:** 4 plans
+**Plans:** 1/4 plans executed
 
 Success criteria:
+
 - `is_transient` classifies `httpx.RemoteProtocolError` and `httpx.WriteError` as transient; a
   server hangup mid-response drives the two-burst retry and reports `transient_exhausted` on
   exhaustion instead of `internal_error`.
+
 - `LocalProtocolError` still classifies non-transient (the fix is not a blanket `TransportError`).
 - The identity guard does not match a recycled PID running the marker as a positional arg
   (`python -m pytest <marker>`), and *does* match a daemon started as `python -O -m <marker> run`.
+
 - New regression tests for both fail against pre-fix source.
 
 > Criterion 1's `transient_exhausted` clause is satisfied via the D-17 hub-scoped restatement:
@@ -47,11 +50,14 @@ Success criteria:
 
 Plans (sequential — Plan 03 waits on 02 so a deliberately RED test never overlaps a sibling's
 full-suite gate):
-- [ ] 01-01-PLAN.md — Phase branch, pre-fix baseline capture, and `tests/conftest.py` (the hub's
+
+- [x] 01-01-PLAN.md — Phase branch, pre-fix baseline capture, and `tests/conftest.py` (the hub's
   first fixtures, D-09/D-10)
+
 - [ ] 01-02-PLAN.md — RELY-01: `tests/test_retry.py` committed RED, then the `is_transient` fix
 - [ ] 01-03-PLAN.md — LIFE-01: `tests/test_identity.py` committed RED, then the
   `_argv_matches_marker` first-`-m` scan fix
+
 - [ ] 01-04-PLAN.md — Phase gate audit, RED-first history proof, authorized merge to `main`
 
 ### Phase 2: Latent runtime robustness
@@ -62,12 +68,16 @@ full-suite gate):
 **Plans:** TBD
 
 Success criteria:
+
 - A PHASE-2 reconcile failure fires `on_rejected` before re-raising, and the rollback/restore
   behavior is otherwise byte-identical (the original error is still the one raised).
+
 - A non-recoverable gateway disconnect leaves an operator-visible signal rather than a silently
   dead bot — **the retry/backoff contract is an open design decision to settle in this phase.**
+
 - Re-summoning a panel cannot leave two live pinned panels or a fresh-but-unpinned panel, with
   `HTTPException`/`NotFound` handled per-item.
+
 - `stop()` cannot raise `RuntimeError` when the loop stops mid-call.
 - **DISC-04 is contract + API only** — the observed defect's fix site is consumer-side; this phase
   makes the `SelectedContext` await-safety contract explicit, it does not chase the consumer bug.
@@ -82,16 +92,21 @@ DISC-06 (H12), LIFE-02 (H14), LIFE-03 (H15), SCHED-01 (H16)
 **Plans:** TBD
 
 **Pairing constraints — these must land together, not as independent tasks:**
+
 - **MATCH-01 + MATCH-02** — both are `registry/match.py` casefold symmetry. Fixing one without the
   other leaves the matcher half-consistent.
+
 - **RELY-02 + RELY-03** — both are the `retry.py` `burst_size` coupling.
 
 Success criteria:
+
 - A length-changing casefold (`ßtatus arg`, `ﬁnd hello`) extracts the correct arg; an empty
   `spec.name` cannot claim blank input; an uppercase registered name is matchable.
+
 - `burst_size == 1` degrades instead of raising `ZeroDivisionError` from inside the tenacity wait.
 - `interaction_check` returns False for an absent `interaction.user`; an empty `marker` is
   rejected at construction.
+
 - `write_pid_atomic` cannot double-close an fd; the non-Linux degrade holds for a path-shaped marker.
 - `SchedulerEngine.remove` has a tested, stated contract for an already-gone id.
 
@@ -103,11 +118,14 @@ Success criteria:
 **Plans:** TBD
 
 Success criteria:
+
 - `from yahir_reusable_bot.discord import summon_panel` succeeds, with docstring,
   `gateway.__all__`, and the package `__init__` in agreement.
+
 - `ReadyGate.run` surfaces a fatal probe result as a distinct outcome a consumer branches on —
   no `stop`-Event overload required. The ok and clean-shutdown paths keep their current
   semantics and emit ordering (`on_online` → log → `READY=1`).
+
 - The de-hack is documented for the repin: the two WeatherBot sites that collapse onto the new
   outcome are named in the phase summary.
 
@@ -131,6 +149,7 @@ Unsequenced parking lot. Source of record for every item below lives in `.planni
 - `HUB-HARDENING-REPORT-v0.1.2.md` — **the planning document.** 17 audit defects (H01–H17) +
   1 enhancement (H18), each with a fix direction verified against hub HEAD `50e8f09`, plus a
   consumer-impact triage. Supersedes the raw handoff for planning.
+
 - `HUB-FINDINGS-HANDOFF.md` — evidence appendix: full failure scenario + evidence per finding.
 - `PROMOTION-CANDIDATES.md` — new reusable mechanisms to pull up from consumers (not bugs).
 
@@ -162,11 +181,13 @@ domain-specific. Hub owns mechanism + pattern-registration API; the consumer reg
 Landing it replaces WeatherBot's app-local copy with a hub import.
 
 Plans:
+
 - [ ] TBD (promote with /gsd-review-backlog when ready)
 
 ## Notes
 
 - The first consumer is **WeatherBot**, depending on this module via a uv git dependency
   tag-pinned for deploy (`tag = "v0.1.0"`, reproducible `uv.lock`).
+
 - A real GitHub remote for this repo is a deploy prerequisite for pinning from a host
   (the local `file://` git URL is sufficient for development / Gate-1 verification only).
