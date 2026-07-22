@@ -10,6 +10,97 @@ import commit tagged `v0.1.0`.
 |-------|-------|--------|
 | 0 | Initial import (module tree, pyproject, re-scoped import-hygiene suite, EXTENSION-GUIDE, GSD init) | done |
 
+## Milestone v0.1.2 — Hub hardening (ACTIVE)
+
+Close all 17 audit-surfaced hub defects (H01–H17) plus the H18 `ReadyGate` fatal-outcome
+enhancement. Sequencing is correctness-first, reachable-first, then reusability hardening,
+cleanup last. Source of record: `.planning/backlog/HUB-HARDENING-REPORT-v0.1.2.md`.
+
+All 18 findings re-verified against source before roadmapping — no semantic drift; two line
+numbers moved within their own function (H07 `gateway.py:246`, H04 `gateway.py:278`).
+
+**Standing gate for every phase (GATE-01):** full pytest suite + import-hygiene / litmus / grimp
+layering checks stay green. **Every fix ships a RED-first regression test** — it must fail against
+current source first. Existing tests cover only decoy cases for several findings, so the
+adversarial case gets added rather than a new happy path.
+
+### Phase 1: Reachable reliability
+
+**Goal:** Close the only two defects live and unmitigated in a real consumer today.
+**Requirements:** RELY-01 (H02), LIFE-01 (H01)
+**Depends on:** —
+**Plans:** TBD
+
+Success criteria:
+- `is_transient` classifies `httpx.RemoteProtocolError` and `httpx.WriteError` as transient; a
+  server hangup mid-response drives the two-burst retry and reports `transient_exhausted` on
+  exhaustion instead of `internal_error`.
+- `LocalProtocolError` still classifies non-transient (the fix is not a blanket `TransportError`).
+- The identity guard does not match a recycled PID running the marker as a positional arg
+  (`python -m pytest <marker>`), and *does* match a daemon started as `python -O -m <marker> run`.
+- New regression tests for both fail against pre-fix source.
+
+### Phase 2: Latent runtime robustness
+
+**Goal:** Close real hub bugs that need specific runtime conditions to bite.
+**Requirements:** CFG-01 (H03), DISC-01 (H04), DISC-02 (H05), DISC-03 (H07), DISC-04 (H08)
+**Depends on:** Phase 1
+**Plans:** TBD
+
+Success criteria:
+- A PHASE-2 reconcile failure fires `on_rejected` before re-raising, and the rollback/restore
+  behavior is otherwise byte-identical (the original error is still the one raised).
+- A non-recoverable gateway disconnect leaves an operator-visible signal rather than a silently
+  dead bot — **the retry/backoff contract is an open design decision to settle in this phase.**
+- Re-summoning a panel cannot leave two live pinned panels or a fresh-but-unpinned panel, with
+  `HTTPException`/`NotFound` handled per-item.
+- `stop()` cannot raise `RuntimeError` when the loop stops mid-call.
+- **DISC-04 is contract + API only** — the observed defect's fix site is consumer-side; this phase
+  makes the `SelectedContext` await-safety contract explicit, it does not chase the consumer bug.
+
+### Phase 3: Reusable public-surface footguns
+
+**Goal:** Harden the public surface against footguns unreachable in the current consumer but
+guaranteed to bite the next one. This is the hub's entire reason to exist.
+**Requirements:** MATCH-01 (H06), MATCH-02 (H13), RELY-02 (H09), RELY-03 (H10), DISC-05 (H11),
+DISC-06 (H12), LIFE-02 (H14), LIFE-03 (H15), SCHED-01 (H16)
+**Depends on:** Phase 2
+**Plans:** TBD
+
+**Pairing constraints — these must land together, not as independent tasks:**
+- **MATCH-01 + MATCH-02** — both are `registry/match.py` casefold symmetry. Fixing one without the
+  other leaves the matcher half-consistent.
+- **RELY-02 + RELY-03** — both are the `retry.py` `burst_size` coupling.
+
+Success criteria:
+- A length-changing casefold (`ßtatus arg`, `ﬁnd hello`) extracts the correct arg; an empty
+  `spec.name` cannot claim blank input; an uppercase registered name is matchable.
+- `burst_size == 1` degrades instead of raising `ZeroDivisionError` from inside the tenacity wait.
+- `interaction_check` returns False for an absent `interaction.user`; an empty `marker` is
+  rejected at construction.
+- `write_pid_atomic` cannot double-close an fd; the non-Linux degrade holds for a path-shaped marker.
+- `SchedulerEngine.remove` has a tested, stated contract for an already-gone id.
+
+### Phase 4: Cleanup + ReadyGate fatal outcome
+
+**Goal:** Fix public-surface drift and give consumers a fatal outcome to de-hack against.
+**Requirements:** SURF-01 (H17), LIFE-04 (H18)
+**Depends on:** Phase 3
+**Plans:** TBD
+
+Success criteria:
+- `from yahir_reusable_bot.discord import summon_panel` succeeds, with docstring,
+  `gateway.__all__`, and the package `__init__` in agreement.
+- `ReadyGate.run` surfaces a fatal probe result as a distinct outcome a consumer branches on —
+  no `stop`-Event overload required. The ok and clean-shutdown paths keep their current
+  semantics and emit ordering (`on_online` → log → `READY=1`).
+- The de-hack is documented for the repin: the two WeatherBot sites that collapse onto the new
+  outcome are named in the phase summary.
+
+**Human-gated close-out — surfaced, never performed autonomously** (`ECOSYSTEM.md` §3):
+bump `pyproject.toml` `0.1.1 → 0.1.2` · cut tag `v0.1.2` · repin WeatherBot `[tool.uv.sources]`
+`v0.1.1 → v0.1.2` + `uv sync --frozen` · re-run WeatherBot's suite against the repinned hub.
+
 ## Deferred Extension Points (future milestones)
 
 Built under build-in-consumer-then-promote / rule of three when a consumer needs them.
@@ -29,122 +120,13 @@ Unsequenced parking lot. Source of record for every item below lives in `.planni
 - `HUB-FINDINGS-HANDOFF.md` — evidence appendix: full failure scenario + evidence per finding.
 - `PROMOTION-CANDIDATES.md` — new reusable mechanisms to pull up from consumers (not bugs).
 
-Grouping below follows the report's §3 proposed sequencing: correctness-first, reachable-first,
-then reusability hardening, cleanup last. **Test posture for all defect items: every fix ships
-with a RED-first regression test** — several findings note the existing tests cover only decoy
-cases, so the missing adversarial case must be added, not just a new happy path.
+The H01–H18 defect items that once lived here were grouped per the report's §3 sequencing and
+have since been promoted. Anything landed from this parking lot is **human-gated** at close-out
+(`ECOSYSTEM.md` §3): fixes + green gates are autonomous; the tag cut, the `pyproject.toml`
+version bump, and the consumer repin are yours.
 
-**Close-out is human-gated** (`ECOSYSTEM.md` §3): fixes + green gates are autonomous; the
-`v0.1.2` tag cut, the `pyproject.toml` version bump, and the consumer repin are yours.
-
-### Phase 999.1: Reachable reliability — H01, H02 (BACKLOG)
-
-**Goal:** Close the two findings that are live and unmitigated in a real consumer today.
-**Requirements:** TBD
-**Plans:** 0 plans
-
-- **H02** `reliability/retry.py:87` · high — `is_transient` matches only
-  `(TimeoutException, ConnectError, ReadError)`, so `httpx.RemoteProtocolError` (server hangup
-  mid-response) and `WriteError` fall through as non-transient: the two-burst retry never fires
-  and the outcome is misclassified `internal_error` instead of `transient_exhausted`. **A routine
-  network blip silently misses the briefing.** Fix direction: broaden to
-  `(TimeoutException, NetworkError, RemoteProtocolError)` — *not* a blanket `TransportError`, so
-  client-side `LocalProtocolError` stays non-retryable.
-- **H01** `lifecycle/identity.py:149` · high — `b"-m" in argv[1:3] and proc_marker in argv[1:4]`
-  both false-positives (marker as a positional arg → `reload` can SIGHUP an unrelated recycled
-  PID) and false-negatives (interpreter flag before `-m` → live daemon reported not running).
-  Fix direction: pin exact position `len(argv) >= 3 and argv[1] == b"-m" and argv[2] == proc_marker`.
-
-**Why first:** no consumer-side workaround exists for either. WeatherBot's `reliability/retry.py`
-is a byte-identical re-export shim of this hub's `is_transient`, so H02 is live there verbatim.
-
-Plans:
-- [ ] TBD (promote with /gsd-review-backlog when ready)
-
-### Phase 999.2: Latent runtime robustness — H03, H04, H05, H07, H08 (BACKLOG)
-
-**Goal:** Close real hub bugs that need specific runtime conditions to bite.
-**Requirements:** TBD
-**Plans:** 0 plans
-
-- **H03** `config/reload.py:150` · medium — PHASE-2 reconcile failure rolls back, logs, re-raises
-  but never fires `on_rejected`, so the host's "config reload rejected" alert silently doesn't
-  fire. Fix: call `_best_effort_hook(self._on_rejected, ...)` before re-raising, matching PHASE-1.
-- **H04** `discord/gateway.py:273` · medium — no reconnect supervisor; a non-recoverable
-  disconnect ends the thread, `is_alive()` stays False forever, every later interaction is dead
-  until a human restart. Fix: bounded supervised reconnect loop, or expose liveness for the
-  consumer park-loop. **Retry/backoff contract is an open design decision for this phase.**
-- **H05** `discord/gateway.py:167` · medium — `summon_panel` sends+pins before deleting, catching
-  only `discord.Forbidden`; a `NotFound`/`HTTPException` aborts remaining deletes → 2+ live pinned
-  panels (both routable via static `custom_id`), or a fresh-but-unpinned panel at the 50-pin cap.
-  Fix: delete-then-pin + per-item `try/except` on `HTTPException`/`NotFound`.
-- **H07** `discord/gateway.py:244` · low — `stop()` TOCTOU: `run_coroutine_threadsafe` sits outside
-  the `try`, so `RuntimeError("Event loop is closed")` escapes. Fix: move inside / catch it.
-- **H08** `discord/selection.py:49` · low — `SelectedContext` re-read after an `await`; a Select
-  tap during a fetch yields an embed whose data is location A but whose 📍 label is location B.
-  Cosmetic. Fix: capture the value once pre-await, as the argless path already does.
-
-Plans:
-- [ ] TBD (promote with /gsd-review-backlog when ready)
-
-### Phase 999.3: Reusable public-surface footguns — H06, H09–H16 (BACKLOG)
-
-**Goal:** Harden the reusable public surface against footguns that are unreachable in the current
-consumer but will bite the next one. Pure reusability hardening — this is the hub's whole point.
-**Requirements:** TBD
-**Plans:** 0 plans
-
-Matcher (`registry/match.py`) — **H06 and H13 must land together**, both are casefold-symmetry:
-- **H06** `:61` · medium — arg sliced from the *un-folded* original using the *folded* keyword
-  length; `casefold()` is not length-preserving (`ß`→`ss`, `ﬁ`→`fi`) so the slice misaligns.
-- **H13** `:59` · low — `spec.name` compared raw against folded input: an empty name matches every
-  input, and any uppercase in a registered name makes the command permanently unmatchable.
-
-Retry callable (`reliability/retry.py`) — **H09 and H10 are the same `burst_size` coupling**:
-- **H09** `:141` · low — `burst_spread_s / (burst_size - 1)` raises `ZeroDivisionError` when
-  `burst_size == 1`; the early-return shields only the first retry.
-- **H10** `:146` · low — standalone `two_burst_wait` fires its mid-pause at `attempt_number ==
-  burst_size` (default 8) independent of the `stop` bound, so a direct caller desyncs the pause.
-
-Panelkit (`discord/panelkit.py`):
-- **H11** `:309` · low — `interaction_check` dereferences `interaction.user.bot`/`.id` with no None
-  guard; `AttributeError` there is not covered by `View.on_error`, so the operator gate throws.
-- **H12** `:479` · low — `marker` is required but unvalidated; `cid.startswith("")` is always True,
-  so `marker=""` makes `is_owned_panel` claim every bot-authored pin → `summon_panel` deletes
-  unrelated bot pins. One-line non-empty guard at construction.
-
-Lifecycle (`lifecycle/identity.py`):
-- **H14** `:83` · low — `write_pid_atomic` double-closes `fd` on the `os.replace` failure path; the
-  fd integer can be reused between closes, silently closing an unrelated descriptor.
-- **H15** `:162` · low — path-shaped `proc_marker` makes the documented non-Linux "degrade to True"
-  return False, flipping the guard to the opposite of its stated portability behavior.
-
-Scheduler (`scheduler/engine.py`):
-- **H16** `:74` · low — `remove()` is non-idempotent (raises `JobLookupError`) while `register()`
-  is forgiving. Either swallow-on-missing or document the raise as contract.
-
-Plans:
-- [ ] TBD (promote with /gsd-review-backlog when ready)
-
-### Phase 999.4: Cleanup + ReadyGate fatal outcome — H17, H18 (BACKLOG)
-
-**Goal:** Fix public-surface drift and give consumers a first-class fatal outcome to de-hack against.
-**Requirements:** TBD
-**Plans:** 0 plans
-
-- **H17** `discord/__init__.py:25` · cleanup — the package docstring advertises "the
-  create-before-delete summon orchestration" and `gateway.py.__all__` lists `summon_panel`, but the
-  package `__init__` never re-exports it, so `from yahir_reusable_bot.discord import summon_panel`
-  raises `ImportError`. Fix: add it to the imports + `__all__`, or correct the docstring.
-- **H18** `lifecycle/ready_gate.py:run` · **enhancement, not a defect** — `run(stop)` loops until
-  ok-or-`stop`; a fatal probe result is only logged louder and re-probed forever, so consumers must
-  overload the `stop` Event to break out. Return a distinct fatal outcome (enum / dedicated return)
-  instead. **Consumer de-hack after ship+repin:** WeatherBot deletes its separate `fatal`
-  `threading.Event` at `weatherbot/scheduler/wiring.py:_on_fail` and the gate-return exit-code
-  check in `weatherbot/ops/daemon.py`.
-
-Plans:
-- [ ] TBD (promote with /gsd-review-backlog when ready)
+> **999.1–999.4 promoted to Milestone v0.1.2 on 2026-07-22** — they are now Phases 1–4 above.
+> Their phase directories were renumbered `999.N-*` → `0N-*`. Only 999.5 remains parked.
 
 ### Phase 999.5: PC-01 — log secret-redaction backstop promotion (BACKLOG)
 
