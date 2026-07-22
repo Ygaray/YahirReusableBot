@@ -48,19 +48,21 @@ condition of the phase, not an oversight.
 
 ## Per-Task Verification Map
 
-Task IDs are assigned at plan time; this map is keyed by requirement and behavior so the planner can
-bind each row to a concrete task. Every row must land on some task's `<verify>` before the plan
-passes Dimension 8.
+Bound to real plan/task IDs after planning (plans committed `8fffd90`). Every row must land on some
+task's `<verify>` before the plan passes Dimension 8.
 
 | Task ID | Plan | Wave | Requirement | Threat Ref | Secure Behavior | Test Type | Automated Command | File Exists | Status |
 |---------|------|------|-------------|------------|-----------------|-----------|-------------------|-------------|--------|
-| _pending_ | _tbd_ | 0 | RELY-01, LIFE-01 | — | N/A (test substrate) | fixture | `uv run pytest tests/ --collect-only -q` | ❌ W0 | ⬜ pending |
-| _pending_ | _tbd_ | 1 | RELY-01 | — | N/A | unit | `uv run pytest tests/test_retry.py -k classif -x` | ❌ W0 | ⬜ pending |
-| _pending_ | _tbd_ | 1 | RELY-01 | — | Exhausted transient reports `transient_exhausted`, never `internal_error` | unit (behavioral) | `uv run pytest tests/test_retry.py -k exhaust -x` | ❌ W0 | ⬜ pending |
-| _pending_ | _tbd_ | 1 | LIFE-01 | T-1-01 | Guard must NOT match a recycled PID → cannot SIGHUP an unrelated process | unit | `uv run pytest tests/test_identity.py -k decoy -x` | ❌ W0 | ⬜ pending |
-| _pending_ | _tbd_ | 1 | LIFE-01 | — | Guard DOES match a daemon behind an interpreter flag | unit | `uv run pytest tests/test_identity.py -k interpreter_flag -x` | ❌ W0 | ⬜ pending |
-| _pending_ | _tbd_ | 1 | LIFE-01 | — | Guard accepts plain `python -m <marker> run` and the `<marker> run` argv0-basename branch | unit | `uv run pytest tests/test_identity.py -x` | ❌ W0 | ⬜ pending |
-| _existing_ | — | all | GATE-01 (standing) | — | Hub imports no consumer; no domain nouns | unit (existing) | `uv run pytest tests/test_import_hygiene.py` | ✅ exists | ⬜ pending |
+| 01-01-T1 | 01 | 1 | RELY-01, LIFE-01 | — | N/A (pre-fix baseline capture) | baseline | `uv run pytest` green at branch point | ✅ exists | ⬜ pending |
+| 01-01-T2 | 01 | 1 | RELY-01, LIFE-01 | — | N/A (test substrate) | fixture | `uv run pytest tests/ --collect-only -q` | ❌ W0 | ⬜ pending |
+| 01-02-T1 | 02 | 2 | RELY-01 | — | N/A (RED commit, test alone) | unit | `uv run pytest tests/test_retry.py` must FAIL | ❌ W0 | ⬜ pending |
+| 01-02-T2 | 02 | 2 | RELY-01 | — | Exhausted transient reports `transient_exhausted`, never `internal_error` | unit (behavioral) | `uv run pytest tests/test_retry.py -x` | ❌ W0 | ⬜ pending |
+| 01-03-T1 | 03 | 3 | LIFE-01 | T-1-01 | N/A (RED commit, test alone) | unit | `uv run pytest tests/test_identity.py` must FAIL | ❌ W0 | ⬜ pending |
+| 01-03-T2 | 03 | 3 | LIFE-01 | T-1-01 | Guard must NOT match a recycled PID → cannot SIGHUP an unrelated process; DOES match a daemon behind one or two interpreter flags | unit | `uv run pytest tests/test_identity.py -x` | ❌ W0 | ⬜ pending |
+| 01-04-T1 | 04 | 4 | RELY-01, LIFE-01, GATE-01 | — | All gates green; RED-first ancestry proven | audit | `uv run pytest` + `git merge-base --is-ancestor` | ✅ exists | ⬜ pending |
+| 01-04-T3 | 04 | 4 | GATE-01 | — | Hub imports no consumer; no domain nouns | unit (existing) | `uv run pytest tests/test_import_hygiene.py` | ✅ exists | ⬜ pending |
+
+`01-04-T2` is the human merge-authorization checkpoint — no automated command by design.
 
 *Status: ⬜ pending · ✅ green · ❌ red · ⚠️ flaky*
 
