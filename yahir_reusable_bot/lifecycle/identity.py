@@ -138,6 +138,31 @@ def _argv_matches_marker(cmdline: bytes, *, proc_marker: bytes) -> bool:
     terminate) to them. So match ``argv0``'s basename, and for the
     ``python -m <module>`` form match the ``-m`` module target in the next two
     fields; never the whole buffer.
+
+    THE rule for the ``-m`` form (D-06, not a heuristic): the FIRST ``-m``
+    token in argv wins, and the marker must be the token immediately after
+    it. This mirrors Python's own CLI grammar — everything after
+    ``-m <module>`` belongs to the module's own argv — which is exactly what
+    makes ``python -m pytest -m <marker>`` resolve correctly: pytest's own
+    ``-m`` marker-selector flag is never the interpreter's, so it must never
+    win the scan.
+
+    A fixed-position check (``argv[1] == b"-m" and argv[2] == proc_marker``,
+    the shape originally prescribed) is REJECTED on evidence (D-05): it fails
+    on ``python -O -m <marker> run``, where the interpreter flag shifts
+    ``-m`` to index 2 and a live daemon would be reported not-running.
+    Scanning for the first ``-m`` tolerates any number of leading interpreter
+    flags.
+
+    ``argv[0]`` is deliberately NOT additionally required to look like a
+    Python interpreter (D-07): that would close a vanishingly rare false
+    positive (a non-Python program taking ``-m <marker>``) at the cost of
+    breaking legitimate daemons on pypy or a custom-named interpreter — this
+    library must not assume its consumer's runtime.
+
+    Like the rest of this guard, this branch degrades to False and never
+    raises: the bounds check on the token after ``-m`` (there may be none) is
+    what keeps a truncated/malformed argv safe rather than an IndexError.
     """
     argv = [part for part in cmdline.split(b"\x00") if part]
     if not argv:
@@ -145,8 +170,12 @@ def _argv_matches_marker(cmdline: bytes, *, proc_marker: bytes) -> bool:
     prog = Path(argv[0].decode("utf-8", "replace")).name
     if prog == proc_marker.decode("utf-8", "replace"):
         return True
-    # `python -m <module> [run]`: interpreter is argv0, `-m` then the module name.
-    return b"-m" in argv[1:3] and proc_marker in argv[1:4]
+    # `python -m <module> [run]`: first `-m` wins; the marker must be the
+    # very next token. Never continues scanning past the first `-m` found.
+    for i, token in enumerate(argv[1:], start=1):
+        if token == b"-m":
+            return i + 1 < len(argv) and argv[i + 1] == proc_marker
+    return False
 
 
 def _read_proc_cmdline(pid: int, *, proc_marker: bytes) -> bytes:
