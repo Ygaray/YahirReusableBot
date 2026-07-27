@@ -29,7 +29,7 @@ adversarial case gets added rather than a new happy path.
 **Goal:** Close the only two defects live and unmitigated in a real consumer today.
 **Requirements:** RELY-01 (H02), LIFE-01 (H01)
 **Depends on:** —
-**Plans:** 4/4 plans executed
+**Plans:** 4/4 plans complete
 
 Success criteria:
 
