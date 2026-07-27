@@ -103,3 +103,56 @@ def test_trailing_module_switch_without_target_does_not_match(cmdline_bytes):
     malformed argv is worse than one that merely reports not-running."""
     cmdline = cmdline_bytes(b"python", b"-m")
     assert is_running_process(1, proc_marker=MARKER, cmdline_reader=lambda _: cmdline) is False
+
+
+def test_attached_module_switch_form_matches(cmdline_bytes):
+    """argv ``python -mexamplebot``: CPython's ATTACHED ``-m<module>`` form,
+    where the module name is baked into the same token with no separating
+    space (verified: ``python3 -mjson.tool`` runs identically to
+    ``python3 -m json.tool``). RED pre-fix — the first-``-m`` scan only tested
+    ``token == b"-m"``, so a daemon launched this way presented argv as the
+    single token ``b"-mexamplebot"``, never matched, and a LIVE daemon was
+    reported not-running (the WR-01 false negative). Post-fix the token's
+    ``-m`` prefix is recognized and the remainder is the module target."""
+    cmdline = cmdline_bytes(b"python", b"-mexamplebot")
+    assert is_running_process(1, proc_marker=MARKER, cmdline_reader=lambda _: cmdline) is True
+
+
+def test_attached_module_switch_with_leading_flag_matches(cmdline_bytes):
+    """argv ``python -O -mexamplebot``: the attached form behind a SEPARATE
+    leading interpreter flag. RED pre-fix (same first-``-m`` blind spot as
+    above). Composes the D-05 leading-flag tolerance with the WR-01 attached
+    form — both must resolve to the same live daemon."""
+    cmdline = cmdline_bytes(b"python", b"-O", b"-mexamplebot")
+    assert is_running_process(1, proc_marker=MARKER, cmdline_reader=lambda _: cmdline) is True
+
+
+def test_attached_first_m_wins_over_nested_selector(cmdline_bytes):
+    """argv ``python -mpytest -m <marker>``: the ATTACHED interpreter ``-m``
+    runs pytest, and pytest's OWN ``-m`` marker-selector carries the marker as
+    a positional. The module target is ``pytest``, NOT the marker, so the
+    correct answer is False. RED pre-fix — and a false POSITIVE, not merely a
+    false negative: the old scan skipped the unrecognized ``-mpytest`` token,
+    reached pytest's ``-m``, and matched the marker as its neighbour, so the
+    reload path would have delivered SIGHUP to an unrelated pytest process.
+    The WR-01 fix closes this by making ``-mpytest`` win the scan as the first
+    ``-m`` (D-06 first-``-m``-wins), with ``pytest`` its module target."""
+    cmdline = cmdline_bytes(b"python", b"-mpytest", b"-m", MARKER)
+    assert is_running_process(1, proc_marker=MARKER, cmdline_reader=lambda _: cmdline) is False
+
+
+def test_bundled_short_option_group_not_matched(cmdline_bytes):
+    """argv ``python -Omexamplebot``: CPython also accepts ``-m`` BUNDLED into
+    a leading short-option group (verified: ``python3 -Omjson.tool`` and
+    ``python3 -Imjson.tool`` both run). This is the WR-01 fix's DELIBERATE
+    remaining boundary (D-20): the scan matches only a token whose first two
+    bytes are ``-m``, so a bundled group beginning ``-O`` is not decoded and a
+    daemon launched this exotic way is still reported not-running. GREEN both
+    pre- and post-fix — a boundary guard, not a RED row. Chosen because fully
+    decoding Python's short-option-bundling grammar (``-Om``, ``-Xmfoo`` where
+    ``-X`` instead consumes the rest) risks FALSE POSITIVES — SIGHUP to the
+    wrong PID — which is the strictly worse direction for this guard than the
+    false negative it leaves open. No consumer launches a daemon as
+    ``python -Om<module>``."""
+    cmdline = cmdline_bytes(b"python", b"-Omexamplebot")
+    assert is_running_process(1, proc_marker=MARKER, cmdline_reader=lambda _: cmdline) is False
