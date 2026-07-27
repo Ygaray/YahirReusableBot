@@ -369,14 +369,19 @@ class BotThread:
         try:
             asyncio.run(self._amain())
         except discord.LoginFailure:
-            self._failed = True
+            # Publish the reason BEFORE the liveness flag (WR-02): a host park-loop that
+            # observes is_alive() == False (i.e. _failed) must never then read
+            # death_reason() == None. Setting the reason first closes the cross-thread
+            # interleaving window between these two writes.
             self._death_reason = REASON_LOGIN_FAILURE
+            self._failed = True
             _log.critical(
                 "invalid Discord token; inbound bot disabled, scheduler unaffected"
             )
         except Exception:  # noqa: BLE001 — die alone; never crash the process
-            self._failed = True
+            # Reason before liveness flag — see the WR-02 note above.
             self._death_reason = REASON_CRASHED
+            self._failed = True
             _log.critical("inbound bot thread crashed; scheduler unaffected")
 
     async def _amain(self) -> None:
