@@ -70,7 +70,7 @@ regression test** — the test must fail against current source before the fix l
 - [x] **DISC-03** (H07, low): `stop()` does not raise `RuntimeError` when the bot loop stops
   between the `is_running()` check and the cross-thread schedule. → Phase 2
 
-- [ ] **DISC-04** (H08, low): The `SelectedContext` concurrency contract is explicit about
+- [x] **DISC-04** (H08, low): The `SelectedContext` concurrency contract is explicit about
   re-reading across an `await`, and the hub offers a snapshot-safe way to consume a selection.
   **Scope note: the observed defect's fix site is consumer-side** (`wiring.py` re-reads post-await);
   the hub side is contract + API only. → Phase 2
@@ -102,7 +102,7 @@ regression test** — the test must fail against current source before the fix l
 
 ### Milestone-level
 
-- [ ] **GATE-01**: The full suite plus the standing import-hygiene gates (grimp graph +
+- [x] **GATE-01**: The full suite plus the standing import-hygiene gates (grimp graph +
   isolated-import + AST signature litmus, `tests/test_import_hygiene.py`) stay green across every
   phase — no fix may regress the one-way dependency or the generic-surface litmus.
 

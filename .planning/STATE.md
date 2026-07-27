@@ -4,17 +4,17 @@ milestone: v0.1.2
 milestone_name: — Hub hardening
 current_phase: 02
 current_phase_name: latent-runtime-robustness
-status: executing
-stopped_at: Completed 02-02-PLAN.md
-last_updated: "2026-07-27T22:39:30.214Z"
+status: verifying
+stopped_at: Completed 02-03-PLAN.md
+last_updated: "2026-07-27T22:44:49.121Z"
 last_activity: 2026-07-27
 last_activity_desc: Phase 02 execution started
 progress:
   total_phases: 4
-  completed_phases: 1
+  completed_phases: 2
   total_plans: 7
-  completed_plans: 6
-  percent: 25
+  completed_plans: 7
+  percent: 50
 ---
 
 # Project State
@@ -23,13 +23,13 @@ progress:
 
 Phase: 02 (latent-runtime-robustness) — EXECUTING
 Plan: 3 of 3
-Status: Ready to execute
+Status: Phase complete — ready for verification
 Last activity: 2026-07-27 — Phase 02 execution started
 
 ## Session
 
-**Last session:** 2026-07-27T22:39:30.203Z
-**Stopped at:** Completed 02-02-PLAN.md
+**Last session:** 2026-07-27T22:44:49.111Z
+**Stopped at:** Completed 02-03-PLAN.md
 **Resume file:** None
 
 ## Performance Metrics
@@ -42,6 +42,7 @@ Last activity: 2026-07-27 — Phase 02 execution started
 | Phase 01 P04 | ~25min | 3 tasks | 1 files |
 | Phase 02 P01 | 15min | 2 tasks | 2 files |
 | Phase 02 P02 | 25min | 3 tasks | 2 files |
+| Phase 02 P03 | 10min | 2 tasks | 2 files |
 
 ## Decisions
 
@@ -65,3 +66,5 @@ Last activity: 2026-07-27 — Phase 02 execution started
 - [Phase ?]: RED-first two-commit proof recorded for DISC-02: test-only commit ca5114e is the direct parent of fix commit f06f20e (D-13)
 - [Phase ?]: DISC-03 fixed: BotThread.stop() moves run_coroutine_threadsafe inside its existing try (D-28) — never raises on the loop-closed TOCTOU, thread join always reached
 - [Phase ?]: RED-first two-commit proof recorded for DISC-03: test-only commit 5b8427d is the direct parent of fix commit 8f715b2 (D-13)
+- [Phase ?]: DISC-04 fixed: SelectedContext gains snapshot() (D-29) + extended await-safety docstring (D-30), no lock added, .value unfrozen; contract + API only, wiring.py untouched
+- [Phase ?]: RED-first two-commit proof recorded for DISC-04: test-only commit cbc08ae is the direct parent of fix commit d8502e5 (D-13)

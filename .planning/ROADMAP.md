@@ -65,7 +65,7 @@ full-suite gate):
 **Goal:** Close real hub bugs that need specific runtime conditions to bite.
 **Requirements:** CFG-01 (H03), DISC-01 (H04), DISC-02 (H05), DISC-03 (H07), DISC-04 (H08)
 **Depends on:** Phase 1
-**Plans:** 2/3 plans executed
+**Plans:** 3/3 plans executed
 
 Success criteria:
 
@@ -92,7 +92,7 @@ sibling's full-suite gate; the Phase-1 "Plan 03 waits on 02" lesson):
 - [x] 02-02-PLAN.md — gateway.py DISC-01/02/03: death-reason accessor (liveness-only, D-21/D-22),
   `summon_panel` per-item delete + pin-cap headroom (D-24..D-27), `stop()` TOCTOU degrade (D-28)
 
-- [ ] 02-03-PLAN.md — DISC-04: `tests/test_selection.py` RED, then `SelectedContext.snapshot()` +
+- [x] 02-03-PLAN.md — DISC-04: `tests/test_selection.py` RED, then `SelectedContext.snapshot()` +
   await-safety docstring contract (D-29/D-30), contract + API only
 
 ### Phase 3: Reusable public-surface footguns
