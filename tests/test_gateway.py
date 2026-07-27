@@ -11,7 +11,7 @@ import asyncio
 
 import discord
 
-from yahir_reusable_bot.discord.gateway import BotThread, build_client
+from yahir_reusable_bot.discord.gateway import BotThread, build_client, summon_panel
 
 
 def test_on_message_event_dispatches_to_injected_handler_not_itself():
@@ -74,3 +74,140 @@ def test_bot_thread_records_crashed_death_reason_on_generic_exception():
     bot._run()  # must not raise — die alone, never crash the process
 
     assert bot.death_reason() == "crashed"
+
+
+class _Resp:
+    """Minimal ``response``-shaped stub for constructing discord.py HTTPException
+    subclasses (``NotFound``/``HTTPException`` read ``.status``/``.reason`` off it)."""
+
+    status = 404
+    reason = "stub"
+
+
+class _FakeOwnedMessage:
+    """A synthetic owned-panel message double: tracks whether delete()/pin() ran."""
+
+    def __init__(self, *, delete_raises: BaseException | None = None) -> None:
+        self.deleted = False
+        self.pinned = False
+        self._delete_raises = delete_raises
+
+    async def delete(self) -> None:
+        if self._delete_raises is not None:
+            raise self._delete_raises
+        self.deleted = True
+
+    async def pin(self) -> None:
+        self.pinned = True
+
+
+class _FakeChannel:
+    """A synthetic channel double: ``pins()`` yields injected owned matches;
+    ``send()`` returns the injected fresh message."""
+
+    id = 424242
+
+    def __init__(self, *, owned_matches: list, fresh_message) -> None:
+        self._owned_matches = owned_matches
+        self._fresh_message = fresh_message
+        self.sent_count = 0
+
+    async def pins(self):
+        for m in self._owned_matches:
+            yield m
+
+    async def send(self, *, embed, view):
+        self.sent_count += 1
+        return self._fresh_message
+
+
+async def _noop() -> None:
+    pass
+
+
+async def _noop_int(_: int) -> None:
+    pass
+
+
+def test_summon_panel_continues_deleting_after_notfound_mid_delete():
+    """DISC-02 (H05), half (a): a NotFound on the FIRST owned stray's delete() must
+    not abort the remaining deletes (D-25's per-item catch) — net state is exactly
+    ONE live pinned panel (the fresh one), not the 2+-live-panels CONFIRMED bug."""
+    old1 = _FakeOwnedMessage(delete_raises=discord.NotFound(_Resp(), "gone"))
+    old2 = _FakeOwnedMessage()
+    old3 = _FakeOwnedMessage()
+    fresh = _FakeOwnedMessage()
+    channel = _FakeChannel(owned_matches=[old1, old2, old3], fresh_message=fresh)
+
+    asyncio.run(
+        summon_panel(
+            channel=channel,
+            bot_user=object(),
+            idle_embed=object(),
+            panel_factory=lambda: object(),
+            is_owned=lambda m: True,
+            on_created=_noop,
+            on_resummoned=_noop,
+            on_strays_cleaned=_noop_int,
+        )
+    )
+
+    # old1's delete() raised NotFound (never marked deleted) — the remaining two
+    # owned strays STILL got deleted despite it, and the fresh panel is pinned.
+    assert old1.deleted is False
+    assert old2.deleted is True
+    assert old3.deleted is True
+    assert fresh.pinned is True
+
+
+class _FakeAtCapMessage:
+    """A synthetic message double whose ``pin()`` fails with ``HTTPException`` UNLESS
+    at least one owned stray has already been evicted (``freed_count >= 1``) — proving
+    the fix reserves pin headroom rather than merely retrying blindly."""
+
+    def __init__(self, *, cap_state: dict, is_fresh: bool = False) -> None:
+        self.deleted = False
+        self.pinned = False
+        self._cap_state = cap_state
+        self._is_fresh = is_fresh
+
+    async def delete(self) -> None:
+        self.deleted = True
+        if not self._is_fresh:
+            self._cap_state["freed_count"] += 1
+
+    async def pin(self) -> None:
+        if self._is_fresh and self._cap_state["freed_count"] < 1:
+            raise discord.HTTPException(_Resp(), "at cap")
+        self.pinned = True
+
+
+def test_summon_panel_reserves_pin_headroom_at_cap_so_fresh_panel_ends_up_pinned():
+    """DISC-02 (H05), half (b) — an INDEPENDENT fixture from half (a) (different code
+    path, D-26): at the pin cap with >=2 owned panels, one owned stray is deleted
+    BEFORE the fresh panel's pin succeeds (headroom-reserve). The fresh panel ends up
+    PINNED and >=1 owned panel is live at every step (no-zero-panel-window, D-24)."""
+    cap_state = {"freed_count": 0}
+    old1 = _FakeAtCapMessage(cap_state=cap_state)
+    old2 = _FakeAtCapMessage(cap_state=cap_state)
+    fresh = _FakeAtCapMessage(cap_state=cap_state, is_fresh=True)
+    channel = _FakeChannel(owned_matches=[old1, old2], fresh_message=fresh)
+
+    asyncio.run(
+        summon_panel(
+            channel=channel,
+            bot_user=object(),
+            idle_embed=object(),
+            panel_factory=lambda: object(),
+            is_owned=lambda m: True,
+            on_created=_noop,
+            on_resummoned=_noop,
+            on_strays_cleaned=_noop_int,
+        )
+    )
+
+    assert fresh.pinned is True
+    # At least one owned stray was live/evicted en route (no-zero-panel-window):
+    # the eviction happened, but it never dropped the owned-panel count to zero
+    # mid-flight (only one of the two owned matches needed evicting).
+    assert cap_state["freed_count"] >= 1
