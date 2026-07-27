@@ -21,12 +21,34 @@ status: partial
   documentation half — see note below)
 - Skipped: 0
 
-`status` is `partial` rather than `all_fixed` because WR-01's finding
+`status` was `partial` at the original review-fix run because WR-01's finding
 described two possible remedies (extend the scan's behavior, OR document the
-gap as an explicit known limitation) and this run applied only the
+gap as an explicit known limitation) and that run applied only the
 documentation half per an explicit scoping instruction — the behavioral
-question (whether to also match the attached `-mmodule` form) is carried
-back to the human, unresolved, rather than auto-decided here.
+question (whether to also match the attached `-mmodule` form) was carried
+back to the human, unresolved, rather than auto-decided there.
+
+**WR-01 behavioral half — RESOLVED 2026-07-27 (option a, human-chosen).**
+The scan now recognizes the attached `-m<module>` form. Applied RED-first
+(this repo's D-13 discipline) as a two-commit pair on `main`, direct
+child-of-parent:
+- `f9e614a` test(01): RED — `test_attached_module_switch_form_matches`,
+  `test_attached_module_switch_with_leading_flag_matches`, and
+  `test_attached_first_m_wins_over_nested_selector` (the last also RED because
+  the old scan had a false POSITIVE on `python -mpytest -m <marker>`, matching
+  pytest's own `-m` selector), plus `test_bundled_short_option_group_not_matched`
+  as a GREEN boundary guard.
+- fix commit (below): a two-line loop addition recognizing a token whose first
+  two bytes are `-m`; module target is that token's remainder. Full suite
+  27 passed, import-hygiene 8 passed.
+
+A NEW decision D-20 was recorded (in the `identity.py` docstring alongside
+D-04..D-07): the scan matches only a token whose first two bytes are `-m`.
+Bundled short-option groups where `-m` is not first (`python -Omexamplebot`,
+`python -Imjson.tool` — both valid CPython, verified) remain a deliberate
+residual false negative, because decoding Python's full short-option-bundling
+grammar risks a false POSITIVE (SIGHUP to the wrong PID), the strictly worse
+failure for a PID-recycling guard. `status` for WR-01 is now `all_fixed`.
 
 ## Fixed Issues
 

@@ -140,12 +140,17 @@ def _argv_matches_marker(cmdline: bytes, *, proc_marker: bytes) -> bool:
     fields; never the whole buffer.
 
     THE rule for the ``-m`` form (D-06, not a heuristic): the FIRST ``-m``
-    token in argv wins, and the marker must be the token immediately after
-    it. This handles the space-separated ``-m <module>`` form of Python's CLI
-    grammar — everything after ``-m <module>`` belongs to the module's own
-    argv — which is exactly what makes ``python -m pytest -m <marker>``
-    resolve correctly: pytest's own ``-m`` marker-selector flag is never the
-    interpreter's, so it must never win the scan.
+    module switch in argv wins, and its target is the module name. This handles
+    BOTH shapes CPython accepts (D-20, WR-01): the space-separated
+    ``-m <module>`` form (target is the next token) and the ATTACHED
+    ``-m<module>`` form (target is the same token's remainder, e.g.
+    ``-mexamplebot`` -> ``examplebot``; verified: ``python3 -mjson.tool`` runs
+    identically to ``python3 -m json.tool``). Everything after ``-m <module>``
+    belongs to the module's own argv — which is exactly what makes
+    ``python -m pytest -m <marker>`` (and its attached twin
+    ``python -mpytest -m <marker>``) resolve correctly: pytest's own ``-m``
+    marker-selector flag is never the interpreter's, so it must never win the
+    scan.
 
     A fixed-position check (``argv[1] == b"-m" and argv[2] == proc_marker``,
     the shape originally prescribed) is REJECTED on evidence (D-05): it fails
@@ -160,21 +165,25 @@ def _argv_matches_marker(cmdline: bytes, *, proc_marker: bytes) -> bool:
     breaking legitimate daemons on pypy or a custom-named interpreter — this
     library must not assume its consumer's runtime.
 
-    KNOWN LIMITATION: CPython also accepts the ATTACHED form with no
-    separating space — ``python -m<module>`` (verified: ``python3
-    -mjson.tool`` runs identically to ``python3 -m json.tool``). This scan
-    only matches the standalone ``b"-m"`` token, so a daemon launched with
-    the attached form presents argv as a single token (e.g.
-    ``b"-mexamplebot"``), which never equals ``b"-m"`` — the loop never
-    matches it and a live daemon is reported as NOT running (a false
-    negative). This is an INHERITED pre-existing gap, not a regression: the
-    prior fixed-position check had the identical blind spot. Unlike D-05 and
-    D-07 above, there is no recorded decision rejecting the attached form as
-    out of scope — this is a tracked gap, not a deliberate exclusion.
+    REMAINING BOUNDARY (D-20, WR-01): CPython additionally accepts ``-m``
+    BUNDLED into a leading short-option group — ``python -Omexamplebot`` and
+    ``python -Imjson.tool`` both run. This scan matches only a token whose
+    first two bytes are ``-m``, so a bundled group beginning with another flag
+    (``-O``, ``-I``, ...) is NOT decoded, and a daemon launched that exotic way
+    is reported not-running. This residual false negative is deliberate:
+    fully reconstructing Python's short-option-bundling grammar (where ``-Om``
+    is ``-O`` + ``-m`` but ``-Xmfoo`` is ``-X`` consuming ``mfoo`` as its
+    argument) risks matching the wrong token and delivering SIGHUP to an
+    unrelated PID — a false POSITIVE, the strictly worse failure for this
+    guard. No consumer launches a daemon as ``python -Om<module>``. Requiring
+    an exact ``-m`` token prefix keeps the scan false-positive-free (nothing
+    but a real ``-m`` module switch begins with ``-m``) while closing the
+    ordinary attached form WR-01 reported.
 
     Like the rest of this guard, this branch degrades to False and never
-    raises: the bounds check on the token after ``-m`` (there may be none) is
-    what keeps a truncated/malformed argv safe rather than an IndexError.
+    raises: the bounds check on the token after a standalone ``-m`` (there may
+    be none) is what keeps a truncated/malformed argv safe rather than an
+    IndexError.
     """
     argv = [part for part in cmdline.split(b"\x00") if part]
     if not argv:
@@ -182,11 +191,17 @@ def _argv_matches_marker(cmdline: bytes, *, proc_marker: bytes) -> bool:
     prog = Path(argv[0].decode("utf-8", "replace")).name
     if prog == proc_marker.decode("utf-8", "replace"):
         return True
-    # `python -m <module> [run]`: first `-m` wins; the marker must be the
-    # very next token. Never continues scanning past the first `-m` found.
+    # `python -m <module> [run]` and `python -m<module> [run]`: first `-m`
+    # module switch wins (D-06). A standalone `b"-m"` token takes the NEXT
+    # token as its module target; an attached `b"-m<module>"` token (D-20,
+    # WR-01) carries the module in its own remainder. Never continues scanning
+    # past the first `-m` module switch found. A bundled `-Om…` group does not
+    # begin with `-m`, so it is intentionally not decoded (see docstring).
     for i, token in enumerate(argv[1:], start=1):
         if token == b"-m":
             return i + 1 < len(argv) and argv[i + 1] == proc_marker
+        if token.startswith(b"-m"):
+            return token[2:] == proc_marker
     return False
 
 
