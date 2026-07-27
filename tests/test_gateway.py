@@ -213,6 +213,36 @@ def test_summon_panel_reserves_pin_headroom_at_cap_so_fresh_panel_ends_up_pinned
     assert cap_state["freed_count"] >= 1
 
 
+def test_summon_panel_reserves_pin_headroom_at_cap_with_a_single_owned_panel():
+    """DISC-02 (H05), half (b) boundary — the COMMON re-summon case is exactly ONE
+    existing owned panel (the one being replaced). At the pin cap with a single owned
+    stray, that stray must STILL be evicted to free a slot: create-before-delete already
+    made the fresh panel live, so no-zero-window holds even when the last owned stray
+    goes. The fresh panel must end up PINNED — never left fresh-but-unpinned (the ROADMAP
+    success criterion). WR-01 regression guard: the >=2 eviction threshold skipped this
+    single-stray case, dropping to the D-27 residual and leaving the fresh panel unpinned."""
+    cap_state = {"freed_count": 0}
+    old1 = _FakeAtCapMessage(cap_state=cap_state)
+    fresh = _FakeAtCapMessage(cap_state=cap_state, is_fresh=True)
+    channel = _FakeChannel(owned_matches=[old1], fresh_message=fresh)
+
+    asyncio.run(
+        summon_panel(
+            channel=channel,
+            bot_user=object(),
+            idle_embed=object(),
+            panel_factory=lambda: object(),
+            is_owned=lambda m: True,
+            on_created=_noop,
+            on_resummoned=_noop,
+            on_strays_cleaned=_noop_int,
+        )
+    )
+
+    assert fresh.pinned is True
+    assert cap_state["freed_count"] >= 1
+
+
 def test_stop_does_not_raise_and_still_joins_when_loop_closes_mid_call():
     """DISC-03 (H07): a loop that closes between the ``is_running()`` fast-path check
     and the ``run_coroutine_threadsafe`` schedule (the TOCTOU boundary) must not let a
