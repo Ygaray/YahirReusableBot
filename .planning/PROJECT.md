@@ -89,4 +89,4 @@ This document evolves at phase transitions and milestone boundaries.
 
 ---
 
-_Last updated: 2026-07-22 — Milestone v0.1.2 (Hub hardening) started._
+_Last updated: 2026-07-27 — Phase 2 (Latent runtime robustness) complete: H03/H04/H05/H07/H08 closed, RED-first, full suite + GATE-01 green. Phases 1–2 done; next: Phase 3 (public-surface footguns). Close-out (bump/tag/repin) still human-gated._
