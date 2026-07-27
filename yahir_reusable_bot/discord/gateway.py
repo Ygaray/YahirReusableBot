@@ -332,13 +332,23 @@ class BotThread:
         return self._death_reason
 
     def stop(self, timeout: float = 5.0) -> None:
-        """Stop the bot: schedule ``client.close()`` cross-thread, then join."""
+        """Stop the bot: schedule ``client.close()`` cross-thread, then join.
+
+        **Degrade-not-raise (D-28):** ``loop.is_running()`` is a fast path only, NOT a
+        guarantee — the loop can close in the gap between that check and the
+        ``run_coroutine_threadsafe`` schedule (the TOCTOU this guards against), so the
+        schedule call is made INSIDE the same ``try`` as ``future.result()``. A
+        ``RuntimeError`` ("Event loop is closed") from either is logged as "loop already
+        stopped" and swallowed. ``stop()`` must NEVER raise, and the thread join below is
+        ALWAYS reached — never early-return inside the except.
+        """
         loop = self._loop
         if loop is not None and loop.is_running():
-            future = asyncio.run_coroutine_threadsafe(self._client.close(), loop)
             try:
+                future = asyncio.run_coroutine_threadsafe(self._client.close(), loop)
                 future.result(timeout=timeout)
-            except Exception:  # noqa: BLE001 — close best-effort; still join below
+            except Exception:  # noqa: BLE001 — close best-effort (incl. "loop already
+                # stopped" RuntimeError on the TOCTOU race); still join below
                 _log.warning("bot client.close() did not complete cleanly")
         self._thread.join(timeout=timeout)
         if self._thread.is_alive():
