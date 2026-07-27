@@ -65,7 +65,7 @@ full-suite gate):
 **Goal:** Close real hub bugs that need specific runtime conditions to bite.
 **Requirements:** CFG-01 (H03), DISC-01 (H04), DISC-02 (H05), DISC-03 (H07), DISC-04 (H08)
 **Depends on:** Phase 1
-**Plans:** 3/3 plans executed
+**Plans:** 3/3 plans complete
 
 Success criteria:
 
