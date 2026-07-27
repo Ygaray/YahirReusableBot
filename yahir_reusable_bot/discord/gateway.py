@@ -199,8 +199,12 @@ async def summon_panel(
             raise
         except discord.HTTPException:
             # Pin-cap headroom-reserve (D-26): react generically to the HTTPException —
-            # never branch on a specific cap count.
-            if len(matches) >= 2:
+            # never branch on a specific cap count. Evict when there is >=1 owned stray:
+            # create-before-delete already made the fresh panel live, so the no-zero-window
+            # invariant (D-24) holds even when the LAST owned stray is evicted. The >=2
+            # threshold was too conservative — it left the common single-owned-panel
+            # re-summon fresh-but-unpinned at the cap, violating the success criterion (WR-01).
+            if len(matches) >= 1:
                 stray = matches.pop(0)
                 try:
                     await stray.delete()
@@ -217,9 +221,10 @@ async def summon_panel(
                         channel_id=getattr(channel, "id", None),
                     )
             else:
-                # D-27 residual: foreign-pin-saturated channel, no owned stray to evict.
-                # The fresh panel was already sent (create-before-delete holds); it stays
-                # unpinned. Documented limitation — not chased further.
+                # D-27 residual (reached only when matches is empty — zero owned strays):
+                # a foreign-pin-saturated channel with no owned pin to evict. The fresh
+                # panel was already sent (create-before-delete holds); it stays unpinned.
+                # Documented limitation — not chased further.
                 _log.critical(
                     "panel pin failed at cap with no owned stray to evict "
                     "(foreign-pin saturation); fresh panel sent but left unpinned",
