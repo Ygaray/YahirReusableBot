@@ -211,3 +211,53 @@ def test_summon_panel_reserves_pin_headroom_at_cap_so_fresh_panel_ends_up_pinned
     # the eviction happened, but it never dropped the owned-panel count to zero
     # mid-flight (only one of the two owned matches needed evicting).
     assert cap_state["freed_count"] >= 1
+
+
+def test_stop_does_not_raise_and_still_joins_when_loop_closes_mid_call():
+    """DISC-03 (H07): a loop that closes between the ``is_running()`` fast-path check
+    and the ``run_coroutine_threadsafe`` schedule (the TOCTOU boundary) must not let a
+    ``RuntimeError`` escape ``stop()`` — it degrades (logs WARNING, falls through) AND
+    still joins the thread (D-28). The success criterion is 'cannot raise AND still
+    joins', not just 'cannot raise' (RESEARCH under-sampling risk).
+
+    Per RESEARCH.md Pitfall 3: a REAL closed loop (``asyncio.new_event_loop()`` then
+    ``.close()``) makes ``run_coroutine_threadsafe`` raise ``RuntimeError("Event loop
+    is closed")`` deterministically, with zero timing/flakiness. A thin proxy reports
+    ``is_running() == True`` (satisfying the fast-path) while delegating everything
+    else (incl. ``call_soon_threadsafe``) to the real closed loop.
+    """
+    real_closed_loop = asyncio.new_event_loop()
+    real_closed_loop.close()
+
+    class _ClosedLoopFastPathProxy:
+        def __init__(self, real_loop) -> None:
+            self._real_loop = real_loop
+
+        def is_running(self) -> bool:
+            return True
+
+        def __getattr__(self, name):
+            return getattr(self._real_loop, name)
+
+    class _FakeCloseableClient:
+        async def close(self) -> None:
+            pass
+
+    class _FakeJoinableThread:
+        def __init__(self) -> None:
+            self.joined: list[bool] = []
+
+        def join(self, timeout: float | None = None) -> None:
+            self.joined.append(True)
+
+        def is_alive(self) -> bool:
+            return False
+
+    bot = BotThread("fake-token", client=_FakeCloseableClient())
+    bot._loop = _ClosedLoopFastPathProxy(real_closed_loop)
+    fake_thread = _FakeJoinableThread()
+    bot._thread = fake_thread
+
+    bot.stop()  # must NOT raise RuntimeError
+
+    assert fake_thread.joined == [True]
