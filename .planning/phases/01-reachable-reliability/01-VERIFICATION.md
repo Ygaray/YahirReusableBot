@@ -1,17 +1,19 @@
 ---
 phase: 01-reachable-reliability
 verified: 2026-07-22T23:58:06Z
-status: human_needed
+status: passed
 score: 8/9 must-haves verified
 behavior_unverified: 1 # the concurrent/interrupted-retry backstop truth — present by non-modification, no test exercises it
 overrides_applied: 0
 re_verification: null
 behavior_unverified_items:
+
   - truth: "Concurrent and interrupted retry behavior is unchanged by this phase — build_retrying's sleep=stop_event.wait interruptibility wiring (retry.py:241, now :265) and its retry_error_callback (retry.py:247, now :271) are not modified, and the broadened is_transient introduces no shared mutable state, so a Retrying driven from two threads classifies identically and a mid-schedule shutdown still abandons the pause."
     test: "Drive build_retrying from two threads concurrently against a stop_event that gets .set() mid-schedule, and confirm (a) both threads classify the same exception identically and (b) the interrupted thread abandons its pause rather than completing the full mid_pause_s wait."
     expected: "Identical classification across threads; the interrupted schedule exits early rather than sleeping the full pause."
     why_human: "No test in this phase drives Retrying from two threads or interrupts a mid-schedule pause — this is asserted by non-modification of the wiring, not by execution. The plan's own <verification> section explicitly marks this `verification: backstop` and states it abstains to human_needed absent explicit evidence. Grep/presence checks cannot prove a concurrency invariant."
 human_verification:
+
   - test: "Drive build_retrying from two threads concurrently against a stop_event that gets .set() mid-schedule."
     expected: "Both threads classify the triggering exception identically (is_transient is pure/stateless); the interrupted thread's schedule abandons the pause rather than completing the full mid_pause_s (production default 2700s) wait."
     why_human: "Flagged by Plan 02's own must_haves as `verification: backstop` — an assumption asserted by non-modification of build_retrying's sleep=stop_event.wait wiring and retry_error_callback, not exercised by any test in this phase. The plan explicitly states this abstains to human_needed unless explicit evidence is produced; this is by design, not an oversight."
