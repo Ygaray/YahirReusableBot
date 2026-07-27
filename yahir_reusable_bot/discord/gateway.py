@@ -58,6 +58,14 @@ REQUIRED_PANEL_PERMS: tuple[str, ...] = (
     "pin_messages",
 )
 
+# Death-reason taxonomy (D-22), mirroring reliability/retry.py:75-77's REASON_* idiom —
+# bare strings, no enum/Literal. Consumed by BotThread.death_reason() so a host park-loop
+# can branch programmatically on WHY the bot thread died, not just scrape a CRITICAL log.
+# Purely additive alongside is_alive() (D-23) — see BotThread's class docstring for the
+# liveness-only contract this taxonomy serves (D-21: NO hub-side reconnect wrapper).
+REASON_LOGIN_FAILURE = "login_failure"
+REASON_CRASHED = "crashed"
+
 # Type aliases for the injected collaborators (kept generic — the module never inspects them).
 OnMessage = Callable[[discord.Message], Awaitable[None]]
 OwnedPredicate = Callable[[discord.Message], bool]
@@ -199,6 +207,17 @@ class BotThread:
 
     The client is INJECTED (built by :func:`build_client` with the caller's ``on_message`` +
     persistent view) so ``BotThread`` names no app concept and constructs nothing app-specific.
+
+    **Liveness/reconnect contract (D-21/D-22/D-23):** ``is_alive()`` is the documented signal
+    the host park-loop consults to decide respawn/alert/exit policy — the hub itself NEVER
+    respawns. There is deliberately NO hub-side reconnect/backoff wrapper around
+    ``client.start()``: discord.py's own ``reconnect=True`` default already retries every
+    *recoverable* disconnect with an ``ExponentialBackoff``; the failures that actually reach
+    ``_run``'s except handlers (bad token, disallowed/privileged intents, auth-close) are
+    exactly the ones discord.py deliberately refuses to retry, so a wrapper here would hot-loop
+    them straight into a Discord rate-limit/ban. ``death_reason()`` is purely additive alongside
+    the unchanged ``is_alive()`` — it lets a host branch on WHY the bot died (``login_failure``
+    vs. ``crashed``) instead of only scraping a CRITICAL log.
     """
 
     def __init__(self, token: str, *, client: discord.Client) -> None:
@@ -214,6 +233,9 @@ class BotThread:
         # dead-start teardown explicit instead of inferring it from ``loop.is_running()``.
         # Failure isolation is preserved: ``_run`` never raises.
         self._failed = False
+        # The death-reason (D-22): None while alive/never-died; set in ``_run``'s except
+        # branches alongside ``_failed``. Purely additive — see ``death_reason()``.
+        self._death_reason: str | None = None
         self._thread = threading.Thread(
             target=self._run, name="discord-gateway", daemon=True
         )
@@ -239,6 +261,17 @@ class BotThread:
         """
         return not self._failed and self._thread.is_alive()
 
+    def death_reason(self) -> str | None:
+        """Why the bot thread died, or ``None`` if it hasn't (D-22).
+
+        Purely additive alongside :meth:`is_alive` (D-23) — one of :data:`REASON_LOGIN_FAILURE`
+        (bad token) or :data:`REASON_CRASHED` (any other unexpected crash), set in ``_run``'s
+        except branches. Lets a host park-loop branch programmatically on WHY the bot died
+        instead of only scraping a CRITICAL log. The hub never respawns on either reason —
+        that policy decision belongs to the consumer (D-21).
+        """
+        return self._death_reason
+
     def stop(self, timeout: float = 5.0) -> None:
         """Stop the bot: schedule ``client.close()`` cross-thread, then join."""
         loop = self._loop
@@ -263,11 +296,13 @@ class BotThread:
             asyncio.run(self._amain())
         except discord.LoginFailure:
             self._failed = True
+            self._death_reason = REASON_LOGIN_FAILURE
             _log.critical(
                 "invalid Discord token; inbound bot disabled, scheduler unaffected"
             )
         except Exception:  # noqa: BLE001 — die alone; never crash the process
             self._failed = True
+            self._death_reason = REASON_CRASHED
             _log.critical("inbound bot thread crashed; scheduler unaffected")
 
     async def _amain(self) -> None:
