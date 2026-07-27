@@ -65,7 +65,7 @@ full-suite gate):
 **Goal:** Close real hub bugs that need specific runtime conditions to bite.
 **Requirements:** CFG-01 (H03), DISC-01 (H04), DISC-02 (H05), DISC-03 (H07), DISC-04 (H08)
 **Depends on:** Phase 1
-**Plans:** 1/3 plans executed
+**Plans:** 2/3 plans executed
 
 Success criteria:
 
@@ -89,7 +89,7 @@ sibling's full-suite gate; the Phase-1 "Plan 03 waits on 02" lesson):
 - [x] 02-01-PLAN.md — CFG-01: `tests/test_reload.py` RED, then fire `on_rejected` on the PHASE-2
   reconcile-failure path (D-31/D-32)
 
-- [ ] 02-02-PLAN.md — gateway.py DISC-01/02/03: death-reason accessor (liveness-only, D-21/D-22),
+- [x] 02-02-PLAN.md — gateway.py DISC-01/02/03: death-reason accessor (liveness-only, D-21/D-22),
   `summon_panel` per-item delete + pin-cap headroom (D-24..D-27), `stop()` TOCTOU degrade (D-28)
 
 - [ ] 02-03-PLAN.md — DISC-04: `tests/test_selection.py` RED, then `SelectedContext.snapshot()` +

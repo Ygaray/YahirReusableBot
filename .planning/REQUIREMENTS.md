@@ -59,15 +59,15 @@ regression test** — the test must fail against current source before the fix l
 
 ### Discord adapter (`discord/`)
 
-- [ ] **DISC-01** (H04, medium): A non-recoverable gateway disconnect does not leave the bot
+- [x] **DISC-01** (H04, medium): A non-recoverable gateway disconnect does not leave the bot
   permanently dead with no operator signal — either a bounded supervised reconnect or liveness the
   host park-loop can act on. **Open design decision: the retry/backoff contract.** → Phase 2
 
-- [ ] **DISC-02** (H05, medium): Re-summoning a panel never leaves two live pinned panels or a
+- [x] **DISC-02** (H05, medium): Re-summoning a panel never leaves two live pinned panels or a
   fresh-but-unpinned panel — delete-then-pin ordering plus per-item handling of `HTTPException` /
   `NotFound`, not just `Forbidden`. → Phase 2
 
-- [ ] **DISC-03** (H07, low): `stop()` does not raise `RuntimeError` when the bot loop stops
+- [x] **DISC-03** (H07, low): `stop()` does not raise `RuntimeError` when the bot loop stops
   between the `is_running()` check and the cross-thread schedule. → Phase 2
 
 - [ ] **DISC-04** (H08, low): The `SelectedContext` concurrency contract is explicit about

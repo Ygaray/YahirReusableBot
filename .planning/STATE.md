@@ -5,15 +5,15 @@ milestone_name: — Hub hardening
 current_phase: 02
 current_phase_name: latent-runtime-robustness
 status: executing
-stopped_at: Completed 02-01-PLAN.md
-last_updated: "2026-07-27T22:31:08.804Z"
+stopped_at: Completed 02-02-PLAN.md
+last_updated: "2026-07-27T22:39:30.214Z"
 last_activity: 2026-07-27
 last_activity_desc: Phase 02 execution started
 progress:
   total_phases: 4
   completed_phases: 1
   total_plans: 7
-  completed_plans: 5
+  completed_plans: 6
   percent: 25
 ---
 
@@ -22,14 +22,14 @@ progress:
 ## Current Position
 
 Phase: 02 (latent-runtime-robustness) — EXECUTING
-Plan: 2 of 3
+Plan: 3 of 3
 Status: Ready to execute
 Last activity: 2026-07-27 — Phase 02 execution started
 
 ## Session
 
-**Last session:** 2026-07-27T22:31:08.793Z
-**Stopped at:** Completed 02-01-PLAN.md
+**Last session:** 2026-07-27T22:39:30.203Z
+**Stopped at:** Completed 02-02-PLAN.md
 **Resume file:** None
 
 ## Performance Metrics
@@ -41,6 +41,7 @@ Last activity: 2026-07-27 — Phase 02 execution started
 | Phase 01 P03 | ~20min | 2 tasks | 2 files |
 | Phase 01 P04 | ~25min | 3 tasks | 1 files |
 | Phase 02 P01 | 15min | 2 tasks | 2 files |
+| Phase 02 P02 | 25min | 3 tasks | 2 files |
 
 ## Decisions
 
@@ -58,3 +59,9 @@ Last activity: 2026-07-27 — Phase 02 execution started
 - [Phase ?]: No version bump, tag, repin, uv sync, or deploy performed — all human-gated per ECOSYSTEM.md §3, deferred to after Phase 4
 - [Phase ?]: CFG-01 fixed: PHASE-2 reconcile-failure path now fires on_rejected (via _best_effort_hook, reused verbatim) before re-raising, matching PHASE-1's precedent (D-31/D-32)
 - [Phase ?]: RED-first two-commit proof recorded for CFG-01: test-only commit 4853c78 is the direct parent of fix commit 3bcd174 (D-13)
+- [Phase ?]: DISC-01 fixed: BotThread gains death_reason() (login_failure/crashed) alongside unchanged is_alive() (D-21/D-22/D-23); no hub-side reconnect wrapper
+- [Phase ?]: RED-first two-commit proof recorded for DISC-01: test-only commit 510ef05 is the direct parent of fix commit 7173027 (D-13)
+- [Phase ?]: DISC-02 fixed: summon_panel per-item delete catch (D-25) + pin-cap headroom-reserve (D-26) closes 2+-live-panels and fresh-but-unpinned bugs; foreign-pin-saturation documented as residual (D-27); create-before-delete preserved (D-24)
+- [Phase ?]: RED-first two-commit proof recorded for DISC-02: test-only commit ca5114e is the direct parent of fix commit f06f20e (D-13)
+- [Phase ?]: DISC-03 fixed: BotThread.stop() moves run_coroutine_threadsafe inside its existing try (D-28) — never raises on the loop-closed TOCTOU, thread join always reached
+- [Phase ?]: RED-first two-commit proof recorded for DISC-03: test-only commit 5b8427d is the direct parent of fix commit 8f715b2 (D-13)
