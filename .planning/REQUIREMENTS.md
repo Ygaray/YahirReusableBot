@@ -54,7 +54,7 @@ regression test** — the test must fail against current source before the fix l
 
 ### Config reload (`config/reload.py`)
 
-- [ ] **CFG-01** (H03, medium): A PHASE-2 reconcile failure fires the `on_rejected` hook before
+- [x] **CFG-01** (H03, medium): A PHASE-2 reconcile failure fires the `on_rejected` hook before
   re-raising — matching PHASE-1 — so the host's "reload rejected" alert is not silently skipped. → Phase 2
 
 ### Discord adapter (`discord/`)
