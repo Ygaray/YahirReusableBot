@@ -28,6 +28,10 @@ from __future__ import annotations
 
 from typing import Any, Callable
 
+import structlog
+
+_log = structlog.get_logger(__name__)
+
 
 class SchedulerEngine:
     """Thin, non-owning registrar over a host-supplied background scheduler.
@@ -70,8 +74,24 @@ class SchedulerEngine:
         )
 
     def remove(self, job_id: str) -> None:
-        """Drop the job with this id from the host scheduler."""
-        self._scheduler.remove_job(job_id)
+        """Drop the job with this id; a no-op success if it is already gone.
+
+        Idempotent by design (D-38, SCHED-01): a host scheduler's "job not
+        found" signal (e.g. APScheduler's ``JobLookupError``, which IS a
+        ``KeyError`` — verified against apscheduler 3.x source) is caught and
+        swallowed with a debug log, mirroring ``Path.unlink(missing_ok=True)``.
+        This lets a reconcile double-remove race or a misfire-coalesce race
+        call ``remove`` on an id that is already gone without crashing the
+        host's reconcile loop. This module never imports a specific scheduler
+        package (host-agnostic by design, D-05); a bare ``except KeyError:``
+        catches the real signal without adding a dependency this facade has
+        never needed. Any other exception from ``remove_job`` propagates
+        unchanged — only the lookup-miss ``KeyError`` is swallowed.
+        """
+        try:
+            self._scheduler.remove_job(job_id)
+        except KeyError:
+            _log.debug("scheduler remove: id already absent", job_id=job_id)
 
     def list_live_ids(self) -> set[str]:
         """The set of ids currently scheduled on the host scheduler."""
