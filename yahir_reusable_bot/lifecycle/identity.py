@@ -187,12 +187,24 @@ def _argv_matches_marker(cmdline: bytes, *, proc_marker: bytes) -> bool:
     raises: the bounds check on the token after a standalone ``-m`` (there may
     be none) is what keeps a truncated/malformed argv safe rather than an
     IndexError.
+
+    D-39 (LIFE-03): ``proc_marker`` is basenamed on the RHS, symmetric with
+    ``argv[0]``'s basenaming on the LHS one line below. This fixes two things
+    with one change: (1) the non-Linux ``/proc``-absent degrade
+    (``_read_proc_cmdline`` returns the RAW ``proc_marker`` as its sentinel),
+    which previously broke for a path-shaped marker because the LHS was
+    basenamed but the RHS was not; and (2) real Linux matching for a
+    path-shaped ``proc_marker`` (e.g. ``b"/opt/thebot"``), which was equally
+    broken by the same asymmetry. It is a no-op for the ordinary, already-
+    basename-shaped marker (``Path("examplebot").name == "examplebot"``) and
+    does NOT touch the ``-m`` module branch below — a module target is never
+    path-shaped.
     """
     argv = [part for part in cmdline.split(b"\x00") if part]
     if not argv:
         return False
     prog = Path(argv[0].decode("utf-8", "replace")).name
-    if prog == proc_marker.decode("utf-8", "replace"):
+    if prog == Path(proc_marker.decode("utf-8", "replace")).name:
         return True
     # `python -m <module> [run]` and `python -m<module> [run]`: first `-m`
     # module switch wins (D-06). A standalone `b"-m"` token takes the NEXT
