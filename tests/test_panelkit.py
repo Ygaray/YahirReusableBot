@@ -143,3 +143,39 @@ def test_disc_05_interaction_check_still_rejects_legitimate_non_operator_user():
     interaction = _FakeInteraction(user=_FakeUser(id=NON_OPERATOR_ID, bot=False))
     result = asyncio.run(panel.interaction_check(interaction))
     assert result is False
+
+
+# -- DISC-06: reject empty/whitespace marker at PanelKit construction --------------- #
+
+
+def test_disc_06_empty_marker_raises_value_error_at_construction():
+    """``PanelKit(..., marker="")`` must raise ``ValueError`` at construction. RED
+    pre-fix: no marker validation exists, so this constructs SILENTLY — closing the
+    ``cid.startswith("")``-owns-everything hole (an empty marker matches every
+    bot-authored pin, so ``summon_panel`` could delete unrelated pins)."""
+    with pytest.raises(ValueError):
+        _build_test_panel(marker="")
+
+
+def test_disc_06_whitespace_only_marker_raises_value_error_at_construction():
+    """A whitespace-only marker is equally invalid — ``cid.startswith("   ")`` would
+    never match a real custom_id, but the validation must reject on `str.strip()`
+    emptiness, not mere non-emptiness. RED pre-fix (constructs silently)."""
+    with pytest.raises(ValueError):
+        _build_test_panel(marker="   ")
+
+
+def test_disc_06_valid_marker_still_constructs():
+    """A normal, non-empty marker must still construct successfully — no regression to
+    the valid path. GREEN both pre- and post-fix."""
+    panel = _build_test_panel(marker="wbpanel")
+    assert panel is not None
+
+
+def test_disc_06_value_error_names_the_offending_marker():
+    """The raised message must reference the offending (empty) value so a consumer sees
+    why construction failed — exact wording is Claude's Discretion, but the value must be
+    named."""
+    with pytest.raises(ValueError) as exc_info:
+        _build_test_panel(marker="")
+    assert repr("") in str(exc_info.value)
