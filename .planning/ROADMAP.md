@@ -101,7 +101,7 @@ sibling's full-suite gate; the Phase-1 "Plan 03 waits on 02" lesson):
 guaranteed to bite the next one. This is the hub's entire reason to exist.
 **Requirements:** MATCH-01 (H06), MATCH-02 (H13), RELY-02 (H09), RELY-03 (H10), DISC-05 (H11), DISC-06 (H12), LIFE-02 (H14), LIFE-03 (H15), SCHED-01 (H16)
 **Depends on:** Phase 2
-**Plans:** 5/5 plans executed
+**Plans:** 5/5 plans complete
 
 **Pairing constraints — these must land together, not as independent tasks:**
 

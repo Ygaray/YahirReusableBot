@@ -2,13 +2,13 @@
 gsd_state_version: 1.0
 milestone: v0.1.2
 milestone_name: — Hub hardening
-current_phase: 03
-current_phase_name: Reusable public-surface footguns
-status: verifying
+current_phase: 04
+current_phase_name: Cleanup + ReadyGate fatal outcome
+status: planning
 stopped_at: Completed 03-05-PLAN.md (Phase 3 complete, 5/5)
-last_updated: "2026-07-28T01:31:53.058Z"
-last_activity: 2026-07-27
-last_activity_desc: Phase 02 complete, transitioned to Phase 03
+last_updated: "2026-07-28T01:53:54.129Z"
+last_activity: 2026-07-28
+last_activity_desc: Phase 03 complete, transitioned to Phase 04
 progress:
   total_phases: 4
   completed_phases: 3
@@ -21,10 +21,10 @@ progress:
 
 ## Current Position
 
-Phase: 03 — Reusable public-surface footguns
-Plan: 5 of 5
-Status: Phase complete — ready for verification
-Last activity: 2026-07-27 — Phase 02 complete, transitioned to Phase 03
+Phase: 04 — Cleanup + ReadyGate fatal outcome
+Plan: Not started
+Status: Ready to plan
+Last activity: 2026-07-28 — Phase 03 complete, transitioned to Phase 04
 
 ## Session
 
