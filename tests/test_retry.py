@@ -209,3 +209,63 @@ def test_rely_02_burst_size_greater_than_one_unchanged():
         attempt_number=2, burst_size=8, burst_spread_s=600, mid_pause_s=2700
     )
     assert step <= result <= step * 1.5
+
+
+class _FakeRetryState:
+    """Minimal ``retry_state``-shaped double exposing only ``attempt_number``
+    and ``outcome`` — mirrors what ``two_burst_wait`` actually reads
+    (retry.py:187-194). ``outcome = None`` skips the Retry-After branch, so
+    this pins the PLAIN two-burst base path only."""
+
+    def __init__(self, attempt_number: int) -> None:
+        self.attempt_number = attempt_number
+        self.outcome = None
+
+
+def test_rely_03_mid_pause_pinned_and_precondition_documented():
+    """RELY-03 (D-37, H10) self-proof: the mid-pause-attempt-pin assertions
+    below pass IDENTICALLY before and after the fix — two_burst_wait's BODY
+    never changes for RELY-03, only its docstring does, so a pin-only test
+    would prove nothing new here. It is the docstring-presence assertion at
+    the end that is genuinely RED against pre-fix retry.py: the D-37
+    precondition string is absent from ``two_burst_wait.__doc__`` pre-fix.
+
+    two_burst_wait structurally CANNOT self-check a standalone stop-bound
+    desync — it only ever sees ``retry_state.attempt_number`` (never the stop
+    bound of whatever Retrying it's wired into). The honest fix is a loud
+    docstring precondition, not coupling machinery (no matched-pair factory,
+    no assert) — pinned here as an executable contract so a future refactor
+    that silently decouples the mid-pause from burst_size fails this test.
+    """
+    burst_size = 4
+    mid_pause_s = 2700
+    boundary = _FakeRetryState(attempt_number=burst_size)
+    before = _FakeRetryState(attempt_number=burst_size - 1)
+    after = _FakeRetryState(attempt_number=burst_size + 1)
+
+    assert (
+        two_burst_wait(
+            boundary, burst_spread_s=600, burst_size=burst_size, mid_pause_s=mid_pause_s
+        )
+        == mid_pause_s
+    )
+    assert (
+        two_burst_wait(
+            before, burst_spread_s=600, burst_size=burst_size, mid_pause_s=mid_pause_s
+        )
+        != mid_pause_s
+    )
+    assert (
+        two_burst_wait(
+            after, burst_spread_s=600, burst_size=burst_size, mid_pause_s=mid_pause_s
+        )
+        != mid_pause_s
+    )
+
+    doc = two_burst_wait.__doc__ or ""
+    assert "stop_after_attempt(2 * burst_size)" in doc, (
+        "D-37 precondition missing from two_burst_wait's docstring: a "
+        "standalone caller wiring this into their OWN Retrying MUST pair it "
+        "with stop=stop_after_attempt(2 * burst_size) or the mid-pause "
+        "desyncs (fires at the wrong attempt, or never)"
+    )
