@@ -1,10 +1,11 @@
 ---
 phase: 3
 slug: public-surface-footguns
-status: draft
-nyquist_compliant: false
-wave_0_complete: false
+status: validated
+nyquist_compliant: true
+wave_0_complete: true
 created: 2026-07-27
+finalized: 2026-07-27
 ---
 
 # Phase 3 — Validation Strategy
@@ -46,16 +47,16 @@ created: 2026-07-27
 
 | Task ID | Plan | Wave | Requirement | Threat Ref | Secure Behavior | Test Type | Automated Command | File Exists | Status |
 |---------|------|------|-------------|------------|-----------------|-----------|-------------------|-------------|--------|
-| 03-01-* | 01 | 1 | SCHED-01 (H16) | — | `remove()` idempotent for already-gone id (no raise) | unit | `uv run pytest tests/test_engine.py -x` | ❌ W0 (new) | ⬜ pending |
-| 03-02-* | 02 | 2 | LIFE-02 (H14) | — | temp fd closed exactly once on `os.replace` failure; original error re-raises | unit | `uv run pytest tests/test_identity.py -k life_02 -x` | ✅ extend | ⬜ pending |
-| 03-02-* | 02 | 2 | LIFE-03 (H15) | — | path-shaped `proc_marker` matches degrade sentinel AND basenamed argv0 | unit | `uv run pytest tests/test_identity.py -k life_03 -x` | ✅ extend | ⬜ pending |
-| 03-03-* | 03 | 3 | MATCH-01 (H06) | — | length-changing casefold (`ßtatus`, `ﬁnd`, `ß foo` overshoot) slices raw arg correctly | unit | `uv run pytest tests/test_match.py -x` | ❌ W0 (new) | ⬜ pending |
-| 03-03-* | 03 | 3 | MATCH-02 (H13) | T-V5 | empty-name AND uppercase-name spec raise `ValueError` at registration | unit | `uv run pytest tests/test_registry.py -x` | ❌ W0 (new) | ⬜ pending |
-| 03-04-* | 04 | 4 | RELY-02 (H09) | T-DoS | `build_retrying(attempts_per_burst=1)` to exhaustion → no `ZeroDivisionError` | unit | `uv run pytest tests/test_retry.py -k rely_02 -x` | ✅ extend | ⬜ pending |
-| 03-04-* | 04 | 4 | RELY-03 (H10) | — | mid-pause pinned to `attempt_number == burst_size` by assertion | unit | `uv run pytest tests/test_retry.py -k rely_03 -x` | ✅ extend | ⬜ pending |
-| 03-05-* | 05 | 5 | DISC-05 (H11) | T-V4 | `interaction_check` with absent user (`None`/`MISSING`) returns `False`, never raises | unit | `uv run pytest tests/test_panelkit.py -k disc_05 -x` | ❌ W0 (new) | ⬜ pending |
-| 03-05-* | 05 | 5 | DISC-06 (H12) | T-V4 | `PanelKit(marker="")` and `marker="   "` raise at construction | unit | `uv run pytest tests/test_panelkit.py -k disc_06 -x` | ❌ W0 (new) | ⬜ pending |
-| GATE-01 | all | all | GATE-01 | — | full suite + import-hygiene/litmus/grimp stay green at every commit | integration/gate | `uv run pytest -q && uv run pytest tests/test_import_hygiene.py -q` | ✅ standing | ⬜ pending |
+| 03-01-* | 01 | 1 | SCHED-01 (H16) | — | `remove()` idempotent for already-gone id (no raise) | unit | `uv run pytest tests/test_engine.py -x` | ✅ created | ✅ green |
+| 03-02-* | 02 | 2 | LIFE-02 (H14) | — | temp fd closed exactly once on `os.replace` failure; original error re-raises | unit | `uv run pytest tests/test_identity.py -k life_02 -x` | ✅ extend | ✅ green |
+| 03-02-* | 02 | 2 | LIFE-03 (H15) | — | path-shaped `proc_marker` matches degrade sentinel AND basenamed argv0 | unit | `uv run pytest tests/test_identity.py -k life_03 -x` | ✅ extend | ✅ green |
+| 03-03-* | 03 | 3 | MATCH-01 (H06) | — | length-changing casefold (`ßtatus`, `ﬁnd`, `ß foo` overshoot) slices raw arg correctly | unit | `uv run pytest tests/test_match.py -x` | ✅ created | ✅ green |
+| 03-03-* | 03 | 3 | MATCH-02 (H13) | T-V5 | empty-name AND uppercase-name spec raise `ValueError` at registration | unit | `uv run pytest tests/test_registry.py -x` | ✅ created | ✅ green |
+| 03-04-* | 04 | 4 | RELY-02 (H09) | T-DoS | `build_retrying(attempts_per_burst=1)` to exhaustion → no `ZeroDivisionError` | unit | `uv run pytest tests/test_retry.py -k rely_02 -x` | ✅ extend | ✅ green |
+| 03-04-* | 04 | 4 | RELY-03 (H10) | — | mid-pause pinned to `attempt_number == burst_size` by assertion | unit | `uv run pytest tests/test_retry.py -k rely_03 -x` | ✅ extend | ✅ green |
+| 03-05-* | 05 | 5 | DISC-05 (H11) | T-V4 | `interaction_check` with absent user (`None`/`MISSING`) returns `False`, never raises | unit | `uv run pytest tests/test_panelkit.py -k disc_05 -x` | ✅ created | ✅ green |
+| 03-05-* | 05 | 5 | DISC-06 (H12) | T-V4 | `PanelKit(marker="")` and `marker="   "` raise at construction | unit | `uv run pytest tests/test_panelkit.py -k disc_06 -x` | ✅ created | ✅ green |
+| GATE-01 | all | all | GATE-01 | — | full suite + import-hygiene/litmus/grimp stay green at every commit | integration/gate | `uv run pytest -q && uv run pytest tests/test_import_hygiene.py -q` | ✅ standing | ✅ green |
 
 *Status: ⬜ pending · ✅ green · ❌ red · ⚠️ flaky*
 
@@ -63,10 +64,10 @@ created: 2026-07-27
 
 ## Wave 0 Requirements
 
-- [ ] `tests/test_engine.py` — stubs for SCHED-01 (new file; fake raw scheduler whose `remove_job` raises `KeyError`)
-- [ ] `tests/test_match.py` — stubs for MATCH-01 (new file; no existing precedent despite CONTEXT.md canonical_refs)
-- [ ] `tests/test_registry.py` — stubs for MATCH-02 (new file)
-- [ ] `tests/test_panelkit.py` — stubs for DISC-05/06 (new file; synthetic interaction + bad-marker construction)
+- [x] `tests/test_engine.py` — stubs for SCHED-01 (new file; fake raw scheduler whose `remove_job` raises `KeyError`)
+- [x] `tests/test_match.py` — stubs for MATCH-01 (new file; no existing precedent despite CONTEXT.md canonical_refs)
+- [x] `tests/test_registry.py` — stubs for MATCH-02 (new file)
+- [x] `tests/test_panelkit.py` — stubs for DISC-05/06 (new file; synthetic interaction + bad-marker construction)
 - No framework install needed — pytest/ruff/grimp all installed and verified
 - No new `tests/conftest.py` fixtures anticipated (D-10: grows only on a real second caller; each new double is used by exactly one file this phase). `cmdline_bytes` (existing) is reusable for LIFE-03.
 
@@ -89,12 +90,33 @@ created: 2026-07-27
 > `validate-phase` hook, invoked by execute-phase `finalize_nyquist_validation` after Gate-1). Never
 > set `nyquist_compliant: true` — or otherwise "sign off" compliance — at plan time (INC-2026-07-27-01).
 
-- [ ] All tasks have `<automated>` verify or Wave 0 dependencies
-- [ ] Sampling continuity: no 3 consecutive tasks without automated verify
-- [ ] Wave 0 covers all MISSING references (4 new test files)
-- [ ] No watch-mode flags
-- [ ] Feedback latency < 10s
-- [ ] _(finalizer-only, post-execution)_ `nyquist_compliant` — leave `false` at plan time; the
-      finalizer sets `true` iff its gap analysis finds zero gaps
+- [x] All tasks have `<automated>` verify or Wave 0 dependencies
+- [x] Sampling continuity: no 3 consecutive tasks without automated verify
+- [x] Wave 0 covers all MISSING references (4 new test files created)
+- [x] No watch-mode flags
+- [x] Feedback latency < 10s (~5s)
+- [x] _(finalizer, post-execution)_ `nyquist_compliant: true` — gap analysis found ZERO gaps: all 9
+      requirements + GATE-01 have a green automated test.
 
-**Approval:** pending — finalizer-owned, not set at plan time
+**Approval:** approved 2026-07-27 — Nyquist finalizer (post-Gate-1, zero gaps)
+
+---
+
+## Validation Audit 2026-07-27
+
+Finalized by `finalize_nyquist_validation` (auto-mode, post-execution). Every requirement mapped to a
+green automated test verified live this session.
+
+| Metric | Count |
+|--------|-------|
+| Requirements audited | 9 (+ GATE-01) |
+| COVERED | 10 |
+| PARTIAL | 0 |
+| MISSING | 0 |
+| Gaps found | 0 |
+| Resolved | 0 |
+| Escalated | 0 |
+
+Per-requirement live check: SCHED-01 (4 passed) · MATCH-01 (7) · MATCH-02 (7) · DISC-05 (3) ·
+DISC-06 (4) · RELY-02 (4) · RELY-03 (1) · LIFE-02 (3) · LIFE-03 (3) · GATE-01 (full suite 71 passed +
+import-hygiene 8 passed). No auditor spawned (auto-mode reports honest coverage; zero gaps → compliant).
