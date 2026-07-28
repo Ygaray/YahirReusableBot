@@ -200,6 +200,19 @@ def two_burst_wait(
        — i.e. wait AT LEAST the capped value, never above the cap. Otherwise (no
        outcome, no exception, no header — incl. the Discord ``ok=False`` path)
        return the plain base.
+
+    PRECONDITION (D-37, RELY-03): this callable receives ONLY
+    ``retry_state.attempt_number`` — it structurally CANNOT see the ``stop``
+    bound of whatever ``Retrying`` it is wired into, so it cannot self-check.
+    The mid-pause (:func:`_within_burst_wait`'s ``attempt_number == burst_size``
+    branch) fires once per schedule, keyed purely on ``burst_size``. A caller
+    wiring this into their OWN ``Retrying`` (bypassing :func:`build_retrying`)
+    MUST pair it with ``stop=stop_after_attempt(2 * burst_size)`` — a
+    mismatched stop bound desyncs the mid-pause (it fires at the wrong
+    attempt, or never fires at all). :func:`build_retrying` already couples
+    these correctly (see ``stop=stop_after_attempt(2 * attempts_per_burst)``
+    below); this precondition only matters for a hypothetical standalone
+    caller.
     """
     base = _within_burst_wait(
         retry_state.attempt_number,
