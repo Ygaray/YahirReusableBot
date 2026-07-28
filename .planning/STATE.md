@@ -5,15 +5,15 @@ milestone_name: — Hub hardening
 current_phase: 03
 current_phase_name: Reusable public-surface footguns
 status: executing
-stopped_at: Phase 3 context gathered
-last_updated: "2026-07-28T01:01:11.460Z"
+stopped_at: Completed 03-01-PLAN.md
+last_updated: "2026-07-28T01:10:06.833Z"
 last_activity: 2026-07-27
 last_activity_desc: Phase 02 complete, transitioned to Phase 03
 progress:
   total_phases: 4
   completed_phases: 2
-  total_plans: 7
-  completed_plans: 7
+  total_plans: 12
+  completed_plans: 8
   percent: 50
 ---
 
@@ -22,15 +22,15 @@ progress:
 ## Current Position
 
 Phase: 03 — Reusable public-surface footguns
-Plan: Not started
+Plan: 2 of 5
 Status: Ready to execute
 Last activity: 2026-07-27 — Phase 02 complete, transitioned to Phase 03
 
 ## Session
 
-**Last session:** 2026-07-28T00:07:48.982Z
-**Stopped at:** Phase 3 context gathered
-**Resume file:** .planning/phases/03-public-surface-footguns/03-CONTEXT.md
+**Last session:** 2026-07-28T01:10:06.824Z
+**Stopped at:** Completed 03-01-PLAN.md
+**Resume file:** None
 
 ## Performance Metrics
 
@@ -43,6 +43,7 @@ Last activity: 2026-07-27 — Phase 02 complete, transitioned to Phase 03
 | Phase 02 P01 | 15min | 2 tasks | 2 files |
 | Phase 02 P02 | 25min | 3 tasks | 2 files |
 | Phase 02 P03 | 10min | 2 tasks | 2 files |
+| Phase 03 P01 | 10min | 1 tasks | 2 files |
 
 ## Decisions
 
@@ -68,3 +69,6 @@ Last activity: 2026-07-27 — Phase 02 complete, transitioned to Phase 03
 - [Phase ?]: RED-first two-commit proof recorded for DISC-03: test-only commit 5b8427d is the direct parent of fix commit 8f715b2 (D-13)
 - [Phase ?]: DISC-04 fixed: SelectedContext gains snapshot() (D-29) + extended await-safety docstring (D-30), no lock added, .value unfrozen; contract + API only, wiring.py untouched
 - [Phase ?]: RED-first two-commit proof recorded for DISC-04: test-only commit cbc08ae is the direct parent of fix commit d8502e5 (D-13)
+- [Phase ?]: SCHED-01 fixed: SchedulerEngine.remove idempotent via except KeyError (dependency-free — apscheduler is NOT a hub dependency; JobLookupError IS a KeyError subclass); adds module-level structlog logger (D-38)
+- [Phase ?]: RED-first two-commit proof recorded for SCHED-01: test-only commit 0d1f828 is the direct parent of fix commit 5e6fbf8 (D-13)
+- [Phase ?]: SchedulerEngine.remove becoming idempotent is a consumer-visible silent->tolerant behavior change, named for the milestone's human-gated close-out (version bump/tag/WeatherBot repin) alongside the two release steps already deferred

@@ -97,7 +97,7 @@ regression test** — the test must fail against current source before the fix l
 
 ### Scheduler (`scheduler/engine.py`)
 
-- [ ] **SCHED-01** (H16, low): `SchedulerEngine.remove` has a stated contract for an already-gone
+- [x] **SCHED-01** (H16, low): `SchedulerEngine.remove` has a stated contract for an already-gone
   job id — either idempotent swallow (symmetric with `register`) or a documented raise. → Phase 3
 
 ### Milestone-level
