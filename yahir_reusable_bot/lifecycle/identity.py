@@ -74,15 +74,18 @@ def write_pid_atomic(pid_file: Path | str) -> None:
     try:
         os.write(fd, f"{os.getpid()}\n".encode())
         os.close(fd)
+        fd = -1  # D-42 (LIFE-02): mark closed so the except-path never re-closes
+        # this integer — if the OS reused it for an unrelated descriptor between
+        # the two closes, a second close here would silently close THAT one, and
+        # the old `except OSError: pass` would hide it entirely.
         os.replace(tmp, pid_file)  # atomic on POSIX — never a partial PID file
     except BaseException:
         # Best-effort cleanup of the temp file, then re-raise so the daemon
-        # startup sees the failure. fd may already be closed (after os.close);
-        # closing twice raises OSError, so guard it.
-        try:
+        # startup sees the failure. Guarded on fd != -1 (D-42): once the
+        # happy-path close above has run, this branch must never re-close the
+        # same fd integer.
+        if fd != -1:
             os.close(fd)
-        except OSError:
-            pass
         Path(tmp).unlink(missing_ok=True)
         raise
 
