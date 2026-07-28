@@ -5,15 +5,15 @@ milestone_name: — Hub hardening
 current_phase: 03
 current_phase_name: Reusable public-surface footguns
 status: executing
-stopped_at: Completed 03-03-PLAN.md
-last_updated: "2026-07-28T01:21:19.655Z"
+stopped_at: Completed 03-04-PLAN.md
+last_updated: "2026-07-28T01:26:32.847Z"
 last_activity: 2026-07-27
 last_activity_desc: Phase 02 complete, transitioned to Phase 03
 progress:
   total_phases: 4
   completed_phases: 2
   total_plans: 12
-  completed_plans: 10
+  completed_plans: 11
   percent: 50
 ---
 
@@ -22,14 +22,14 @@ progress:
 ## Current Position
 
 Phase: 03 — Reusable public-surface footguns
-Plan: 4 of 5
+Plan: 5 of 5
 Status: Ready to execute
 Last activity: 2026-07-27 — Phase 02 complete, transitioned to Phase 03
 
 ## Session
 
-**Last session:** 2026-07-28T01:21:19.646Z
-**Stopped at:** Completed 03-03-PLAN.md
+**Last session:** 2026-07-28T01:26:32.839Z
+**Stopped at:** Completed 03-04-PLAN.md
 **Resume file:** None
 
 ## Performance Metrics
@@ -46,6 +46,7 @@ Last activity: 2026-07-27 — Phase 02 complete, transitioned to Phase 03
 | Phase 03 P01 | 10min | 1 tasks | 2 files |
 | Phase 03 P02 | 10min | 2 tasks | 2 files |
 | Phase 03 P03 | 6min | 2 tasks | 4 files |
+| Phase 03 P04 | 8min | 2 tasks | 2 files |
 
 ## Decisions
 
@@ -83,3 +84,7 @@ Last activity: 2026-07-27 — Phase 02 complete, transitioned to Phase 03
 - [Phase ?]: MATCH-02's new build-time ValueError is a consumer-visible silent->fail-loud behavior change, named for the milestone's human-gated close-out alongside SCHED-01's idempotent-remove change
 - [Phase ?]: MATCH-01 fixed: match.py gains _keyword_boundary(stripped, name) mapping the keyword boundary to the ORIGINAL string index (D-35); fixes arg mis-slice for length-changing casefolds (ss, fi, st); adversarial overshoot folds into the existing continue/non-match
 - [Phase ?]: RED-first two-commit proof recorded for MATCH-01: test-only commit 39ababf is the direct parent of fix commit 2fa1908 (D-13); GATE-01 green at 58 passed
+- [Phase ?]: RELY-02 fixed: _within_burst_wait guards burst_size <= 1 (D-36), degrades to burst_spread_s instead of raising ZeroDivisionError; burst_size > 1 math unchanged
+- [Phase ?]: RED-first two-commit proof recorded for RELY-02: test-only commit 4579dc5 is the direct parent of fix commit 5567a38 (D-13)
+- [Phase ?]: RELY-03 fixed: two_burst_wait docstring gains a loud D-37 standalone-desync precondition (stop_after_attempt(2 * burst_size)); no coupling machinery added, function body unchanged
+- [Phase ?]: RED-first two-commit proof recorded for RELY-03: test-only commit 5c8b9cb is the direct parent of fix commit 3079e9c (D-13); GATE-01 green at 63 passed

@@ -29,10 +29,10 @@ regression test** — the test must fail against current source before the fix l
   Broaden to `(TimeoutException, NetworkError, RemoteProtocolError)`; **not** a blanket
   `TransportError`, so client-side `LocalProtocolError` stays non-retryable. → Phase 1
 
-- [ ] **RELY-02** (H09, low): A caller configuring `burst_size == 1` gets a degraded wait rather
+- [x] **RELY-02** (H09, low): A caller configuring `burst_size == 1` gets a degraded wait rather
   than a `ZeroDivisionError` raised from inside the tenacity wait callable. → Phase 3
 
-- [ ] **RELY-03** (H10, low): A caller pairing standalone `two_burst_wait` with its own
+- [x] **RELY-03** (H10, low): A caller pairing standalone `two_burst_wait` with its own
   `stop_after_attempt(N)` cannot silently desync the mid-pause — `burst_size` is coupled to the
   stop bound, or the precondition is asserted loudly. → Phase 3
 
