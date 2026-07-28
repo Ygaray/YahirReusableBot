@@ -80,11 +80,35 @@ REASON_INTERNAL_ERROR = "internal_error"
 def is_transient(exc: BaseException) -> bool:
     """True for retryable failures: network errors and transient HTTP statuses.
 
-    Timeouts / connect / read errors and ``HTTPStatusError`` whose status is in
-    :data:`TRANSIENT` (429 / 5xx) are retryable; everything else (incl. 4xx in
-    :data:`PERMANENT`) is not (D-08, RELY-02).
+    Timeouts, network errors (connect/read/write/close), a remote hangup
+    mid-response, and ``HTTPStatusError`` whose status is in :data:`TRANSIENT`
+    (429 / 5xx) are retryable; everything else (incl. 4xx in :data:`PERMANENT`)
+    is not (D-08, RELY-02).
+
+    **Deny-by-default is the LOCKED posture (D-02, RELY-01).** An httpx
+    exception type not explicitly named here classifies non-transient. A wrong
+    retry silently burns roughly 75 minutes of the delivery window, and this
+    library cannot see its consumers' failure modes, so an unrecognized future
+    exception type must fail closed rather than retry blind.
+
+    Rejected alternative (D-02): a blanket ``httpx.TransportError`` rule — with
+    or without a deny-list — was considered and rejected. It would sweep in
+    ``httpx.ProxyError`` and ``httpx.UnsupportedProtocol``, neither of which
+    resolves by waiting, and it would silently start retrying any future
+    exception type added under that parent.
+
+    Concrete gap closed here, verified against the installed httpx 0.28.1
+    class tree (D-03): the previous tuple's real misses were
+    ``httpx.WriteError``, ``httpx.CloseError``, and ``httpx.RemoteProtocolError``
+    — a routine mid-response server hangup (``RemoteProtocolError``) never
+    drove the two-burst retry. ``httpx.PoolTimeout`` was already covered via
+    ``httpx.TimeoutException`` and remains so.
+
+    ``httpx.LocalProtocolError`` stays non-transient: it signals a client-side
+    request-construction bug, not a network condition, so retrying it would
+    never succeed and would only burn the delivery window.
     """
-    if isinstance(exc, (httpx.TimeoutException, httpx.ConnectError, httpx.ReadError)):
+    if isinstance(exc, (httpx.TimeoutException, httpx.NetworkError, httpx.RemoteProtocolError)):
         return True
     if isinstance(exc, httpx.HTTPStatusError):
         return exc.response.status_code in TRANSIENT
@@ -133,10 +157,27 @@ def parse_retry_after(resp: httpx.Response) -> float | None:
 def _within_burst_wait(
     attempt_number: int, *, burst_spread_s: float, burst_size: int, mid_pause_s: float
 ) -> float:
-    """Base two-burst wait (Pattern 1), independent of any Retry-After honoring."""
+    """Base two-burst wait (Pattern 1), independent of any Retry-After honoring.
+
+    D-36 (RELY-02): when ``burst_size <= 1`` (a single-attempt burst), the
+    ``burst_spread_s / (burst_size - 1)`` step below would divide by zero.
+    tenacity calls this wait callable BEFORE checking its own ``stop`` bound
+    (RESEARCH.md Pitfall 3), so the crash reproduces on the burst's second
+    attempt even though ``stop_after_attempt(2)`` is about to end the schedule
+    anyway. Guard, degrade, do not raise: return ``burst_spread_s`` (the
+    spread base, no jitter) instead. The guard only has to not crash — with
+    ``burst_size <= 1`` the degenerate value is never actually consumed
+    because the schedule stops before another wait is computed.
+    """
     if attempt_number == burst_size:
         # Just finished burst 1 -> the long interruptible pause before burst 2.
         return mid_pause_s
+    if burst_size <= 1:
+        # D-36 (RELY-02): a single-attempt burst has no spacing to divide
+        # across. Degrade to the spread base (no jitter) rather than raising
+        # ZeroDivisionError — this branch runs on the wait-before-stop call
+        # tenacity makes even on the terminal attempt (Pitfall 3).
+        return burst_spread_s
     # Spread a burst's attempts across ~burst_spread_s with bounded jitter.
     step = burst_spread_s / (burst_size - 1)
     jitter = random.uniform(0, step * 0.5)
@@ -159,6 +200,19 @@ def two_burst_wait(
        — i.e. wait AT LEAST the capped value, never above the cap. Otherwise (no
        outcome, no exception, no header — incl. the Discord ``ok=False`` path)
        return the plain base.
+
+    PRECONDITION (D-37, RELY-03): this callable receives ONLY
+    ``retry_state.attempt_number`` — it structurally CANNOT see the ``stop``
+    bound of whatever ``Retrying`` it is wired into, so it cannot self-check.
+    The mid-pause (:func:`_within_burst_wait`'s ``attempt_number == burst_size``
+    branch) fires once per schedule, keyed purely on ``burst_size``. A caller
+    wiring this into their OWN ``Retrying`` (bypassing :func:`build_retrying`)
+    MUST pair it with ``stop=stop_after_attempt(2 * burst_size)`` — a
+    mismatched stop bound desyncs the mid-pause (it fires at the wrong
+    attempt, or never fires at all). :func:`build_retrying` already couples
+    these correctly (see ``stop=stop_after_attempt(2 * attempts_per_burst)``
+    below); this precondition only matters for a hypothetical standalone
+    caller.
     """
     base = _within_burst_wait(
         retry_state.attempt_number,

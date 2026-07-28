@@ -54,10 +54,15 @@ class HealthResult:
     compares — a bot puts whatever classification string it likes there.
     ``severity`` is the NEUTRAL field the gate branches the startup re-probe log
     level on (defaults to :attr:`Severity.WARNING`); it is only meaningful on a
-    failing (``ok=False``) result.
+    failing (``ok=False``) result. ``fatal`` (defaults ``False``) is an
+    orthogonal, app-authored NEUTRAL field: when ``True`` on a failing result,
+    the gate returns terminally instead of re-probing — independent of
+    ``severity``, which is purely a log-level rung and never implies
+    unrecoverability (LIFE-04, D-45).
     """
 
     ok: bool
     reason: str
     detail: str = ""
     severity: Severity = Severity.WARNING
+    fatal: bool = False

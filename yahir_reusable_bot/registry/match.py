@@ -42,6 +42,33 @@ class ParsedCommand:
     arg: str | None = None
 
 
+def _keyword_boundary(stripped: str, name: str) -> int | None:
+    """Return the index into ``stripped`` just past the folded match of ``name``.
+
+    ``name`` is already casefolded (guaranteed by D-34's registration-time
+    validation). Accumulates each ORIGINAL character's casefolded length; the
+    boundary is the first original index where the running total reaches
+    ``len(name)`` EXACTLY. If the running total jumps PAST ``len(name)`` without
+    ever hitting it exactly, the keyword boundary falls strictly inside a single
+    character's multi-char casefold expansion (e.g. ``ß``->``ss``) — this can
+    never be a real word-boundary match, because no Unicode casefold expansion
+    contains whitespace (verified across all 0x110000 codepoints, MATCH-01/D-35),
+    so the folded content immediately after the notional boundary is guaranteed
+    non-whitespace. Returning ``None`` here is equivalent to the existing
+    word-boundary rejection (``continue``) — no new failure mode, just the
+    correct original-string index for the ones that DO land exactly.
+    """
+    target = len(name)
+    acc = 0
+    for i, ch in enumerate(stripped, start=1):
+        acc += len(ch.casefold())
+        if acc == target:
+            return i
+        if acc > target:
+            return None
+    return None  # defensive; unreachable given the caller's startswith guard
+
+
 def match_command(text: str, specs: Iterable[CommandSpec]) -> ParsedCommand:
     """Match ``text`` against ``specs`` (longest-keyword-first, word-boundary, pure).
 
@@ -58,7 +85,16 @@ def match_command(text: str, specs: Iterable[CommandSpec]) -> ParsedCommand:
     for spec in specs:
         if not folded.startswith(spec.name):
             continue
-        rest = stripped[len(spec.name) :]
+        # MATCH-01 (D-35): map the keyword boundary back to an index in the
+        # ORIGINAL stripped string — never slice from `folded`. A length-changing
+        # casefold (e.g. "ß"->"ss") makes len(spec.name) the wrong slice point
+        # against the un-folded original; _keyword_boundary computes the correct
+        # one. `spec.name` is never re-casefolded here (D-34 already guarantees
+        # it is casefolded at registration).
+        boundary = _keyword_boundary(stripped, spec.name)
+        if boundary is None:
+            continue
+        rest = stripped[boundary:]
         # Word-boundary guard: anything other than whitespace right after the
         # keyword (e.g. "sunny", "status:") is not this command.
         if rest and not rest[0].isspace():

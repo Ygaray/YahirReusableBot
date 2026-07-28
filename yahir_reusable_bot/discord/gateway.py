@@ -58,6 +58,14 @@ REQUIRED_PANEL_PERMS: tuple[str, ...] = (
     "pin_messages",
 )
 
+# Death-reason taxonomy (D-22), mirroring reliability/retry.py:75-77's REASON_* idiom —
+# bare strings, no enum/Literal. Consumed by BotThread.death_reason() so a host park-loop
+# can branch programmatically on WHY the bot thread died, not just scrape a CRITICAL log.
+# Purely additive alongside is_alive() (D-23) — see BotThread's class docstring for the
+# liveness-only contract this taxonomy serves (D-21: NO hub-side reconnect wrapper).
+REASON_LOGIN_FAILURE = "login_failure"
+REASON_CRASHED = "crashed"
+
 # Type aliases for the injected collaborators (kept generic — the module never inspects them).
 OnMessage = Callable[[discord.Message], Awaitable[None]]
 OwnedPredicate = Callable[[discord.Message], bool]
@@ -152,35 +160,99 @@ async def summon_panel(
     does the config read + channel resolution + permission preflight), the ``idle_embed``
     (built via the app's render), the ``panel_factory`` (constructs the app's panel with its
     cosmetics injected), and the operator-feedback callbacks (``on_created`` /
-    ``on_resummoned`` / ``on_strays_cleaned`` — the caller owns the copy strings). Each write
-    is guarded by an inner ``discord.Forbidden`` catch (the TOCTOU backstop): a permission
-    revoked between the caller's preflight and a write is logged and swallowed, never bubbled.
+    ``on_resummoned`` / ``on_strays_cleaned`` — the caller owns the copy strings). The
+    send+pin is guarded by an outer ``discord.Forbidden`` catch (the TOCTOU backstop): a
+    permission revoked between the caller's preflight and a write is logged and swallowed,
+    never bubbled.
+
+    **Per-item delete resilience (D-25):** each prior owned panel's ``delete()`` is guarded by
+    its OWN ``try/except (discord.NotFound, discord.HTTPException, discord.Forbidden)`` — one
+    failed delete (already-gone message, revoked permission mid-loop) logs a warning and
+    continues, so it can never abort the remaining deletes and leave 2+ live panels.
+
+    **Pin-cap headroom-reserve (D-26):** if the fresh panel's ``pin()`` fails with
+    ``discord.HTTPException`` (the channel is at its pin cap — never hardcode the exact cap
+    number, A1/A2 in RESEARCH.md are unresolved between discord.py's docstring and Discord's
+    documented error code) AND >=2 owned panels exist, ONE owned stray is evicted first
+    (freeing a slot; >=1 owned panel is still live throughout — D-06's no-zero-window holds)
+    and the pin is retried.
+
+    **Residual limitation (D-27):** if the channel is saturated with FOREIGN (non-owned) pins
+    — no owned stray to evict — or the retried pin still fails, the fresh panel is left sent
+    but unpinned, and a loud CRITICAL is emitted rather than silently swallowing it. This is a
+    documented, out-of-authority edge: the hub cannot evict pins it does not own.
     """
     try:
         # Scan owned panels FIRST. Async iterator — NOT ``await channel.pins()`` (deprecated
         # awaitable). Discord caps pins at 50, no pagination needed.
         matches = [m async for m in channel.pins() if is_owned(m)]
+        num_matches = len(matches)
         # Create-before-delete (no-orphan ordering): post the fresh panel as the NEWEST
         # channel message (bottom) and pin it FIRST, so there is never a zero-panel window
         # even if a later delete fails.
         msg = await channel.send(embed=idle_embed, view=panel_factory())
-        await msg.pin()
+        try:
+            await msg.pin()
+        except discord.Forbidden:
+            # Re-raise to the outer TOCTOU backstop below — Forbidden is a distinct,
+            # preflight-revoked-permission case, not the pin-cap case handled here.
+            raise
+        except discord.HTTPException:
+            # Pin-cap headroom-reserve (D-26): react generically to the HTTPException —
+            # never branch on a specific cap count. Evict when there is >=1 owned stray:
+            # create-before-delete already made the fresh panel live, so the no-zero-window
+            # invariant (D-24) holds even when the LAST owned stray is evicted. The >=2
+            # threshold was too conservative — it left the common single-owned-panel
+            # re-summon fresh-but-unpinned at the cap, violating the success criterion (WR-01).
+            if len(matches) >= 1:
+                stray = matches.pop(0)
+                try:
+                    await stray.delete()
+                except (discord.NotFound, discord.HTTPException, discord.Forbidden):
+                    _log.warning(
+                        "stray panel delete failed; continuing",
+                        channel_id=getattr(channel, "id", None),
+                    )
+                try:
+                    await msg.pin()
+                except discord.HTTPException:
+                    _log.critical(
+                        "panel pin failed at cap even after evicting a stray",
+                        channel_id=getattr(channel, "id", None),
+                    )
+            else:
+                # D-27 residual (reached only when matches is empty — zero owned strays):
+                # a foreign-pin-saturated channel with no owned pin to evict. The fresh
+                # panel was already sent (create-before-delete holds); it stays unpinned.
+                # Documented limitation — not chased further.
+                _log.critical(
+                    "panel pin failed at cap with no owned stray to evict "
+                    "(foreign-pin saturation); fresh panel sent but left unpinned",
+                    channel_id=getattr(channel, "id", None),
+                )
         # THEN DELETE every prior owned panel (the previously-pinned one + any strays).
         # Deleting the old pinned message also clears its pin, so net pins return to exactly
         # one. DELETE, never unpin-only — an unpinned-but-live View still responds to clicks.
+        # Per-item catch (D-25): one failed delete must never abort the rest.
         for old in matches:
-            await old.delete()
-        if not matches:
+            try:
+                await old.delete()
+            except (discord.NotFound, discord.HTTPException, discord.Forbidden):
+                _log.warning(
+                    "stray panel delete failed; continuing",
+                    channel_id=getattr(channel, "id", None),
+                )
+        if num_matches == 0:
             await on_created()
-        elif len(matches) > 1:
+        elif num_matches > 1:
             # One prior panel is logically replaced by the fresh one; the rest were strays.
-            await on_strays_cleaned(len(matches) - 1)
+            await on_strays_cleaned(num_matches - 1)
         else:
             await on_resummoned()
     except discord.Forbidden:
-        # TOCTOU backstop: a permission was revoked between the preflight and a write. Log
-        # CRITICAL and return — never let the 403 bubble out. ``channel_id`` is a non-secret
-        # structured field; never leak the token.
+        # TOCTOU backstop: a permission was revoked between the preflight and the send/pin
+        # write. Log CRITICAL and return — never let the 403 bubble out. ``channel_id`` is a
+        # non-secret structured field; never leak the token.
         _log.critical(
             "panel summon write forbidden (403) despite preflight",
             channel_id=getattr(channel, "id", None),
@@ -199,6 +271,17 @@ class BotThread:
 
     The client is INJECTED (built by :func:`build_client` with the caller's ``on_message`` +
     persistent view) so ``BotThread`` names no app concept and constructs nothing app-specific.
+
+    **Liveness/reconnect contract (D-21/D-22/D-23):** ``is_alive()`` is the documented signal
+    the host park-loop consults to decide respawn/alert/exit policy — the hub itself NEVER
+    respawns. There is deliberately NO hub-side reconnect/backoff wrapper around
+    ``client.start()``: discord.py's own ``reconnect=True`` default already retries every
+    *recoverable* disconnect with an ``ExponentialBackoff``; the failures that actually reach
+    ``_run``'s except handlers (bad token, disallowed/privileged intents, auth-close) are
+    exactly the ones discord.py deliberately refuses to retry, so a wrapper here would hot-loop
+    them straight into a Discord rate-limit/ban. ``death_reason()`` is purely additive alongside
+    the unchanged ``is_alive()`` — it lets a host branch on WHY the bot died (``login_failure``
+    vs. ``crashed``) instead of only scraping a CRITICAL log.
     """
 
     def __init__(self, token: str, *, client: discord.Client) -> None:
@@ -214,6 +297,9 @@ class BotThread:
         # dead-start teardown explicit instead of inferring it from ``loop.is_running()``.
         # Failure isolation is preserved: ``_run`` never raises.
         self._failed = False
+        # The death-reason (D-22): None while alive/never-died; set in ``_run``'s except
+        # branches alongside ``_failed``. Purely additive — see ``death_reason()``.
+        self._death_reason: str | None = None
         self._thread = threading.Thread(
             target=self._run, name="discord-gateway", daemon=True
         )
@@ -239,14 +325,35 @@ class BotThread:
         """
         return not self._failed and self._thread.is_alive()
 
+    def death_reason(self) -> str | None:
+        """Why the bot thread died, or ``None`` if it hasn't (D-22).
+
+        Purely additive alongside :meth:`is_alive` (D-23) — one of :data:`REASON_LOGIN_FAILURE`
+        (bad token) or :data:`REASON_CRASHED` (any other unexpected crash), set in ``_run``'s
+        except branches. Lets a host park-loop branch programmatically on WHY the bot died
+        instead of only scraping a CRITICAL log. The hub never respawns on either reason —
+        that policy decision belongs to the consumer (D-21).
+        """
+        return self._death_reason
+
     def stop(self, timeout: float = 5.0) -> None:
-        """Stop the bot: schedule ``client.close()`` cross-thread, then join."""
+        """Stop the bot: schedule ``client.close()`` cross-thread, then join.
+
+        **Degrade-not-raise (D-28):** ``loop.is_running()`` is a fast path only, NOT a
+        guarantee — the loop can close in the gap between that check and the
+        ``run_coroutine_threadsafe`` schedule (the TOCTOU this guards against), so the
+        schedule call is made INSIDE the same ``try`` as ``future.result()``. A
+        ``RuntimeError`` ("Event loop is closed") from either is logged as "loop already
+        stopped" and swallowed. ``stop()`` must NEVER raise, and the thread join below is
+        ALWAYS reached — never early-return inside the except.
+        """
         loop = self._loop
         if loop is not None and loop.is_running():
-            future = asyncio.run_coroutine_threadsafe(self._client.close(), loop)
             try:
+                future = asyncio.run_coroutine_threadsafe(self._client.close(), loop)
                 future.result(timeout=timeout)
-            except Exception:  # noqa: BLE001 — close best-effort; still join below
+            except Exception:  # noqa: BLE001 — close best-effort (incl. "loop already
+                # stopped" RuntimeError on the TOCTOU race); still join below
                 _log.warning("bot client.close() did not complete cleanly")
         self._thread.join(timeout=timeout)
         if self._thread.is_alive():
@@ -262,11 +369,18 @@ class BotThread:
         try:
             asyncio.run(self._amain())
         except discord.LoginFailure:
+            # Publish the reason BEFORE the liveness flag (WR-02): a host park-loop that
+            # observes is_alive() == False (i.e. _failed) must never then read
+            # death_reason() == None. Setting the reason first closes the cross-thread
+            # interleaving window between these two writes.
+            self._death_reason = REASON_LOGIN_FAILURE
             self._failed = True
             _log.critical(
                 "invalid Discord token; inbound bot disabled, scheduler unaffected"
             )
         except Exception:  # noqa: BLE001 — die alone; never crash the process
+            # Reason before liveness flag — see the WR-02 note above.
+            self._death_reason = REASON_CRASHED
             self._failed = True
             _log.critical("inbound bot thread crashed; scheduler unaffected")
 

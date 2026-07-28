@@ -13,6 +13,34 @@ specifics at one composition root, instead of re-deriving the plumbing each time
 **Import root:** `yahir_reusable_bot` · **PyPI name:** `yahir-reusable-bot` · **No console
 script** (library only). Build backend: hatchling. `requires-python >=3.12`.
 
+## Current Milestone: v0.1.2 Hub hardening
+
+**Goal:** Close all 17 audit-surfaced hub defects and add a first-class `ReadyGate` fatal
+outcome, so the live consumer stops silently dropping deliveries and the next consumer inherits
+a footgun-free public surface.
+
+**Target features:**
+- Reachable reliability — the two defects live and unmitigated in a consumer today (H01, H02)
+- Latent runtime robustness — real bugs behind narrow runtime conditions (H03, H04, H05, H07, H08)
+- Reusable public-surface hardening — matcher, retry callable, panelkit, identity, scheduler
+  footguns that are unreachable in the current consumer but will bite the next (H06, H09–H16)
+- Public-surface cleanup + `ReadyGate` fatal outcome (H17, H18)
+
+**Source of record:** `.planning/backlog/HUB-HARDENING-REPORT-v0.1.2.md` (fix direction per
+finding), `.planning/backlog/HUB-FINDINGS-HANDOFF.md` (failure scenario + evidence per finding).
+All 18 re-verified against source at HEAD `5da57b8` — no semantic drift; H07 is at `gateway.py:246`
+(not `:244`) and H04 at `gateway.py:278` (not `:273`), both inside the same function as reported.
+
+**Test posture:** every fix ships with a RED-first regression test. Several findings note the
+existing tests cover only decoy cases (e.g. `test_reload.py:561` for H01) — the missing
+adversarial case gets added, not just a new happy path.
+
+**Close-out is human-gated** (`ECOSYSTEM.md` §3): fixes plus green gates are autonomous; the
+`pyproject.toml` bump `0.1.1 → 0.1.2`, the `v0.1.2` tag cut, and the WeatherBot repin are not.
+
+**Out of milestone:** PC-01 (log secret-redaction backstop promotion) stays in the backlog as
+phase 999.5 — a promotion track, not a defect fix.
+
 ## Origin
 
 Extracted from `WeatherBot` over Phases 22–27 (in-place seam un-braiding), then physically
@@ -41,3 +69,24 @@ deferred — revisit only if a second consumer wants versioned releases.
 Designed-but-deferred extension points follow **build-in-consumer-then-promote** (rule of
 three): build a concrete impl in a consuming app first, prove it across consumers, then promote
 the generalized form into this module. See `EXTENSION-GUIDE.md` and `REQUIREMENTS.md`.
+
+## Evolution
+
+This document evolves at phase transitions and milestone boundaries.
+
+**After each phase transition** (via `/gsd-transition`):
+1. Requirements invalidated? → Move to Out of Scope with reason
+2. Requirements validated? → Move to Validated with phase reference
+3. New requirements emerged? → Add to Active
+4. Decisions to log? → Add to Key Decisions
+5. "What This Is" still accurate? → Update if drifted
+
+**After each milestone** (via `/gsd-complete-milestone`):
+1. Full review of all sections
+2. Core Value check — still the right priority?
+3. Audit Out of Scope — reasons still valid?
+4. Update Context with current state
+
+---
+
+_Last updated: 2026-07-27 — Phase 3 (Reusable public-surface footguns) complete: 9 findings closed RED-first (H06 MATCH-01, H13 MATCH-02, H09 RELY-02, H10 RELY-03, H11 DISC-05, H12 DISC-06, H14 LIFE-02, H15 LIFE-03, H16 SCHED-01); full suite 71 passed + GATE-01 (import-hygiene/litmus/grimp) green; Nyquist-compliant. Two research corrections held (SCHED-01 `except KeyError` not apscheduler; DISC-05 falsy `not interaction.user` for the MISSING sentinel). One in-scope code-review regression fixed (WR-01 `write_pid_atomic` except-path close-safety); a duplicate-`spec.name` footgun (WR-02) logged for a scope decision. Phases 1–3 done; next: Phase 4 (cleanup + `ReadyGate` fatal outcome, H17/H18). Close-out (bump `0.1.1→0.1.2` / `v0.1.2` tag / WeatherBot repin) still human-gated._

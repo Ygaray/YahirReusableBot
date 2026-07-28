@@ -43,7 +43,6 @@ What the engine deliberately does NOT do (stays the host's / injected):
 from __future__ import annotations
 
 import threading
-from pathlib import Path
 from typing import Any, Callable, Generic, TypeVar
 
 import structlog
@@ -122,9 +121,15 @@ class ReloadEngine(Generic[T]):
         ``validate``. On ANY raise, fire the best-effort ``on_rejected`` hook BEFORE re-raising,
         leaving the holder + job set UNTOUCHED (keep-old). PHASE 2 (atomic swap + reconcile):
         snapshot the old config, ``holder.replace(new)``, then reconcile; on ANY reconcile throw
-        roll the holder back and re-run the injected ``restore`` (best-effort), then re-raise so
-        the caller sees the failure with the OLD schedule fully intact. On success fire the
-        best-effort ``on_applied`` hook with the diff summary.
+        roll the holder back and re-run the injected ``restore`` (best-effort), THEN fire the
+        SAME best-effort ``on_rejected`` hook with the reconcile exception BEFORE re-raising so
+        the caller sees the failure with the OLD schedule fully intact (CFG-01/D-31: a rejected
+        reload must be operator-visible on BOTH rejection paths, not just PHASE 1 — mirrors this
+        method's own PHASE-1 fire-before-reraise order, log -> restore -> fire hook -> raise; the
+        ORIGINAL reconcile exception is always the one re-raised, never masked). No second hook or
+        reason enum is introduced (D-32) — distinctness between the two rejection paths lives only
+        in the internal log label (``reload-rejected`` vs. ``reconcile-rolled-back``). On success
+        fire the best-effort ``on_applied`` hook with the diff summary.
         """
         # PHASE 1 — validate-or-keep-old. The injected validator owns the concrete catch set;
         # here a bare ``except Exception`` preserves the keep-old contract for any failure.
@@ -143,7 +148,7 @@ class ReloadEngine(Generic[T]):
         self._holder.replace(new_cfg)
         try:
             summary = self._reconcile()
-        except Exception:
+        except Exception as exc:
             # Roll back to the previous config AND rebuild the old job set from it, then
             # re-raise so the OLD schedule fires fully intact. The restore is best-effort and
             # must never mask the ORIGINAL reconcile error.
@@ -155,6 +160,14 @@ class ReloadEngine(Generic[T]):
                     "reload rollback restore raised; original error re-raised"
                 )
             _log.error("reload reconcile failed; rolled back to previous config")
+            # Post the rejection BEFORE re-raising (D-31), mirroring PHASE-1's
+            # fire-before-reraise order (log -> restore -> fire hook -> raise). Best-effort:
+            # a hook failure is logged + swallowed; the ORIGINAL reconcile error below is the
+            # one re-raised, so a rejected reload is operator-visible on BOTH rejection paths,
+            # not just PHASE-1 validation (D-32: same hook, no new public surface).
+            self._best_effort_hook(
+                self._on_rejected, exc, label="reconcile-rolled-back"
+            )
             raise
 
         _log.info("reload applied", summary=summary)

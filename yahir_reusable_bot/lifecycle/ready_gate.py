@@ -29,6 +29,7 @@ scheduler dependency.
 
 from __future__ import annotations
 
+from enum import Enum
 from typing import Any, Callable
 
 import structlog
@@ -42,6 +43,33 @@ _log = structlog.get_logger(__name__)
 # within ~2 min of becoming good, gentle enough it never approaches any upstream
 # rate limit. A module default — an app may override per construction.
 RE_PROBE_INTERVAL_S = 120
+
+
+class ReadyOutcome(Enum):
+    """The distinct terminal outcomes of :meth:`ReadyGate.run` (LIFE-04, D-44).
+
+    Only :attr:`ONLINE` is truthy (the ``__bool__`` override below) so every
+    existing *truthy/falsy* caller (``if gate.run(stop):`` / ``if not
+    gate.run(stop):``) stays byte-compatible: both non-online outcomes
+    (``SHUTDOWN``, ``FATAL``) evaluate falsy exactly like the old
+    ``return False`` did. This does NOT hold for a caller that compares the
+    result against a bare bool (``== False`` / ``is False`` / ``== True``): a
+    plain :class:`Enum` member is never equal or identical to ``True``/``False``,
+    so such a caller must migrate to an identity check
+    (``is ReadyOutcome.ONLINE`` / ``is ReadyOutcome.FATAL``) at repin time —
+    grep every consumer call site for ``== False`` / ``is False`` / ``== True``
+    against ``gate.run(...)``, not just ``if gate.run(...):`` (``ECOSYSTEM.md``
+    §3 repin checklist). New/updated callers branch on identity
+    (``outcome is ReadyOutcome.FATAL``) to distinguish a clean shutdown from a
+    terminal probe failure without overloading the ``stop`` Event.
+    """
+
+    ONLINE = "online"
+    SHUTDOWN = "shutdown"
+    FATAL = "fatal"
+
+    def __bool__(self) -> bool:
+        return self is ReadyOutcome.ONLINE
 
 
 class ReadyGate:
@@ -69,23 +97,34 @@ class ReadyGate:
         self._on_online = on_online
         self._on_fail = on_fail
 
-    def run(self, stop) -> bool:
-        """Re-probe until the health-check passes or ``stop`` is set (lifted ordering).
+    def run(self, stop) -> "ReadyOutcome":
+        """Re-probe until the health-check passes, goes fatal, or ``stop`` is set.
 
-        On EVERY non-ok outcome the per-outcome ``on_fail`` hook fires (the app
-        stamps its durable health row there, D-02a), then the startup log branches
-        on the NEUTRAL ``result.severity`` rung — CRITICAL rung -> ``critical``,
-        else ``warning`` — NEVER comparing ``reason`` to an app-named string. The
+        On EVERY non-ok outcome the per-outcome ``on_fail`` hook fires FIRST (the
+        app stamps its durable health row there, D-02a) — unconditionally, fatal
+        or not. Then, if ``result.fatal`` is True (LIFE-04, D-46), the gate logs a
+        fatal event at ``critical`` and returns :attr:`ReadyOutcome.FATAL`
+        IMMEDIATELY — no re-probe wait, ``on_online`` never fires (the gate never
+        went online). Otherwise the startup log branches on the NEUTRAL
+        ``result.severity`` rung — CRITICAL rung -> ``critical``, else
+        ``warning`` — NEVER comparing ``reason`` to an app-named string, and the
         re-probe wait is the interruptible ``stop.wait(interval)`` (NEVER
         ``time.sleep``, Pitfall 2): it returns True if ``stop`` was set during the
         wait, so a shutdown mid-probe breaks promptly.
 
-        Returns ``True`` once the health-check first passes — at which point the
-        gate fires the ``on_online`` hook (the app's health-row ``online`` stamp +
-        tick + ping, D-02a), emits ``READY=1`` via ``notifier.ready()``, and logs
-        the structured online event. Returns ``False`` if ``stop`` was set first
-        (clean shutdown during the gate — the caller falls straight through without
-        starting work or emitting the online signal).
+        Returns :attr:`ReadyOutcome.ONLINE` once the health-check first passes —
+        at which point the gate fires the ``on_online`` hook (the app's
+        health-row ``online`` stamp + tick + ping, D-02a), emits ``READY=1`` via
+        ``notifier.ready()``, and logs the structured online event. Returns
+        :attr:`ReadyOutcome.SHUTDOWN` if ``stop`` was set first (clean shutdown
+        during the gate — the caller falls straight through without starting
+        work or emitting the online signal). Returns :attr:`ReadyOutcome.FATAL`
+        on a terminal probe failure (see above). Only ``ONLINE`` is truthy
+        (:class:`ReadyOutcome`'s ``__bool__`` override), so an existing
+        *truthy/falsy* ``if gate.run(stop):`` caller stays byte-compatible for
+        the non-fatal cases; a caller that compares against a bare bool
+        (``== False`` / ``is False``) must migrate to an identity check, and a
+        caller that cares about the fatal case branches on identity.
         """
         while not stop.is_set():
             result = self._health_check()
@@ -96,9 +135,19 @@ class ReadyGate:
                 self._best_effort_hook(self._on_online, result, label="on_online")
                 _log.info("bot online")
                 self._notifier.ready()
-                return True
-            # Per-outcome hook (the app's durable health row, D-02a).
+                return ReadyOutcome.ONLINE
+            # Per-outcome hook (the app's durable health row, D-02a) — fires on
+            # EVERY failing probe, fatal or not.
             self._best_effort_hook(self._on_fail, result, label="on_fail")
+            # NEW (LIFE-04, D-46): fatal short-circuit, after on_fail, before the
+            # severity-branch log below — no re-probe wait, on_online never fires.
+            if result.fatal:
+                _log.critical(
+                    "startup self-check fatal failure",
+                    reason=result.reason,
+                    detail=result.detail,
+                )
+                return ReadyOutcome.FATAL
             # Branch the startup log on the NEUTRAL severity rung, NOT a reason string.
             if result.severity >= Severity.CRITICAL:
                 _log.critical(
@@ -116,7 +165,7 @@ class ReadyGate:
             # wait -> clean shutdown (NEVER a blocking time.sleep, Pitfall 2).
             if stop.wait(self._re_probe_interval):
                 break
-        return False
+        return ReadyOutcome.SHUTDOWN
 
     # ------------------------------------------------------------------ #
     # best-effort hook guard (cloned verbatim from ReloadEngine, D-09)

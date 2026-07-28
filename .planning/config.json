@@ -8,7 +8,13 @@
   "workflow": {
     "research": true,
     "verifier": true,
-    "tdd_mode": false
+    "tdd_mode": false,
+    "_auto_chain_active": false,
+    "test_command": "uv run pytest -q",
+    "build_command": "uv run python -c 'import yahir_reusable_bot'"
   },
-  "_note": "Module GSD project, initialized at v0.1.0 import (Phase 28 split from WeatherBot). Records EXT-01 (durable JobStore) and EXT-02 (2nd Channel adapter) as deferred extension points."
+  "_note": "Module GSD project, initialized at v0.1.0 import (Phase 28 split from WeatherBot). Records EXT-01 (durable JobStore) and EXT-02 (2nd Channel adapter) as deferred extension points.",
+  "graphify": {
+    "enabled": true
+  }
 }

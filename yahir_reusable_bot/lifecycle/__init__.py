@@ -21,11 +21,12 @@ from .identity import (
     read_pid,
     write_pid_atomic,
 )
-from .ready_gate import ReadyGate
+from .ready_gate import ReadyGate, ReadyOutcome
 from .sdnotify import SystemdNotifier
 
 __all__ = [
     "ReadyGate",
+    "ReadyOutcome",
     "SystemdNotifier",
     "HealthResult",
     "Severity",
