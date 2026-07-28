@@ -81,7 +81,7 @@ regression test** — the test must fail against current source before the fix l
 - [x] **DISC-06** (H12, low): An empty `marker` is rejected at construction, so `is_owned_panel`
   can never claim every bot-authored pinned message and have `summon_panel` delete unrelated pins. → Phase 3
 
-- [ ] **SURF-01** (H17, cleanup): `from yahir_reusable_bot.discord import summon_panel` works, or
+- [x] **SURF-01** (H17, cleanup): `from yahir_reusable_bot.discord import summon_panel` works, or
   the package docstring stops advertising it — docstring, `gateway.__all__`, and the package
   `__init__` agree. → Phase 4
 

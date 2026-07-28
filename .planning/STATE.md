@@ -4,17 +4,17 @@ milestone: v0.1.2
 milestone_name: — Hub hardening
 current_phase: 04
 current_phase_name: cleanup-readygate-fatal
-status: executing
-stopped_at: Completed 04-01-PLAN.md
-last_updated: "2026-07-28T14:41:57.119Z"
+status: verifying
+stopped_at: Completed 04-02-PLAN.md
+last_updated: "2026-07-28T14:45:25.097Z"
 last_activity: 2026-07-28
 last_activity_desc: Phase 04 execution started
 progress:
   total_phases: 4
-  completed_phases: 3
+  completed_phases: 4
   total_plans: 14
-  completed_plans: 13
-  percent: 75
+  completed_plans: 14
+  percent: 100
 ---
 
 # Project State
@@ -23,13 +23,13 @@ progress:
 
 Phase: 04 (cleanup-readygate-fatal) — EXECUTING
 Plan: 2 of 2
-Status: Ready to execute
+Status: Phase complete — ready for verification
 Last activity: 2026-07-28 — Phase 04 execution started
 
 ## Session
 
-**Last session:** 2026-07-28T14:41:57.110Z
-**Stopped at:** Completed 04-01-PLAN.md
+**Last session:** 2026-07-28T14:45:25.088Z
+**Stopped at:** Completed 04-02-PLAN.md
 **Resume file:** None
 
 ## Performance Metrics
@@ -49,6 +49,7 @@ Last activity: 2026-07-28 — Phase 04 execution started
 | Phase 03 P04 | 8min | 2 tasks | 2 files |
 | Phase 03 P05 | 12min | 2 tasks | 2 files |
 | Phase 04 P01 | 12min | 3 tasks | 4 files |
+| Phase 04 P02 | 3min | 2 tasks | 2 files |
 
 ## Decisions
 
@@ -98,3 +99,5 @@ Last activity: 2026-07-28 — Phase 04 execution started
 - [Phase ?]: LIFE-04 fixed: ReadyGate.run returns ReadyOutcome (ONLINE/SHUTDOWN/FATAL, only ONLINE truthy via __bool__ override); HealthResult gains additive fatal: bool = False; fatal short-circuit fires after on_fail, before severity-branch log, no re-probe wait, on_online never fires (D-44/D-45/D-46)
 - [Phase ?]: RED-first two-commit proof recorded for LIFE-04: test-only commit 175072b is the direct parent of fix commit d7939d8 (D-13); full suite green at 78 passed, import-hygiene green at 8 passed
 - [Phase ?]: Named both WeatherBot de-hack sites (weatherbot/scheduler/wiring.py _on_fail, weatherbot/ops/daemon.py gate-return check) in 04-01-SUMMARY.md for the human-gated v0.1.2 repin; no bump/tag/repin performed (ECOSYSTEM.md §3)
+- [Phase ?]: SURF-01 fixed: summon_panel re-exported ONLY from discord/__init__.py (joined onto existing gateway import line + __all__), scoped per D-47 — not surfaced at top-level yahir_reusable_bot
+- [Phase ?]: RED-first two-commit proof recorded for SURF-01: test-only commit 1e762bf is the direct parent of fix commit eefffc9 (D-13); full suite green at 79 passed, import-hygiene green at 8 passed
