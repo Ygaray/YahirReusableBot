@@ -5,15 +5,15 @@ milestone_name: — Hub hardening
 current_phase: 03
 current_phase_name: Reusable public-surface footguns
 status: executing
-stopped_at: Completed 03-02-PLAN.md
-last_updated: "2026-07-28T01:15:36.830Z"
+stopped_at: Completed 03-03-PLAN.md
+last_updated: "2026-07-28T01:21:19.655Z"
 last_activity: 2026-07-27
 last_activity_desc: Phase 02 complete, transitioned to Phase 03
 progress:
   total_phases: 4
   completed_phases: 2
   total_plans: 12
-  completed_plans: 9
+  completed_plans: 10
   percent: 50
 ---
 
@@ -22,14 +22,14 @@ progress:
 ## Current Position
 
 Phase: 03 — Reusable public-surface footguns
-Plan: 3 of 5
+Plan: 4 of 5
 Status: Ready to execute
 Last activity: 2026-07-27 — Phase 02 complete, transitioned to Phase 03
 
 ## Session
 
-**Last session:** 2026-07-28T01:15:36.821Z
-**Stopped at:** Completed 03-02-PLAN.md
+**Last session:** 2026-07-28T01:21:19.646Z
+**Stopped at:** Completed 03-03-PLAN.md
 **Resume file:** None
 
 ## Performance Metrics
@@ -45,6 +45,7 @@ Last activity: 2026-07-27 — Phase 02 complete, transitioned to Phase 03
 | Phase 02 P03 | 10min | 2 tasks | 2 files |
 | Phase 03 P01 | 10min | 1 tasks | 2 files |
 | Phase 03 P02 | 10min | 2 tasks | 2 files |
+| Phase 03 P03 | 6min | 2 tasks | 4 files |
 
 ## Decisions
 
@@ -77,3 +78,8 @@ Last activity: 2026-07-27 — Phase 02 complete, transitioned to Phase 03
 - [Phase ?]: LIFE-02 test double is the repo's FIRST monkeypatch use (delegating fake os, real close counted through, deliberate house-style extension, D-09-style flag)
 - [Phase ?]: LIFE-03 fixed: _argv_matches_marker basenames both argv[0] and proc_marker (D-39) — fixes non-Linux degrade AND real Linux path-shaped matching; -m branch untouched
 - [Phase ?]: RED-first two-commit proof recorded for LIFE-02 (a815e26 -> 0c14258) and LIFE-03 (bbfccca -> 820353f); GATE-01 green at 44 passed
+- [Phase ?]: MATCH-02 fixed: CommandRegistry.__init__ raises ValueError inside its existing derivation pass when spec.name is empty or not already casefolded (D-34); no per-match casefold fallback
+- [Phase ?]: RED-first two-commit proof recorded for MATCH-02: test-only commit d98d3fc is the direct parent of fix commit fd38b47 (D-13)
+- [Phase ?]: MATCH-02's new build-time ValueError is a consumer-visible silent->fail-loud behavior change, named for the milestone's human-gated close-out alongside SCHED-01's idempotent-remove change
+- [Phase ?]: MATCH-01 fixed: match.py gains _keyword_boundary(stripped, name) mapping the keyword boundary to the ORIGINAL string index (D-35); fixes arg mis-slice for length-changing casefolds (ss, fi, st); adversarial overshoot folds into the existing continue/non-match
+- [Phase ?]: RED-first two-commit proof recorded for MATCH-01: test-only commit 39ababf is the direct parent of fix commit 2fa1908 (D-13); GATE-01 green at 58 passed

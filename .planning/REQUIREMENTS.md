@@ -87,11 +87,11 @@ regression test** — the test must fail against current source before the fix l
 
 ### Command registry (`registry/`)
 
-- [ ] **MATCH-01** (H06, medium): A command argument is extracted correctly when the keyword's
+- [x] **MATCH-01** (H06, medium): A command argument is extracted correctly when the keyword's
   casefold changes length (`ß`→`ss`, `ﬁ`→`fi`) — the arg is sliced from a string consistent with
   the string the prefix test matched. **Lands with MATCH-02.** → Phase 3
 
-- [ ] **MATCH-02** (H13, low): `spec.name` is validated at registration so an empty name cannot
+- [x] **MATCH-02** (H13, low): `spec.name` is validated at registration so an empty name cannot
   claim blank input, and an uppercase name cannot be permanently unmatchable against casefolded
   input. **Lands with MATCH-01.** → Phase 3
 
