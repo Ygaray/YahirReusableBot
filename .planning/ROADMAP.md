@@ -146,7 +146,7 @@ never overlaps a sibling's full-suite gate; the two ROADMAP pairings each stay w
 **Goal:** Fix public-surface drift and give consumers a fatal outcome to de-hack against.
 **Requirements:** SURF-01 (H17), LIFE-04 (H18)
 **Depends on:** Phase 3
-**Plans:** 2/2 plans executed
+**Plans:** 2/2 plans complete
 
 Plans:
 
