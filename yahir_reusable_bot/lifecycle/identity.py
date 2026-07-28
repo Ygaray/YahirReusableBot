@@ -83,9 +83,16 @@ def write_pid_atomic(pid_file: Path | str) -> None:
         # Best-effort cleanup of the temp file, then re-raise so the daemon
         # startup sees the failure. Guarded on fd != -1 (D-42): once the
         # happy-path close above has run, this branch must never re-close the
-        # same fd integer.
+        # same fd integer. The close is ALSO wrapped in try/except OSError
+        # (WR-01) so that a genuine close failure on the still-open fd — e.g. a
+        # delayed ENOSPC/EIO surfacing on close, plausible on the same disk-full
+        # condition that made os.write fail — cannot mask the original error or
+        # skip the unlink/re-raise below (the writer's documented contract).
         if fd != -1:
-            os.close(fd)
+            try:
+                os.close(fd)
+            except OSError:
+                pass
         Path(tmp).unlink(missing_ok=True)
         raise
 
