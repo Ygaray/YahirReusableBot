@@ -89,4 +89,4 @@ This document evolves at phase transitions and milestone boundaries.
 
 ---
 
-_Last updated: 2026-07-27 — Phase 2 (Latent runtime robustness) complete: H03/H04/H05/H07/H08 closed, RED-first, full suite + GATE-01 green. Phases 1–2 done; next: Phase 3 (public-surface footguns). Close-out (bump/tag/repin) still human-gated._
+_Last updated: 2026-07-27 — Phase 3 (Reusable public-surface footguns) complete: 9 findings closed RED-first (H06 MATCH-01, H13 MATCH-02, H09 RELY-02, H10 RELY-03, H11 DISC-05, H12 DISC-06, H14 LIFE-02, H15 LIFE-03, H16 SCHED-01); full suite 71 passed + GATE-01 (import-hygiene/litmus/grimp) green; Nyquist-compliant. Two research corrections held (SCHED-01 `except KeyError` not apscheduler; DISC-05 falsy `not interaction.user` for the MISSING sentinel). One in-scope code-review regression fixed (WR-01 `write_pid_atomic` except-path close-safety); a duplicate-`spec.name` footgun (WR-02) logged for a scope decision. Phases 1–3 done; next: Phase 4 (cleanup + `ReadyGate` fatal outcome, H17/H18). Close-out (bump `0.1.1→0.1.2` / `v0.1.2` tag / WeatherBot repin) still human-gated._
