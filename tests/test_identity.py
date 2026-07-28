@@ -20,12 +20,33 @@ also adds one row beyond the locked four
 live false negative) and a discriminator row proving "first ``-m`` wins" is
 the correct rule and not merely a convenient one
 (``test_nested_selector_switch_does_not_match``).
+
+Phase 3 (LIFE-02, LIFE-03, D-42/D-39) extends this file with two more
+independent findings in the same module:
+
+- LIFE-02 (``test_life_02_write_pid_atomic_closes_temp_fd_exactly_once_on_replace_failure``)
+  introduces this repo's FIRST use of pytest's built-in ``monkeypatch``
+  fixture — a deliberate house-style extension (``monkeypatch`` is pytest
+  core, not a mocking library; this repo uses no ``pytest-mock``/
+  ``unittest.mock``), flagged the same way Phase 1 flagged ``conftest.py``
+  (D-09) and ``pytest.raises()`` as deliberate first uses. The double
+  delegates to the REAL ``os.close`` so a genuine pre-fix double-close
+  raises ``OSError`` in-process, proving the structural "closed at most
+  once" invariant without needing a non-deterministic real fd-reuse race.
+- LIFE-03 (``test_life_03_*``) extends the existing ``cmdline_bytes``-driven
+  truth-table style with rows for a path-shaped ``proc_marker``.
 """
 from __future__ import annotations
 
+import types
+
+import pytest
+
+from yahir_reusable_bot.lifecycle import identity
 from yahir_reusable_bot.lifecycle.identity import is_running_process
 
 MARKER = b"examplebot"  # neutral placeholder — never a consumer's real marker
+PATH_MARKER = b"/usr/bin/thebot"  # neutral placeholder — path-shaped marker for LIFE-03
 
 
 def test_decoy_positional_marker_arg_does_not_match(cmdline_bytes):
@@ -156,3 +177,63 @@ def test_bundled_short_option_group_not_matched(cmdline_bytes):
     ``python -Om<module>``."""
     cmdline = cmdline_bytes(b"python", b"-Omexamplebot")
     assert is_running_process(1, proc_marker=MARKER, cmdline_reader=lambda _: cmdline) is False
+
+
+def test_life_02_write_pid_atomic_closes_temp_fd_exactly_once_on_replace_failure(tmp_path, monkeypatch):
+    """A failing ``os.replace`` must not double-close the temp fd (D-42, LIFE-02).
+
+    Real ``os.close`` is delegated through (not a no-op stub), so a genuine
+    pre-fix double close raises ``OSError`` (EBADF) on the SECOND call
+    in-process — which the pre-fix ``except OSError: pass`` on the except-path
+    close silently swallows. This proves the STRUCTURAL invariant the fix
+    guarantees ("closed at most once"), rather than trying to force an actual
+    fd-integer-reuse race (non-deterministic, unprovable in a single-threaded
+    test).
+
+    RED pre-fix: the except-path unconditionally re-closes ``fd`` after the
+    happy-path already closed it once, so ``len(close_calls) == 2`` and the
+    real second ``os.close`` raises ``OSError(EBADF)`` — swallowed by the
+    pre-fix ``except OSError: pass``, but this test's ``pytest.raises`` is
+    keyed on the SIMULATED ``os.replace`` failure message, so the swallowed
+    EBADF does not save it: pre-fix, ``len(close_calls) == 1`` fails (it is 2).
+    """
+    import os as real_os
+
+    close_calls: list[int] = []
+    real_close = real_os.close
+
+    def _counting_close(fd: int) -> None:
+        close_calls.append(fd)
+        real_close(fd)
+
+    fake_os = types.SimpleNamespace(**vars(real_os))
+    fake_os.close = _counting_close
+    fake_os.replace = lambda *a, **kw: (_ for _ in ()).throw(  # noqa: ARG005
+        OSError("simulated replace failure")
+    )
+    monkeypatch.setattr(identity, "os", fake_os)
+
+    pid_file = tmp_path / "bot.pid"
+    with pytest.raises(OSError, match="simulated replace failure"):
+        identity.write_pid_atomic(pid_file)
+
+    assert len(close_calls) == 1, (
+        "the temp fd must be closed exactly once; a second close on the same "
+        "fd integer risks silently closing an unrelated descriptor if the OS "
+        "reused it between the two close() calls"
+    )
+
+
+def test_life_02_write_pid_atomic_happy_path_still_writes_one_pid_file(tmp_path):
+    """Regression guard: the LIFE-02 fd-guard change must not touch the
+    success path — a normal write still writes the current pid and leaves
+    exactly one live PID file. GREEN both pre- and post-fix."""
+    import os
+
+    pid_file = tmp_path / "ok.pid"
+    identity.write_pid_atomic(pid_file)
+
+    assert pid_file.read_text(encoding="utf-8").strip() == str(os.getpid())
+
+    live_files = list(tmp_path.iterdir())
+    assert live_files == [pid_file]
