@@ -146,7 +146,11 @@ never overlaps a sibling's full-suite gate; the two ROADMAP pairings each stay w
 **Goal:** Fix public-surface drift and give consumers a fatal outcome to de-hack against.
 **Requirements:** SURF-01 (H17), LIFE-04 (H18)
 **Depends on:** Phase 3
-**Plans:** TBD
+**Plans:** 2 plans
+
+Plans:
+- [ ] 04-01-PLAN.md — LIFE-04: ReadyGate fatal outcome (ReadyOutcome enum + HealthResult.fatal + run rewrite + de-hack docs)
+- [ ] 04-02-PLAN.md — SURF-01: summon_panel re-export from the discord subpackage
 
 Success criteria:
 
