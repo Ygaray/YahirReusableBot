@@ -195,6 +195,16 @@ and `04-CONTEXT.md` §specifics):
    overloaded stop/fatal `Event` pair; after the repin it consumes `ReadyOutcome.FATAL` directly
    from `ReadyGate.run`'s return value to decide its process exit code.
 
+**Repin-checklist caveat (WR-02, code review):** `ReadyGate.run`'s return type changed from `bool`
+to `ReadyOutcome`. Truthy/falsy call sites (`if gate.run(stop):` / `if not gate.run(stop):`) stay
+byte-compatible via the `__bool__` override, but a call site that compares the result against a
+bare bool (`== False` / `is False` / `== True`) will silently break — a plain `Enum` member is
+never equal or identical to `True`/`False`. **Before the repin, grep every WeatherBot consumer
+call site of `gate.run(...)` for `== False` / `is False` / `== True` (not just `if gate.run(...):`)**
+and migrate any hit to an identity check (`is ReadyOutcome.ONLINE` / `is ReadyOutcome.FATAL`). The
+current two sites above both use non-equality access, so no migration is expected — but the grep is
+the guard so it isn't tribal knowledge in the hub docstring alone.
+
 No autonomous bump/tag/repin task exists anywhere in this phase's plans.
 
 ## User Setup Required

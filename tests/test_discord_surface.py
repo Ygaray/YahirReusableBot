@@ -22,3 +22,15 @@ def test_summon_panel_reexport_succeeds() -> None:
     import yahir_reusable_bot.discord as discord_pkg
 
     assert "summon_panel" in discord_pkg.__all__
+
+
+def test_summon_panel_not_widened_to_top_level_package() -> None:
+    """D-47's second half: the re-export is scoped to the ``discord`` subpackage
+    ONLY — the top-level ``yahir_reusable_bot`` package must NOT gain
+    ``summon_panel``. Widening is the easy, well-intentioned regression (a
+    missing re-export is caught by any consumer's first import; an over-broad one
+    is not), so guard it explicitly (WR-01)."""
+    import yahir_reusable_bot as pkg
+
+    assert not hasattr(pkg, "summon_panel")
+    assert "summon_panel" not in getattr(pkg, "__all__", [])
