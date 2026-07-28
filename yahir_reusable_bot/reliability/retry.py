@@ -157,10 +157,27 @@ def parse_retry_after(resp: httpx.Response) -> float | None:
 def _within_burst_wait(
     attempt_number: int, *, burst_spread_s: float, burst_size: int, mid_pause_s: float
 ) -> float:
-    """Base two-burst wait (Pattern 1), independent of any Retry-After honoring."""
+    """Base two-burst wait (Pattern 1), independent of any Retry-After honoring.
+
+    D-36 (RELY-02): when ``burst_size <= 1`` (a single-attempt burst), the
+    ``burst_spread_s / (burst_size - 1)`` step below would divide by zero.
+    tenacity calls this wait callable BEFORE checking its own ``stop`` bound
+    (RESEARCH.md Pitfall 3), so the crash reproduces on the burst's second
+    attempt even though ``stop_after_attempt(2)`` is about to end the schedule
+    anyway. Guard, degrade, do not raise: return ``burst_spread_s`` (the
+    spread base, no jitter) instead. The guard only has to not crash — with
+    ``burst_size <= 1`` the degenerate value is never actually consumed
+    because the schedule stops before another wait is computed.
+    """
     if attempt_number == burst_size:
         # Just finished burst 1 -> the long interruptible pause before burst 2.
         return mid_pause_s
+    if burst_size <= 1:
+        # D-36 (RELY-02): a single-attempt burst has no spacing to divide
+        # across. Degrade to the spread base (no jitter) rather than raising
+        # ZeroDivisionError — this branch runs on the wait-before-stop call
+        # tenacity makes even on the terminal attempt (Pitfall 3).
+        return burst_spread_s
     # Spread a burst's attempts across ~burst_spread_s with bounded jitter.
     step = burst_spread_s / (burst_size - 1)
     jitter = random.uniform(0, step * 0.5)
