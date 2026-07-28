@@ -4,17 +4,17 @@ milestone: v0.1.2
 milestone_name: — Hub hardening
 current_phase: 03
 current_phase_name: Reusable public-surface footguns
-status: executing
-stopped_at: Completed 03-04-PLAN.md
-last_updated: "2026-07-28T01:26:32.847Z"
+status: verifying
+stopped_at: Completed 03-05-PLAN.md (Phase 3 complete, 5/5)
+last_updated: "2026-07-28T01:31:53.058Z"
 last_activity: 2026-07-27
 last_activity_desc: Phase 02 complete, transitioned to Phase 03
 progress:
   total_phases: 4
-  completed_phases: 2
+  completed_phases: 3
   total_plans: 12
-  completed_plans: 11
-  percent: 50
+  completed_plans: 12
+  percent: 75
 ---
 
 # Project State
@@ -23,13 +23,13 @@ progress:
 
 Phase: 03 — Reusable public-surface footguns
 Plan: 5 of 5
-Status: Ready to execute
+Status: Phase complete — ready for verification
 Last activity: 2026-07-27 — Phase 02 complete, transitioned to Phase 03
 
 ## Session
 
-**Last session:** 2026-07-28T01:26:32.839Z
-**Stopped at:** Completed 03-04-PLAN.md
+**Last session:** 2026-07-28T01:31:53.048Z
+**Stopped at:** Completed 03-05-PLAN.md (Phase 3 complete, 5/5)
 **Resume file:** None
 
 ## Performance Metrics
@@ -47,6 +47,7 @@ Last activity: 2026-07-27 — Phase 02 complete, transitioned to Phase 03
 | Phase 03 P02 | 10min | 2 tasks | 2 files |
 | Phase 03 P03 | 6min | 2 tasks | 4 files |
 | Phase 03 P04 | 8min | 2 tasks | 2 files |
+| Phase 03 P05 | 12min | 2 tasks | 2 files |
 
 ## Decisions
 
@@ -88,3 +89,8 @@ Last activity: 2026-07-27 — Phase 02 complete, transitioned to Phase 03
 - [Phase ?]: RED-first two-commit proof recorded for RELY-02: test-only commit 4579dc5 is the direct parent of fix commit 5567a38 (D-13)
 - [Phase ?]: RELY-03 fixed: two_burst_wait docstring gains a loud D-37 standalone-desync precondition (stop_after_attempt(2 * burst_size)); no coupling machinery added, function body unchanged
 - [Phase ?]: RED-first two-commit proof recorded for RELY-03: test-only commit 5c8b9cb is the direct parent of fix commit 3079e9c (D-13); GATE-01 green at 63 passed
+- [Phase ?]: DISC-05 fixed: interaction_check guards if not interaction.user: (falsy, not is None) at the TOP, catching both None and discord.py 2.7.1's real absence sentinel discord.utils.MISSING (RESEARCH Pitfall 1); emits existing reject-log shape, returns False, no ephemeral ack
+- [Phase ?]: RED-first two-commit proof recorded for DISC-05: test-only commit 18ea58d is the direct parent of fix commit ed18d8b (D-13); the RED test calls interaction_check directly and never asserts anything about on_error
+- [Phase ?]: DISC-06 fixed: PanelKit.__init__ raises ValueError (not assert) when not marker or not marker.strip(), placed right after super().__init__(timeout=None), before collaborator assignments/_build_children/_assert_layout — closes the cid.startswith("") owns-everything hole at the source
+- [Phase ?]: RED-first two-commit proof recorded for DISC-06: test-only commit ee73757 is the direct parent of fix commit 2a3e0c7 (D-13); GATE-01 green at 70 passed
+- [Phase ?]: Phase 3 complete (5/5 plans): three consumer-visible behavior changes consolidated for the human-gated milestone close-out — D-38 SchedulerEngine.remove idempotent, D-34 CommandRegistry ValueError, D-41 PanelKit empty-marker ValueError; none live in any consumer until repin/deploy (ECOSYSTEM.md §3)

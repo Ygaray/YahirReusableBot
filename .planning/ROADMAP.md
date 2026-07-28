@@ -101,7 +101,7 @@ sibling's full-suite gate; the Phase-1 "Plan 03 waits on 02" lesson):
 guaranteed to bite the next one. This is the hub's entire reason to exist.
 **Requirements:** MATCH-01 (H06), MATCH-02 (H13), RELY-02 (H09), RELY-03 (H10), DISC-05 (H11), DISC-06 (H12), LIFE-02 (H14), LIFE-03 (H15), SCHED-01 (H16)
 **Depends on:** Phase 2
-**Plans:** 4/5 plans executed
+**Plans:** 5/5 plans executed
 
 **Pairing constraints — these must land together, not as independent tasks:**
 
@@ -138,7 +138,7 @@ never overlaps a sibling's full-suite gate; the two ROADMAP pairings each stay w
 - [x] 03-04-PLAN.md — RELY-02 + RELY-03 (pairing): `tests/test_retry.py` RED, then the `burst_size <= 1`
   degrade guard (D-36) and the `two_burst_wait` standalone-desync precondition docstring + mid-pause pin (D-37)
 
-- [ ] 03-05-PLAN.md — DISC-05 + DISC-06: new `tests/test_panelkit.py` RED, then the `interaction_check`
+- [x] 03-05-PLAN.md — DISC-05 + DISC-06: new `tests/test_panelkit.py` RED, then the `interaction_check`
   None/MISSING falsy guard (D-40) and the empty-marker construction reject (D-41)
 
 ### Phase 4: Cleanup + ReadyGate fatal outcome

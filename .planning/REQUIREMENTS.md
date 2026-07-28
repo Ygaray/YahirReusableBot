@@ -75,10 +75,10 @@ regression test** — the test must fail against current source before the fix l
   **Scope note: the observed defect's fix site is consumer-side** (`wiring.py` re-reads post-await);
   the hub side is contract + API only. → Phase 2
 
-- [ ] **DISC-05** (H11, low): `interaction_check` returns False cleanly when `interaction.user` is
+- [x] **DISC-05** (H11, low): `interaction_check` returns False cleanly when `interaction.user` is
   absent, instead of raising `AttributeError` outside `View.on_error`'s reach. → Phase 3
 
-- [ ] **DISC-06** (H12, low): An empty `marker` is rejected at construction, so `is_owned_panel`
+- [x] **DISC-06** (H12, low): An empty `marker` is rejected at construction, so `is_owned_panel`
   can never claim every bot-authored pinned message and have `summon_panel` delete unrelated pins. → Phase 3
 
 - [ ] **SURF-01** (H17, cleanup): `from yahir_reusable_bot.discord import summon_panel` works, or
