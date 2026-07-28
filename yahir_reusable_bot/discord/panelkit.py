@@ -299,13 +299,27 @@ class PanelKit(discord.ui.View):
     async def interaction_check(self, interaction: discord.Interaction) -> bool:
         """The single operator gate — runs before EVERY child callback.
 
-        Rejects any bot (defense-in-depth) and any non-operator. The non-operator reject is a
-        SINGLE byte-exact identity-free ephemeral ``send_message`` (which suppresses the
-        foreign user's "interaction failed" toast and physically cannot edit the shared
-        panel) plus an explicit reject log — that log is the SOLE audit record (a clean
-        ``return False`` does NOT route through ``on_error``). The reject copy never
-        interpolates the user / custom_id / command / operator.
+        Rejects any absent user, any bot (defense-in-depth), and any non-operator. The
+        non-operator reject is a SINGLE byte-exact identity-free ephemeral
+        ``send_message`` (which suppresses the foreign user's "interaction failed" toast
+        and physically cannot edit the shared panel) plus an explicit reject log — that
+        log is the SOLE audit record (a clean ``return False`` does NOT route through
+        ``on_error``). The reject copy never interpolates the user / custom_id / command /
+        operator.
+
+        D-40 (DISC-05): ``interaction.user``'s absence sentinel in discord.py 2.7.1 is
+        ``discord.utils.MISSING`` (a distinct object, falsy but NOT ``None``) — the guard
+        below is a FALSY check (``if not interaction.user:``), not an identity (``is
+        None``) check, so it catches both ``None`` and ``MISSING`` alike. No ephemeral ack
+        is sent (there is no user to ack); the reject log matches every other reject
+        path's audit-log contract.
         """
+        if not interaction.user:
+            _log.info(
+                "panel reject (no user)",
+                custom_id=(interaction.data or {}).get("custom_id"),
+            )
+            return False
         if interaction.user.bot:
             # INTENTIONAL asymmetry: a bot actor gets NO ephemeral ack (it needs no
             # human-readable feedback); Discord's "interaction failed" toast fires on the
