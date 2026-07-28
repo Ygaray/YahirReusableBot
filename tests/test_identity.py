@@ -237,3 +237,40 @@ def test_life_02_write_pid_atomic_happy_path_still_writes_one_pid_file(tmp_path)
 
     live_files = list(tmp_path.iterdir())
     assert live_files == [pid_file]
+
+
+def test_life_03_non_linux_degrade_holds_for_path_shaped_marker(cmdline_bytes):
+    """The non-Linux ``/proc``-absent degrade returns the raw ``proc_marker``
+    as the cmdline sentinel (``_read_proc_cmdline`` `:218`) — reproduced here
+    directly via ``cmdline_reader`` returning that same raw, path-shaped
+    marker unmodified, exactly as the degrade path would. D-39/LIFE-03: this
+    must still resolve to ``True`` ("host is Linux" degrade contract) even
+    when ``proc_marker`` is path-shaped. RED pre-fix: ``prog`` (basenamed to
+    ``"thebot"``) is compared against the UN-basenamed
+    ``"/usr/bin/thebot"`` -> False."""
+    cmdline = cmdline_bytes(PATH_MARKER)
+    assert (
+        is_running_process(1, proc_marker=PATH_MARKER, cmdline_reader=lambda _: cmdline) is True
+    )
+
+
+def test_life_03_real_linux_basename_matches_path_shaped_marker(cmdline_bytes):
+    """A real Linux argv0 basenamed against a path-shaped ``proc_marker``:
+    ``cmdline_bytes(b"/opt/thebot", b"run")`` with ``proc_marker=b"/opt/thebot"``
+    must match (basename-to-basename). RED pre-fix — same un-basenamed RHS bug
+    as the degrade row above, just via the real argv0-basename branch instead
+    of the degrade sentinel shape."""
+    cmdline = cmdline_bytes(b"/opt/thebot", b"run")
+    assert (
+        is_running_process(1, proc_marker=b"/opt/thebot", cmdline_reader=lambda _: cmdline)
+        is True
+    )
+
+
+def test_life_03_plain_basename_marker_still_matches_no_op_regression(cmdline_bytes):
+    """The D-39 basename-both-sides fix must be a no-op for a normal, already-
+    basename-shaped marker (``Path("examplebot").name == "examplebot"``).
+    GREEN both pre- and post-fix — a regression guard that the fix doesn't
+    break the ordinary, already-covered case."""
+    cmdline = cmdline_bytes(MARKER, b"run")
+    assert is_running_process(1, proc_marker=MARKER, cmdline_reader=lambda _: cmdline) is True
