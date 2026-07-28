@@ -170,6 +170,19 @@ class PanelKit(discord.ui.View):
         command_rows: dict[str, int],
     ) -> None:
         super().__init__(timeout=None)  # REQUIRED for persistence (Phase-18 discipline)
+        # D-41 (DISC-06): fail LOUD at construction on an empty/whitespace-only marker —
+        # cid.startswith("") is always True, so an unvalidated empty marker would make
+        # is_owned_panel claim every bot-authored pin (summon_panel could then delete
+        # unrelated pins). Placed BEFORE the collaborator assignments / _build_children /
+        # _assert_layout so a bad marker never reaches child construction. A ValueError
+        # (not assert) because this is genuine consumer-input validation that must
+        # survive -O, matching MATCH-02's D-34 reasoning.
+        if not marker or not marker.strip():
+            raise ValueError(
+                f"PanelKit marker must be a non-empty, non-whitespace string "
+                f"(an empty marker makes cid.startswith(marker) match every "
+                f"bot-authored pin); got {marker!r}"
+            )
         # Required injected collaborators (no module default — the positive injection
         # assertion checks render/contributors/marker have no default).
         self._registry = registry
