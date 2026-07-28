@@ -128,7 +128,8 @@ def is_running_process(
     stub the ``/proc`` read; production passes ``None`` and reads ``/proc``.
     """
     if cmdline_reader is None:
-        cmdline_reader = lambda p: _read_proc_cmdline(p, proc_marker=proc_marker)
+        def cmdline_reader(p):
+            return _read_proc_cmdline(p, proc_marker=proc_marker)
     try:
         cmdline = cmdline_reader(pid)
     except FileNotFoundError:

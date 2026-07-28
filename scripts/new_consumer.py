@@ -194,7 +194,7 @@ def register_in_ecosystem(bot: str, repo_disp: str, dev_path: str, pin: str) -> 
     eco = HUB_ROOT / "ECOSYSTEM.md"
     lines = eco.read_text().splitlines()
     # locate the consumers table header (it is indented under a bullet — match after lstrip)
-    hdr = next((i for i, l in enumerate(lines) if l.lstrip().startswith("| Consumer |")), None)
+    hdr = next((i for i, l in enumerate(lines) if l.lstrip().startswith("| Consumer |")), None)  # noqa: E741 — throwaway loop var in a one-off scaffolder script
     if hdr is None:
         print("  ! could not find consumers table in ECOSYSTEM.md — add the row by hand")
         return

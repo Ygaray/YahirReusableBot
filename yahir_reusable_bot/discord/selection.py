@@ -39,7 +39,7 @@ from typing import Generic, TypeVar
 
 # UNBOUND (D-02) — no module base class. Any bot passes its own selected-item type, so the
 # module imposes zero inheritance. The bound is deliberately omitted (the holder precedent).
-I = TypeVar("I")
+I = TypeVar("I")  # noqa: E741 — single-cap TypeVar, cloned verbatim from the holder precedent (D-02)
 
 
 class SelectedContext(Generic[I]):

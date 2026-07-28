@@ -43,7 +43,6 @@ What the engine deliberately does NOT do (stays the host's / injected):
 from __future__ import annotations
 
 import threading
-from pathlib import Path
 from typing import Any, Callable, Generic, TypeVar
 
 import structlog
