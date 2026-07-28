@@ -18,8 +18,8 @@ root (the Phase-25 ``build_runtime``).
 
 from __future__ import annotations
 
-from yahir_reusable_bot.discord.gateway import BotThread, build_client
+from yahir_reusable_bot.discord.gateway import BotThread, build_client, summon_panel
 from yahir_reusable_bot.discord.panelkit import PanelKit
 from yahir_reusable_bot.discord.selection import SelectedContext
 
-__all__ = ["BotThread", "build_client", "PanelKit", "SelectedContext"]
+__all__ = ["BotThread", "build_client", "PanelKit", "SelectedContext", "summon_panel"]
