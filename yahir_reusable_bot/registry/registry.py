@@ -39,6 +39,22 @@ class CommandRegistry:
     def __init__(self, specs: Iterable[CommandSpec]) -> None:
         # Freeze the registered specs into a tuple, then derive the read views once.
         self.commands: tuple[CommandSpec, ...] = tuple(specs)
+        # D-34 (MATCH-02): validate every spec.name INSIDE this same pass, before any
+        # view is derived from it — non-empty AND already-casefolded. Deny-by-default,
+        # matching is_transient's posture (retry.py:88-92): match_command casefolds the
+        # INPUT text and tests it against spec.name verbatim, so an uppercase name would
+        # never match anything, forever, with no signal at build time; an empty name
+        # would silently claim blank input. Rejected alternative: casefold spec.name at
+        # match time as a tolerant fallback — that silently hides a consumer wiring bug
+        # and pays a per-match cost on the hot path. Reject loudly here instead, once,
+        # at construction — raise (not assert), since this is genuine untrusted-input
+        # validation that must survive `-O`.
+        for spec in self.commands:
+            if not spec.name or spec.name != spec.name.casefold():
+                raise ValueError(
+                    f"CommandSpec.name must be non-empty and already casefolded "
+                    f"(match_command folds input, never spec.name); got {spec.name!r}"
+                )
         # name -> spec (every name is unique; one entry per spec).
         self.by_name: dict[str, CommandSpec] = {c.name: c for c in self.commands}
         # Longest-keyword-first ordering so a longer command (e.g. "next-cloudy") is
