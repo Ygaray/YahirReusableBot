@@ -5,15 +5,15 @@ milestone_name: — Hub hardening
 current_phase: 03
 current_phase_name: Reusable public-surface footguns
 status: executing
-stopped_at: Completed 03-01-PLAN.md
-last_updated: "2026-07-28T01:10:06.833Z"
+stopped_at: Completed 03-02-PLAN.md
+last_updated: "2026-07-28T01:15:36.830Z"
 last_activity: 2026-07-27
 last_activity_desc: Phase 02 complete, transitioned to Phase 03
 progress:
   total_phases: 4
   completed_phases: 2
   total_plans: 12
-  completed_plans: 8
+  completed_plans: 9
   percent: 50
 ---
 
@@ -22,14 +22,14 @@ progress:
 ## Current Position
 
 Phase: 03 — Reusable public-surface footguns
-Plan: 2 of 5
+Plan: 3 of 5
 Status: Ready to execute
 Last activity: 2026-07-27 — Phase 02 complete, transitioned to Phase 03
 
 ## Session
 
-**Last session:** 2026-07-28T01:10:06.824Z
-**Stopped at:** Completed 03-01-PLAN.md
+**Last session:** 2026-07-28T01:15:36.821Z
+**Stopped at:** Completed 03-02-PLAN.md
 **Resume file:** None
 
 ## Performance Metrics
@@ -44,6 +44,7 @@ Last activity: 2026-07-27 — Phase 02 complete, transitioned to Phase 03
 | Phase 02 P02 | 25min | 3 tasks | 2 files |
 | Phase 02 P03 | 10min | 2 tasks | 2 files |
 | Phase 03 P01 | 10min | 1 tasks | 2 files |
+| Phase 03 P02 | 10min | 2 tasks | 2 files |
 
 ## Decisions
 
@@ -72,3 +73,7 @@ Last activity: 2026-07-27 — Phase 02 complete, transitioned to Phase 03
 - [Phase ?]: SCHED-01 fixed: SchedulerEngine.remove idempotent via except KeyError (dependency-free — apscheduler is NOT a hub dependency; JobLookupError IS a KeyError subclass); adds module-level structlog logger (D-38)
 - [Phase ?]: RED-first two-commit proof recorded for SCHED-01: test-only commit 0d1f828 is the direct parent of fix commit 5e6fbf8 (D-13)
 - [Phase ?]: SchedulerEngine.remove becoming idempotent is a consumer-visible silent->tolerant behavior change, named for the milestone's human-gated close-out (version bump/tag/WeatherBot repin) alongside the two release steps already deferred
+- [Phase ?]: LIFE-02 fixed: write_pid_atomic sets fd = -1 after the happy-path os.close, except-path close guarded with if fd != -1 (D-42) — reused fd integer can never be double-closed
+- [Phase ?]: LIFE-02 test double is the repo's FIRST monkeypatch use (delegating fake os, real close counted through, deliberate house-style extension, D-09-style flag)
+- [Phase ?]: LIFE-03 fixed: _argv_matches_marker basenames both argv[0] and proc_marker (D-39) — fixes non-Linux degrade AND real Linux path-shaped matching; -m branch untouched
+- [Phase ?]: RED-first two-commit proof recorded for LIFE-02 (a815e26 -> 0c14258) and LIFE-03 (bbfccca -> 820353f); GATE-01 green at 44 passed

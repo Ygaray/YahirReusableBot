@@ -42,10 +42,10 @@ regression test** — the test must fail against current source before the fix l
   argv position, so a recycled PID running the marker as a *positional* arg is never signalled, and
   a genuine daemon started with an interpreter flag before `-m` is still detected as running. → Phase 1
 
-- [ ] **LIFE-02** (H14, low): `write_pid_atomic` never closes an fd twice, so a failing
+- [x] **LIFE-02** (H14, low): `write_pid_atomic` never closes an fd twice, so a failing
   `os.replace` cannot silently close an unrelated descriptor that reused the integer. → Phase 3
 
-- [ ] **LIFE-03** (H15, low): The documented non-Linux "degrade to True" behavior holds even when
+- [x] **LIFE-03** (H15, low): The documented non-Linux "degrade to True" behavior holds even when
   the consumer supplies a path-shaped `proc_marker`. → Phase 3
 
 - [ ] **LIFE-04** (H18, enhancement): `ReadyGate.run` returns a distinct fatal outcome a consumer

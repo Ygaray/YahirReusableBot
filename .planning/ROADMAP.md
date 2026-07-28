@@ -101,7 +101,7 @@ sibling's full-suite gate; the Phase-1 "Plan 03 waits on 02" lesson):
 guaranteed to bite the next one. This is the hub's entire reason to exist.
 **Requirements:** MATCH-01 (H06), MATCH-02 (H13), RELY-02 (H09), RELY-03 (H10), DISC-05 (H11), DISC-06 (H12), LIFE-02 (H14), LIFE-03 (H15), SCHED-01 (H16)
 **Depends on:** Phase 2
-**Plans:** 1/5 plans executed
+**Plans:** 2/5 plans executed
 
 **Pairing constraints — these must land together, not as independent tasks:**
 
@@ -129,7 +129,7 @@ never overlaps a sibling's full-suite gate; the two ROADMAP pairings each stay w
 - [x] 03-01-PLAN.md — SCHED-01: `tests/test_engine.py` RED, then idempotent `SchedulerEngine.remove`
   via dependency-free `except KeyError:` + module logger (D-38)
 
-- [ ] 03-02-PLAN.md — LIFE-02 + LIFE-03: `tests/test_identity.py` RED, then the `write_pid_atomic`
+- [x] 03-02-PLAN.md — LIFE-02 + LIFE-03: `tests/test_identity.py` RED, then the `write_pid_atomic`
   fd-double-close guard (D-42) and the `_argv_matches_marker` basename-both-sides fix (D-39)
 
 - [ ] 03-03-PLAN.md — MATCH-01 + MATCH-02 (pairing): new `tests/test_registry.py` / `tests/test_match.py`
