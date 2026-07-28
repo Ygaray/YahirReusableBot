@@ -274,3 +274,48 @@ def test_life_03_plain_basename_marker_still_matches_no_op_regression(cmdline_by
     break the ordinary, already-covered case."""
     cmdline = cmdline_bytes(MARKER, b"run")
     assert is_running_process(1, proc_marker=MARKER, cmdline_reader=lambda _: cmdline) is True
+
+
+def test_life_02_except_path_close_failure_does_not_mask_original_error(tmp_path, monkeypatch):
+    """WR-01 (code-review follow-up to LIFE-02): a failing except-path ``os.close``
+    must never mask the original error or skip temp-file cleanup.
+
+    The D-42 fix swapped the except-path ``try: os.close(fd) except OSError: pass``
+    for a bare ``if fd != -1: os.close(fd)``. That closes the double-close hole, but
+    the ``fd != -1`` branch STILL runs whenever ``os.write`` failed before the
+    happy-path close (fd is still the live descriptor). If that close itself raises
+    — plausibly on the very ``ENOSPC``/``EIO`` disk condition that made the write
+    fail — the writer's documented contract ("the temp file is unlinked and the
+    error is RE-RAISED") is violated: the close error masks the original, and the
+    ``Path(tmp).unlink`` + ``raise`` never run, leaking the temp PID file.
+
+    RED pre-fix: with ``os.write`` raising ``"simulated write failure"`` and the
+    except-path ``os.close`` raising ``"simulated close failure"``, the unguarded
+    close propagates the close error (``pytest.raises(match="write failure")``
+    fails) and leaves a ``.wbpid-*`` temp file behind. Post-fix (close re-wrapped in
+    ``try/except OSError`` while keeping the ``fd != -1`` double-close guard): the
+    original write error re-raises and the temp file is unlinked."""
+    import os as real_os
+
+    real_close = real_os.close
+
+    def _real_then_raise_close(fd: int) -> None:
+        real_close(fd)  # actually close so the fd never leaks
+        raise OSError("simulated close failure")
+
+    fake_os = types.SimpleNamespace(**vars(real_os))
+    fake_os.close = _real_then_raise_close
+    fake_os.write = lambda *a, **kw: (_ for _ in ()).throw(  # noqa: ARG005
+        OSError("simulated write failure")
+    )
+    monkeypatch.setattr(identity, "os", fake_os)
+
+    pid_file = tmp_path / "bot.pid"
+    with pytest.raises(OSError, match="simulated write failure"):
+        identity.write_pid_atomic(pid_file)
+
+    leftovers = list(tmp_path.glob(".wbpid-*"))
+    assert leftovers == [], (
+        "the temp PID file must be unlinked even when the except-path close "
+        f"itself raises; leaked: {leftovers}"
+    )
