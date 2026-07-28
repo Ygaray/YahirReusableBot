@@ -3,17 +3,17 @@ gsd_state_version: 1.0
 milestone: v0.1.2
 milestone_name: — Hub hardening
 current_phase: 04
-current_phase_name: Cleanup + ReadyGate fatal outcome
+current_phase_name: cleanup-readygate-fatal
 status: executing
-stopped_at: Phase 4 context gathered
-last_updated: "2026-07-28T14:33:18.596Z"
+stopped_at: Completed 04-01-PLAN.md
+last_updated: "2026-07-28T14:41:57.119Z"
 last_activity: 2026-07-28
-last_activity_desc: Phase 03 complete, transitioned to Phase 04
+last_activity_desc: Phase 04 execution started
 progress:
   total_phases: 4
   completed_phases: 3
-  total_plans: 12
-  completed_plans: 12
+  total_plans: 14
+  completed_plans: 13
   percent: 75
 ---
 
@@ -21,16 +21,16 @@ progress:
 
 ## Current Position
 
-Phase: 04 — Cleanup + ReadyGate fatal outcome
-Plan: Not started
+Phase: 04 (cleanup-readygate-fatal) — EXECUTING
+Plan: 2 of 2
 Status: Ready to execute
-Last activity: 2026-07-28 — Phase 03 complete, transitioned to Phase 04
+Last activity: 2026-07-28 — Phase 04 execution started
 
 ## Session
 
-**Last session:** 2026-07-28T14:05:22.580Z
-**Stopped at:** Phase 4 context gathered
-**Resume file:** .planning/phases/04-cleanup-readygate-fatal/04-CONTEXT.md
+**Last session:** 2026-07-28T14:41:57.110Z
+**Stopped at:** Completed 04-01-PLAN.md
+**Resume file:** None
 
 ## Performance Metrics
 
@@ -48,6 +48,7 @@ Last activity: 2026-07-28 — Phase 03 complete, transitioned to Phase 04
 | Phase 03 P03 | 6min | 2 tasks | 4 files |
 | Phase 03 P04 | 8min | 2 tasks | 2 files |
 | Phase 03 P05 | 12min | 2 tasks | 2 files |
+| Phase 04 P01 | 12min | 3 tasks | 4 files |
 
 ## Decisions
 
@@ -94,3 +95,6 @@ Last activity: 2026-07-28 — Phase 03 complete, transitioned to Phase 04
 - [Phase ?]: DISC-06 fixed: PanelKit.__init__ raises ValueError (not assert) when not marker or not marker.strip(), placed right after super().__init__(timeout=None), before collaborator assignments/_build_children/_assert_layout — closes the cid.startswith("") owns-everything hole at the source
 - [Phase ?]: RED-first two-commit proof recorded for DISC-06: test-only commit ee73757 is the direct parent of fix commit 2a3e0c7 (D-13); GATE-01 green at 70 passed
 - [Phase ?]: Phase 3 complete (5/5 plans): three consumer-visible behavior changes consolidated for the human-gated milestone close-out — D-38 SchedulerEngine.remove idempotent, D-34 CommandRegistry ValueError, D-41 PanelKit empty-marker ValueError; none live in any consumer until repin/deploy (ECOSYSTEM.md §3)
+- [Phase ?]: LIFE-04 fixed: ReadyGate.run returns ReadyOutcome (ONLINE/SHUTDOWN/FATAL, only ONLINE truthy via __bool__ override); HealthResult gains additive fatal: bool = False; fatal short-circuit fires after on_fail, before severity-branch log, no re-probe wait, on_online never fires (D-44/D-45/D-46)
+- [Phase ?]: RED-first two-commit proof recorded for LIFE-04: test-only commit 175072b is the direct parent of fix commit d7939d8 (D-13); full suite green at 78 passed, import-hygiene green at 8 passed
+- [Phase ?]: Named both WeatherBot de-hack sites (weatherbot/scheduler/wiring.py _on_fail, weatherbot/ops/daemon.py gate-return check) in 04-01-SUMMARY.md for the human-gated v0.1.2 repin; no bump/tag/repin performed (ECOSYSTEM.md §3)

@@ -48,7 +48,7 @@ regression test** — the test must fail against current source before the fix l
 - [x] **LIFE-03** (H15, low): The documented non-Linux "degrade to True" behavior holds even when
   the consumer supplies a path-shaped `proc_marker`. → Phase 3
 
-- [ ] **LIFE-04** (H18, enhancement): `ReadyGate.run` returns a distinct fatal outcome a consumer
+- [x] **LIFE-04** (H18, enhancement): `ReadyGate.run` returns a distinct fatal outcome a consumer
   can branch on directly, instead of forcing consumers to overload the `stop` Event to escape a
   fatal probe result. → Phase 4
 
