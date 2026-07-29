@@ -13,33 +13,52 @@ specifics at one composition root, instead of re-deriving the plumbing each time
 **Import root:** `yahir_reusable_bot` · **PyPI name:** `yahir-reusable-bot` · **No console
 script** (library only). Build backend: hatchling. `requires-python >=3.12`.
 
-## Current Milestone: v0.1.2 Hub hardening
+## Current Milestone: v0.2.0 Redaction promotion + hardening debt
 
-**Goal:** Close all 17 audit-surfaced hub defects and add a first-class `ReadyGate` fatal
-outcome, so the live consumer stops silently dropping deliveries and the next consumer inherits
-a footgun-free public surface.
+**Goal:** Promote the secret-redaction backstop into the hub as a generic mechanism, and clear
+every open item the v0.1.2 audit surfaced — so the hub owns log scrubbing and carries forward no
+known footgun or stale doc.
 
 **Target features:**
-- Reachable reliability — the two defects live and unmitigated in a consumer today (H01, H02)
-- Latent runtime robustness — real bugs behind narrow runtime conditions (H03, H04, H05, H07, H08)
-- Reusable public-surface hardening — matcher, retry callable, panelkit, identity, scheduler
-  footguns that are unreachable in the current consumer but will bite the next (H06, H09–H16)
-- Public-surface cleanup + `ReadyGate` fatal outcome (H17, H18)
+- **PC-01 — secret-redaction backstop promotion.** A `redact_secrets(text, patterns) -> text`
+  core, a pattern-registration API, and a structlog insertion seam (sink wrapper and/or
+  processor) scrubbing event fields AND formatted tracebacks. Hub owns the mechanism; the
+  consumer registers its own patterns. This is the hub's first **promotion** (not a defect fix).
+- **WR-02 — duplicate `spec.name` rejected at registration.** The one real public-surface
+  footgun left open by v0.1.2: a duplicate silently overwrites `by_name` while `match_command`
+  can resolve a different `CommandSpec`.
+- **Residual review nits** — Phase 4 IN-01/IN-02, Phase 2 IN-01/IN-02/IN-03, Phase 1 WR-01
+  (attached `-mmodule` false negative).
+- **Doc-drift corrections** — DOC-DRIFT-01 (a de-hack site documented at a path that does not
+  exist, across 11 artifacts) and DOC-DRIFT-02 (a third de-hack site never named).
 
-**Source of record:** `.planning/backlog/HUB-HARDENING-REPORT-v0.1.2.md` (fix direction per
-finding), `.planning/backlog/HUB-FINDINGS-HANDOFF.md` (failure scenario + evidence per finding).
-All 18 re-verified against source at HEAD `5da57b8` — no semantic drift; H07 is at `gateway.py:246`
-(not `:244`) and H04 at `gateway.py:278` (not `:273`), both inside the same function as reported.
+**Source of record:** `.planning/v0.1.2-MILESTONE-AUDIT.md` (the 9-item debt table + both drift
+findings) and `.planning/backlog/PROMOTION-CANDIDATES.md` (PC-01 shape, litmus, and the
+when-actioned sequence).
 
-**Test posture:** every fix ships with a RED-first regression test. Several findings note the
-existing tests cover only decoy cases (e.g. `test_reload.py:561` for H01) — the missing
-adversarial case gets added, not just a new happy path.
+**Test posture:** unchanged from v0.1.2 — every fix ships a RED-first regression test that must
+fail against current source before the fix lands. GATE-01 (full suite + import-hygiene / litmus /
+grimp) stays green across every phase.
+
+**PC-01 litmus constraint:** the mechanism must be fully generic. Only the *pattern* (e.g.
+`appid=<key>`) is consumer-specific, and it is injected, never hardcoded. No domain noun may
+enter the hub surface.
+
+**Two items need an explicit human decision at discuss time, not a default:** Phase 1 WR-01
+(behavioral fix vs. keep-documented — already deferred once) and Phase 4 IN-02 (`on_online`
+annotation narrowing is a *public* hub-surface change).
+
+**Consumer-breaking note:** WR-02 makes a previously-silent duplicate registration raise
+`ValueError`. The repin needs a WeatherBot sweep for duplicate `spec.name` values.
 
 **Close-out is human-gated** (`ECOSYSTEM.md` §3): fixes plus green gates are autonomous; the
-`pyproject.toml` bump `0.1.1 → 0.1.2`, the `v0.1.2` tag cut, and the WeatherBot repin are not.
+`pyproject.toml` bump `0.1.2 → 0.2.0`, the `v0.2.0` tag cut, the WeatherBot repin, and the
+deletion of WeatherBot's app-local `_redact.py` in favor of the hub import are not.
 
-**Out of milestone:** PC-01 (log secret-redaction backstop promotion) stays in the backlog as
-phase 999.5 — a promotion track, not a defect fix.
+**Out of milestone:** EXT-01 (durable `JobStore`) and EXT-02 (second `Channel` adapter) stay
+parked. Both are deferred *by design* under build-in-consumer-then-promote (rule of three) — no
+consumer needs either today, and building them now would mean designing against imagined
+requirements.
 
 ## Origin
 
@@ -89,4 +108,6 @@ This document evolves at phase transitions and milestone boundaries.
 
 ---
 
-_Last updated: 2026-07-27 — Phase 3 (Reusable public-surface footguns) complete: 9 findings closed RED-first (H06 MATCH-01, H13 MATCH-02, H09 RELY-02, H10 RELY-03, H11 DISC-05, H12 DISC-06, H14 LIFE-02, H15 LIFE-03, H16 SCHED-01); full suite 71 passed + GATE-01 (import-hygiene/litmus/grimp) green; Nyquist-compliant. Two research corrections held (SCHED-01 `except KeyError` not apscheduler; DISC-05 falsy `not interaction.user` for the MISSING sentinel). One in-scope code-review regression fixed (WR-01 `write_pid_atomic` except-path close-safety); a duplicate-`spec.name` footgun (WR-02) logged for a scope decision. Phases 1–3 done; next: Phase 4 (cleanup + `ReadyGate` fatal outcome, H17/H18). Close-out (bump `0.1.1→0.1.2` / `v0.1.2` tag / WeatherBot repin) still human-gated._
+_Last updated: 2026-07-29 — Milestone v0.2.0 (Redaction promotion + hardening debt) started. v0.1.2 "Hub hardening" shipped: all 4 phases complete, 19/19 requirements satisfied, tagged `v0.1.2` (`60698b1`), repinned into WeatherBot and deployed live on `yahir-mint`. Retrospective audit (`.planning/v0.1.2-MILESTONE-AUDIT.md`) returned `tech_debt` — no blockers, 9 open items, which (minus the parked EXT points) are this milestone's scope alongside the PC-01 promotion. GATE-01 green at handoff: 80 passed, 8 import-hygiene, ruff clean._
+
+_Prior: 2026-07-27 — Phase 3 (Reusable public-surface footguns) complete: 9 findings closed RED-first (H06 MATCH-01, H13 MATCH-02, H09 RELY-02, H10 RELY-03, H11 DISC-05, H12 DISC-06, H14 LIFE-02, H15 LIFE-03, H16 SCHED-01); full suite 71 passed + GATE-01 (import-hygiene/litmus/grimp) green; Nyquist-compliant. Two research corrections held (SCHED-01 `except KeyError` not apscheduler; DISC-05 falsy `not interaction.user` for the MISSING sentinel). One in-scope code-review regression fixed (WR-01 `write_pid_atomic` except-path close-safety); a duplicate-`spec.name` footgun (WR-02) logged for a scope decision. Phases 1–3 done; next: Phase 4 (cleanup + `ReadyGate` fatal outcome, H17/H18). Close-out (bump `0.1.1→0.1.2` / `v0.1.2` tag / WeatherBot repin) still human-gated._

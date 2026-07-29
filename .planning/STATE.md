@@ -1,30 +1,26 @@
 ---
 gsd_state_version: 1.0
-milestone: v0.1.2
-milestone_name: — Hub hardening
-current_phase: 04
-status: completed
-stopped_at: Completed 04-02-PLAN.md
-last_updated: "2026-07-28T15:02:28.030Z"
-last_activity: 2026-07-28
-last_activity_desc: Phase 04 complete
+milestone: v0.2.0
+milestone_name: Redaction promotion + hardening debt
+status: planning
+last_updated: "2026-07-29T16:59:04.815Z"
+last_activity: 2026-07-29
 progress:
-  total_phases: 4
-  completed_phases: 4
-  total_plans: 14
-  completed_plans: 14
-  percent: 100
-current_phase_name: cleanup-readygate-fatal
+  total_phases: 0
+  completed_phases: 0
+  total_plans: 0
+  completed_plans: 0
+  percent: 0
 ---
 
 # Project State
 
 ## Current Position
 
-Phase: 04
-Plan: Not started
-Status: Milestone complete
-Last activity: 2026-07-28 — Phase 04 complete
+Phase: Not started (defining requirements)
+Plan: —
+Status: Defining requirements
+Last activity: 2026-07-29 — Milestone v0.2.0 started
 
 ## Session
 
