@@ -10,7 +10,7 @@ import commit tagged `v0.1.0`.
 |-------|-------|--------|
 | 0 | Initial import (module tree, pyproject, re-scoped import-hygiene suite, EXTENSION-GUIDE, GSD init) | done |
 
-## Milestone v0.1.2 — Hub hardening (ACTIVE)
+## Milestone v0.1.2 — Hub hardening (SHIPPED 2026-07-28, tag `v0.1.2`)
 
 Close all 17 audit-surfaced hub defects (H01–H17) plus the H18 `ReadyGate` fatal-outcome
 enhancement. Sequencing is correctness-first, reachable-first, then reusability hardening,
@@ -23,6 +23,12 @@ numbers moved within their own function (H07 `gateway.py:246`, H04 `gateway.py:2
 layering checks stay green. **Every fix ships a RED-first regression test** — it must fail against
 current source first. Existing tests cover only decoy cases for several findings, so the
 adversarial case gets added rather than a new happy path.
+
+> **Outcome:** 4/4 phases complete, 19/19 requirements satisfied, tagged `v0.1.2` (`60698b1`),
+> repinned into WeatherBot and deployed live on `yahir-mint`. Retrospective audit:
+> `.planning/v0.1.2-MILESTONE-AUDIT.md` — status `tech_debt`, no blockers, 9 open items. Phase
+> artifacts archived to `.planning/milestones/v0.1.2-phases/`. The 9 open items (minus the parked
+> EXT points) are Milestone v0.2.0's Track B below.
 
 ### Phase 1: Reachable reliability
 
@@ -168,6 +174,210 @@ Success criteria:
 **Human-gated close-out — surfaced, never performed autonomously** (`ECOSYSTEM.md` §3):
 bump `pyproject.toml` `0.1.1 → 0.1.2` · cut tag `v0.1.2` · repin WeatherBot `[tool.uv.sources]`
 `v0.1.1 → v0.1.2` + `uv sync --frozen` · re-run WeatherBot's suite against the repinned hub.
+**Executed 2026-07-28.**
+
+## Milestone v0.2.0 — Redaction promotion + hardening debt (ACTIVE)
+
+Two tracks in one milestone, **phase numbering continues from v0.1.2** (which ended at Phase 4).
+
+- **Track A — PC-01, the hub's first *promotion* (Phases 5–6).** Generalize WeatherBot's
+  production-proven app-local secret redactor into a generic `yahir_reusable_bot/redact/`
+  subpackage. Source of record: `.planning/backlog/PROMOTION-CANDIDATES.md`; research:
+  `.planning/research/SUMMARY.md` (+ STACK / FEATURES / ARCHITECTURE / PITFALLS). Verified
+  verdict: **zero new dependencies** — `structlog` (already pinned, resolved 26.1.0) plus stdlib
+  `re` cover the whole mechanism.
+
+- **Track B — v0.1.2 debt paydown (Phase 7).** Clear every open item the retrospective audit
+  surfaced (`.planning/v0.1.2-MILESTONE-AUDIT.md`, 9 items). Independent of Track A and mostly of
+  each other; sequenced last so the headline promotion lands first and the debt absorbs any slip.
+
+**Standing gate for every phase (GATE-02):** the full pytest suite plus the standing
+import-hygiene gates (grimp graph + isolated-import + AST signature litmus,
+`tests/test_import_hygiene.py`) stay green, and **every requirement ships a RED-first regression
+test** that fails against pre-fix source before the fix lands. No change may regress the one-way
+dependency or the generic-surface litmus. GATE-02 is milestone-standing — it is stated here once
+and asserted in every phase, not carried as a phase of its own.
+
+**Standing PC-01 litmus:** the mechanism is fully generic. Only the *pattern* is
+consumer-specific and it is always injected, never hardcoded — `redact_secrets(text, patterns)`,
+never `redact_appid` or an `appid` parameter. No domain noun may enter the hub surface.
+
+**Standing plan-sequencing rule (hard-won in Phases 1–3):** plans within a phase are ordered so a
+deliberately-RED test never overlaps a sibling plan's full-suite gate. Each plan commits its RED
+test, then its GREEN fix, and re-verifies GATE-02 green before the next plan's RED commit.
+
+**Naming collision to call out at plan time:** the hub already has a *command* `registry/`
+subpackage (SEAM-06). The new `redact/registry.py` is a different, much smaller thing (a pattern
+collection) at a distinct dotted path — do not merge the two by analogy-confusion.
+
+### Phases
+
+- [ ] **Phase 5: Redaction core + pattern registration** - The generic scrubbing primitive and a safe-by-construction pattern API
+- [ ] **Phase 6: Insertion seams + provable backstop** - The load-bearing sink, the additive processor, and proof the backstop is live
+- [ ] **Phase 7: v0.1.2 debt paydown** - Every open audit item closed; no known footgun, no stale doc
+
+| Phase | Plans Complete | Status | Completed |
+|-------|----------------|--------|-----------|
+| 5. Redaction core + pattern registration | 0/TBD | Not started | - |
+| 6. Insertion seams + provable backstop | 0/TBD | Not started | - |
+| 7. v0.1.2 debt paydown | 0/TBD | Not started | - |
+
+### v0.2.0 Phase Details
+
+### Phase 5: Redaction core + pattern registration
+
+**Goal**: The hub owns a generic secret-scrubbing primitive and a safe-by-construction way to
+register the patterns it uses — no domain noun, no process-wide mutable state, no ReDoS surface.
+**Depends on**: Nothing (first phase of the milestone; v0.1.2 shipped)
+**Requirements**: REDACT-01, REDACT-02, REDACT-03, REDACT-06
+**Success Criteria** (what must be TRUE):
+
+  1. `redact_secrets(text, patterns)` masks the secret value while the surrounding diagnostics
+     survive intact (endpoint, HTTP status, neighbouring params), is idempotent under
+     re-application, and returns non-`str` input without raising mid-exception-handling —
+     WeatherBot's boundary-case matrix, ported into the hub suite, passes.
+  2. Patterns are compiled once at registration and frozen into an immutable collection; the hub's
+     own suite produces identical results run in isolation and run in full-suite order — no
+     cross-test pollution, no import-order dependence, no module-level mutable singleton.
+  3. A pattern with nested/overlapping quantifiers that blows a wall-clock budget against
+     adversarial input is **rejected at registration** with a raised error, never silently accepted
+     to hang at log time.
+  4. A registered literal secret value is blocked wherever it appears — including inside a
+     `repr()` of an object that embeds it — not only in a `name=value` shape.
+  5. Every `def`/`class`/param/annotation name under `redact/` passes the AST signature litmus, and
+     `redact/` imports no sibling `yahir_reusable_bot` subpackage (pure leaf: stdlib only).
+
+**Plans**: TBD
+
+**Scope notes for discuss/plan:**
+
+- Build order inside the phase is `core.py` → `registry.py` (research ARCHITECTURE Q6 steps 1–2).
+  REDACT-03's ReDoS vetting is part of the registration API, not bolted on afterwards — it is the
+  registration call that raises.
+- The API shape must make late compilation structurally impossible (accept compiled pattern
+  objects / a registered handle, never raw strings at the call site) and must expose disablement
+  as an explicit constructor parameter — **never** an env-var read inside the hub
+  (PITFALLS 6, 7, 9). These are expensive to change once a consumer depends on them; settle them
+  here, not retrofitted later.
+- The parity-test plan for the human-gated close-out (which exact WeatherBot assertions must
+  re-pass, and the explicit scope boundary around `client.py`) is written and agreed at this
+  phase's discuss/plan time, not improvised at repin time (PITFALLS 10).
+
+### Phase 6: Insertion seams + provable backstop
+
+**Goal**: A consumer can wire the hub's redaction into its own `structlog.configure()` and have
+every rendered log line — event fields and formatted tracebacks alike — provably scrubbed.
+**Depends on**: Phase 5
+**Requirements**: REDACT-04, REDACT-05, REDACT-07, REDACT-08, DOCS-04
+**Success Criteria** (what must be TRUE):
+
+  1. A `logger.exception(...)` rendered through `dev.ConsoleRenderer` — which formats tracebacks
+     straight to the stream, bypassing `event_dict` — comes out of the wrapped sink with the secret
+     masked, asserted against the **full captured output**, never `str(exc)` alone; and a
+     `JSONRenderer`-produced line carrying an escaped secret still round-trips through
+     `json.loads` after redaction.
+  2. The optional structlog processor scrubs `event_dict` string values pre-render, and its
+     chain-order precondition (must sit after the exception formatters) is stated loudly in its own
+     docstring — shipped as additive defense-in-depth, never as the sole backstop.
+  3. `assert_redaction_active` fails loudly when the backstop is not actually installed — e.g.
+     after a second `structlog.configure()` call drops it — and passes when it is.
+  4. Redaction-count telemetry reports how many substitutions fired, so a consumer can observe the
+     backstop working rather than assume it.
+  5. `EXTENSION-GUIDE.md` carries SEAM-08 with its row flipped to **implemented**, naming the
+     architectural inversion explicitly: the hub supplies a toolkit the consumer wires into its own
+     `structlog.configure()`, so no `Redactor` Protocol exists to go looking for.
+
+**Plans**: TBD
+
+**Sequencing constraint — the sink is proven first:**
+
+- **REDACT-04 (`RedactingWriter`) is load-bearing and lands before the processor.** It alone
+  satisfies the hard requirement (event fields *and* formatted tracebacks, renderer-agnostic,
+  chain-order-independent). Proving it first means the milestone goal is met even if scope pressure
+  later trims REDACT-05.
+- REDACT-05 (processor) is secondary and additive — it could be deferred within the milestone
+  without breaking the goal. It lands last among the seams.
+- REDACT-07 / REDACT-08 depend on a seam existing; they land after REDACT-04, and their own tests
+  become the assertion mechanism for the seam integration tests rather than hand-rolled capture
+  setup per test.
+- DOCS-04 closes the phase: per `ECOSYSTEM.md` §6 the promotion is not *done* until the guide row
+  flips. The hub must **not** call `structlog.configure()` itself at any point.
+
+### Phase 7: v0.1.2 debt paydown
+
+**Goal**: The hub carries forward no known footgun and no stale planning doc from v0.1.2 — every
+open item from the retrospective audit is closed or explicitly decided.
+**Depends on**: Nothing (independent of Phases 5–6; sequenced last so the promotion lands first)
+**Requirements**: MATCH-03, LIFE-05, SURF-02, DISC-07, DISC-08, HYG-02, HYG-03, DOCS-02, DOCS-03
+**Success Criteria** (what must be TRUE):
+
+  1. Registering two `CommandSpec`s with the same `name` raises `ValueError` at registration, so
+     `match_command` can never resolve a different `CommandSpec` than `by_name` holds.
+  2. The retry-pin path's log distinguishes `discord.Forbidden` from a generic `HTTPException`, so
+     a permissions failure is never mislabeled as a pin-cap failure; and a failed eviction-delete
+     leaves that stray in the call's cleanup instead of dropping it.
+  3. `_best_effort_hook` logs via a structured `label=` kwarg instead of an f-string, at both its
+     sites; and `uv run pytest` completes with **zero** warnings — the unawaited-coroutine
+     `RuntimeWarning` from the `test_gateway.py` fake client is gone.
+  4. The identity guard's attached `-mmodule` behavior and `on_online`'s annotation each land as an
+     explicitly decided outcome, with the reasoning recorded — see the human-decision note below.
+  5. Every active planning artifact naming a consumer de-hack site names a path that **exists** in
+     WeatherBot, and the enumeration includes the *producing* site (`weatherbot/ops/selfcheck.py`),
+     not only the sites that consume the outcome — verified against the filesystem, not against the
+     string that produced the drift.
+
+**Plans**: TBD
+
+**Pairing constraint — these must land together, not as independent tasks:**
+
+- **DISC-07 + DISC-08** — both touch `summon_panel` in `discord/gateway.py`. Splitting them across
+  plans is a guaranteed collision on the same function.
+
+**Shared-site note:**
+
+- **HYG-02** touches `_best_effort_hook` at `lifecycle/ready_gate.py:175` *and* the verbatim clone
+  at `config/reload.py:326`. One fix, two sites — do not leave the clone drifted.
+
+**⚠ Two items require an explicit human decision at discuss time — do not default:**
+
+- **LIFE-05** (v0.1.2 Phase 1 WR-01): the attached `-mmodule` form false negative. Documentation
+  was applied in v0.1.2 and the behavioral fix was **deliberately deferred to a human call**. The
+  discuss step must surface "fix the behavior" vs. "document as a permanent limitation, with
+  reasoning" as a decision, not pick one.
+- **SURF-02** (v0.1.2 Phase 4 IN-02): narrowing `on_online` from `Callable[..., None] | None` to
+  `Callable[[HealthResult], None]`. This is a **public hub-surface change** — deferred deliberately
+  in v0.1.2 as needing a decision, not a drive-by. The discuss step must surface it.
+
+**Consumer-breaking note:** MATCH-03 turns a previously-silent duplicate registration into a
+`ValueError`. The repin needs a WeatherBot sweep for duplicate `spec.name` values.
+
+**Doc-fix verification note (DOCS-02/03):** the v0.1.2 audit's own lesson applies here — *an
+automated check derived from the same source as the claim it verifies cannot catch an error in
+that source*. The DOCS-02 check must assert the named path resolves on disk in WeatherBot, not
+that some string matches another string. `ECOSYSTEM.md` is already clean (it correctly references
+`weatherbot/scheduler/wiring.py`); the drift is in
+`.planning/backlog/HUB-HARDENING-REPORT-v0.1.2.md:213` and the artifacts that inherited it.
+Historical phase records under `.planning/milestones/v0.1.2-phases/` are an archive — decide at
+discuss time whether they are corrected or annotated.
+
+### Human-gated close-out — surfaced, never performed autonomously (`ECOSYSTEM.md` §3)
+
+1. Bump `pyproject.toml` `0.1.2 → 0.2.0` · cut tag `v0.2.0`.
+2. Repin WeatherBot `[tool.uv.sources]` `v0.1.2 → v0.2.0` + `uv lock --upgrade` + `uv sync`.
+3. **Parity gate — prove before deleting anything.** Run WeatherBot's existing, *unmodified*
+   `tests/test_redact_hygiene.py` (6 tests) against the hub-backed replacement, with only the
+   import swapped. All 6 assertions must pass unchanged. **Only then** delete the app-local
+   `weatherbot/_redact.py` in favour of the hub import. Deleting it in the same commit that wires
+   the replacement is the failure mode this gate exists to prevent.
+4. **Sweep WeatherBot for duplicate `spec.name` values** (MATCH-03 is consumer-breaking).
+5. Verify the PC-01 parity suite and the MATCH-03 duplicate sweep as **two separate, individually
+   green checks** before treating the combined repin as ready — one bundled repin otherwise
+   conflates the two failure causes.
+6. Confirm the live daemon picked the change up: check the startup `module provenance` log line
+   against `deploy/PROMOTION-LEDGER.md` post-deploy (`ECOSYSTEM.md` §7).
+7. **Permanently out of PC-01 scope:** `weatherbot/weather/client.py`'s domain-specific redacted
+   re-raise (with `from None`) stays app-local forever — it is domain logic, not a generic
+   backstop, and it must be confirmed *untouched* by the swap.
 
 ## Deferred Extension Points (future milestones)
 
@@ -177,6 +387,10 @@ Built under build-in-consumer-then-promote / rule of three when a consumer needs
 |----------------|-------|--------|
 | EXT-A | Durable `JobStore` impl + serialization contract (promote from a consumer that needs persistence) | EXT-01 |
 | EXT-B | Second `Channel` adapter (Telegram / SMS / Slack) | EXT-02 |
+
+**Out of Milestone v0.2.0 — deliberately parked.** EXT-01 and EXT-02 stay deferred *by design*
+under rule of three. No consumer needs either today; building them now would mean designing
+against imagined requirements.
 
 ## Backlog
 
@@ -195,13 +409,18 @@ have since been promoted. Anything landed from this parking lot is **human-gated
 version bump, and the consumer repin are yours.
 
 > **999.1–999.4 promoted to Milestone v0.1.2 on 2026-07-22** — they are now Phases 1–4 above.
-> Their phase directories were renumbered `999.N-*` → `0N-*`. Only 999.5 remains parked.
+> Their phase directories were renumbered `999.N-*` → `0N-*`.
+>
+> **999.5 promoted to Milestone v0.2.0 on 2026-07-29** — PC-01 is now Phases 5–6 above
+> (REDACT-01..08 + DOCS-04). The parked section below is **superseded** and kept only as the
+> origin record; the empty `.planning/phases/999.5-secret-redaction-promotion/` directory is
+> retired in favour of the real phase directories. Nothing remains parked in this section.
 
-### Phase 999.5: PC-01 — log secret-redaction backstop promotion (BACKLOG)
+### Phase 999.5: PC-01 — log secret-redaction backstop promotion (SUPERSEDED — promoted to Phases 5–6)
 
 **Goal:** Promote WeatherBot's app-local secret redactor into a generic hub mechanism.
-**Requirements:** TBD
-**Plans:** 0 plans
+**Requirements:** REDACT-01..08, DOCS-04 (assigned at v0.2.0 roadmapping)
+**Plans:** superseded by Phases 5–6
 
 **Separate track — a promotion, not a fix.** WeatherBot ships this app-local in its Phase 30
 (`HARD-SEC-01`, origin finding F12) to keep that phase cheap and avoid a mid-phase hub tag cut.
@@ -216,14 +435,10 @@ and/or a processor, plus a config-driven pattern list.
 domain-specific. Hub owns mechanism + pattern-registration API; the consumer registers its patterns.
 Landing it replaces WeatherBot's app-local copy with a hub import.
 
-Plans:
-
-- [ ] TBD (promote with /gsd-review-backlog when ready)
-
 ## Notes
 
 - The first consumer is **WeatherBot**, depending on this module via a uv git dependency
-  tag-pinned for deploy (`tag = "v0.1.0"`, reproducible `uv.lock`).
+  tag-pinned for deploy (currently `tag = "v0.1.2"`, reproducible `uv.lock`).
 
 - A real GitHub remote for this repo is a deploy prerequisite for pinning from a host
   (the local `file://` git URL is sufficient for development / Gate-1 verification only).

@@ -2,11 +2,11 @@
 gsd_state_version: 1.0
 milestone: v0.2.0
 milestone_name: Redaction promotion + hardening debt
-status: planning
-last_updated: "2026-07-29T16:59:04.815Z"
+status: roadmapped
+last_updated: "2026-07-29T17:30:00.000Z"
 last_activity: 2026-07-29
 progress:
-  total_phases: 0
+  total_phases: 3
   completed_phases: 0
   total_plans: 0
   completed_plans: 0
@@ -17,18 +17,32 @@ progress:
 
 ## Current Position
 
-Phase: Not started (defining requirements)
+Phase: 5 — Redaction core + pattern registration (not started)
 Plan: —
-Status: Defining requirements
-Last activity: 2026-07-29 — Milestone v0.2.0 started
+Status: Roadmapped — ready for `/gsd-discuss-phase 5`
+Progress: [__________] 0% (0/3 phases)
+Last activity: 2026-07-29 — ROADMAP.md written for v0.2.0 (Phases 5–7, 19/19 requirements mapped)
+
+## Milestone Shape
+
+| Phase | Track | Goal | Requirements |
+|-------|-------|------|--------------|
+| 5 | A (PC-01) | Generic scrubbing primitive + safe-by-construction pattern API | REDACT-01, 02, 03, 06 |
+| 6 | A (PC-01) | Load-bearing sink seam, additive processor, provable backstop, SEAM-08 | REDACT-04, 05, 07, 08, DOCS-04 |
+| 7 | B (debt) | Every v0.1.2 audit item closed or explicitly decided | MATCH-03, LIFE-05, SURF-02, DISC-07, DISC-08, HYG-02, HYG-03, DOCS-02, DOCS-03 |
+
+**GATE-02** is milestone-standing (spans all phases), not a phase: full suite + import-hygiene /
+litmus / grimp green, and every requirement ships a RED-first regression test.
 
 ## Session
 
-**Last session:** 2026-07-28T14:45:25.088Z
-**Stopped at:** Completed 04-02-PLAN.md
+**Last session:** 2026-07-29T17:00:00.000Z
+**Stopped at:** ROADMAP.md created for v0.2.0
 **Resume file:** None
 
 ## Performance Metrics
+
+Carried from v0.1.2 for calibration (14 plans across 4 phases, ~3–25min per plan).
 
 | Phase | Plan | Duration | Notes |
 |-------|------|----------|-------|
@@ -49,51 +63,51 @@ Last activity: 2026-07-29 — Milestone v0.2.0 started
 
 ## Decisions
 
-- [Phase ?]: Recreated stale .venv (path mismatch after repo move) before running any Phase 1 verification — Rule 3 blocking-issue fix, no packages changed
-- [Phase ?]: Cut phase-01-reachable-reliability from main with zero divergence (D-14); pre-fix baseline for RELY-01/LIFE-01 confirmed by execution
-- [Phase ?]: tests/conftest.py founded with exactly two D-10-bounded fixtures (fake_stop_event, cmdline_bytes) — repo's first conftest.py
-- [Phase ?]: RELY-01 fixed: is_transient broadened to (TimeoutException, NetworkError, RemoteProtocolError) per D-01/D-02/D-03, deny-by-default preserved
-- [Phase ?]: RED-first two-commit proof recorded for RELY-01: test-only commit e7c959d is the direct parent of fix commit f6e4fb2 (D-13)
-- [Phase ?]: D-17 hub-scoped restatement encoded literally in the exhaustion test: exhausted RemoteProtocolError must escape Retrying.__call__ as itself, not tenacity.RetryError
-- [Phase ?]: LIFE-01 fixed: _argv_matches_marker replaced overlapping-slice membership with a first-`-m`-wins scan (D-04/D-06), bounds-checked, never raises
-- [Phase ?]: RED-first two-commit proof recorded for LIFE-01: test-only commit 0f0a9ad is the direct parent of fix commit 5273c13 (D-13)
-- [Phase ?]: Signed off 01-VALIDATION.md: RED-first ancestry mechanically proven for both fixes, all four under-sampling risks refuted by named assertions, nyquist_compliant: true
-- [Phase ?]: Merged phase-01-reachable-reliability into main with --no-ff (81df616) after explicit developer authorization; RED-first four-commit structure preserved, full suite + GATE-01 re-proven green on main
-- [Phase ?]: GATE-01 left unchecked in REQUIREMENTS.md — milestone-standing, spans all 4 phases, only marked complete once green across the whole v0.1.2 milestone
-- [Phase ?]: No version bump, tag, repin, uv sync, or deploy performed — all human-gated per ECOSYSTEM.md §3, deferred to after Phase 4
-- [Phase ?]: CFG-01 fixed: PHASE-2 reconcile-failure path now fires on_rejected (via _best_effort_hook, reused verbatim) before re-raising, matching PHASE-1's precedent (D-31/D-32)
-- [Phase ?]: RED-first two-commit proof recorded for CFG-01: test-only commit 4853c78 is the direct parent of fix commit 3bcd174 (D-13)
-- [Phase ?]: DISC-01 fixed: BotThread gains death_reason() (login_failure/crashed) alongside unchanged is_alive() (D-21/D-22/D-23); no hub-side reconnect wrapper
-- [Phase ?]: RED-first two-commit proof recorded for DISC-01: test-only commit 510ef05 is the direct parent of fix commit 7173027 (D-13)
-- [Phase ?]: DISC-02 fixed: summon_panel per-item delete catch (D-25) + pin-cap headroom-reserve (D-26) closes 2+-live-panels and fresh-but-unpinned bugs; foreign-pin-saturation documented as residual (D-27); create-before-delete preserved (D-24)
-- [Phase ?]: RED-first two-commit proof recorded for DISC-02: test-only commit ca5114e is the direct parent of fix commit f06f20e (D-13)
-- [Phase ?]: DISC-03 fixed: BotThread.stop() moves run_coroutine_threadsafe inside its existing try (D-28) — never raises on the loop-closed TOCTOU, thread join always reached
-- [Phase ?]: RED-first two-commit proof recorded for DISC-03: test-only commit 5b8427d is the direct parent of fix commit 8f715b2 (D-13)
-- [Phase ?]: DISC-04 fixed: SelectedContext gains snapshot() (D-29) + extended await-safety docstring (D-30), no lock added, .value unfrozen; contract + API only, wiring.py untouched
-- [Phase ?]: RED-first two-commit proof recorded for DISC-04: test-only commit cbc08ae is the direct parent of fix commit d8502e5 (D-13)
-- [Phase ?]: SCHED-01 fixed: SchedulerEngine.remove idempotent via except KeyError (dependency-free — apscheduler is NOT a hub dependency; JobLookupError IS a KeyError subclass); adds module-level structlog logger (D-38)
-- [Phase ?]: RED-first two-commit proof recorded for SCHED-01: test-only commit 0d1f828 is the direct parent of fix commit 5e6fbf8 (D-13)
-- [Phase ?]: SchedulerEngine.remove becoming idempotent is a consumer-visible silent->tolerant behavior change, named for the milestone's human-gated close-out (version bump/tag/WeatherBot repin) alongside the two release steps already deferred
-- [Phase ?]: LIFE-02 fixed: write_pid_atomic sets fd = -1 after the happy-path os.close, except-path close guarded with if fd != -1 (D-42) — reused fd integer can never be double-closed
-- [Phase ?]: LIFE-02 test double is the repo's FIRST monkeypatch use (delegating fake os, real close counted through, deliberate house-style extension, D-09-style flag)
-- [Phase ?]: LIFE-03 fixed: _argv_matches_marker basenames both argv[0] and proc_marker (D-39) — fixes non-Linux degrade AND real Linux path-shaped matching; -m branch untouched
-- [Phase ?]: RED-first two-commit proof recorded for LIFE-02 (a815e26 -> 0c14258) and LIFE-03 (bbfccca -> 820353f); GATE-01 green at 44 passed
-- [Phase ?]: MATCH-02 fixed: CommandRegistry.__init__ raises ValueError inside its existing derivation pass when spec.name is empty or not already casefolded (D-34); no per-match casefold fallback
-- [Phase ?]: RED-first two-commit proof recorded for MATCH-02: test-only commit d98d3fc is the direct parent of fix commit fd38b47 (D-13)
-- [Phase ?]: MATCH-02's new build-time ValueError is a consumer-visible silent->fail-loud behavior change, named for the milestone's human-gated close-out alongside SCHED-01's idempotent-remove change
-- [Phase ?]: MATCH-01 fixed: match.py gains _keyword_boundary(stripped, name) mapping the keyword boundary to the ORIGINAL string index (D-35); fixes arg mis-slice for length-changing casefolds (ss, fi, st); adversarial overshoot folds into the existing continue/non-match
-- [Phase ?]: RED-first two-commit proof recorded for MATCH-01: test-only commit 39ababf is the direct parent of fix commit 2fa1908 (D-13); GATE-01 green at 58 passed
-- [Phase ?]: RELY-02 fixed: _within_burst_wait guards burst_size <= 1 (D-36), degrades to burst_spread_s instead of raising ZeroDivisionError; burst_size > 1 math unchanged
-- [Phase ?]: RED-first two-commit proof recorded for RELY-02: test-only commit 4579dc5 is the direct parent of fix commit 5567a38 (D-13)
-- [Phase ?]: RELY-03 fixed: two_burst_wait docstring gains a loud D-37 standalone-desync precondition (stop_after_attempt(2 * burst_size)); no coupling machinery added, function body unchanged
-- [Phase ?]: RED-first two-commit proof recorded for RELY-03: test-only commit 5c8b9cb is the direct parent of fix commit 3079e9c (D-13); GATE-01 green at 63 passed
-- [Phase ?]: DISC-05 fixed: interaction_check guards if not interaction.user: (falsy, not is None) at the TOP, catching both None and discord.py 2.7.1's real absence sentinel discord.utils.MISSING (RESEARCH Pitfall 1); emits existing reject-log shape, returns False, no ephemeral ack
-- [Phase ?]: RED-first two-commit proof recorded for DISC-05: test-only commit 18ea58d is the direct parent of fix commit ed18d8b (D-13); the RED test calls interaction_check directly and never asserts anything about on_error
-- [Phase ?]: DISC-06 fixed: PanelKit.__init__ raises ValueError (not assert) when not marker or not marker.strip(), placed right after super().__init__(timeout=None), before collaborator assignments/_build_children/_assert_layout — closes the cid.startswith("") owns-everything hole at the source
-- [Phase ?]: RED-first two-commit proof recorded for DISC-06: test-only commit ee73757 is the direct parent of fix commit 2a3e0c7 (D-13); GATE-01 green at 70 passed
-- [Phase ?]: Phase 3 complete (5/5 plans): three consumer-visible behavior changes consolidated for the human-gated milestone close-out — D-38 SchedulerEngine.remove idempotent, D-34 CommandRegistry ValueError, D-41 PanelKit empty-marker ValueError; none live in any consumer until repin/deploy (ECOSYSTEM.md §3)
-- [Phase ?]: LIFE-04 fixed: ReadyGate.run returns ReadyOutcome (ONLINE/SHUTDOWN/FATAL, only ONLINE truthy via __bool__ override); HealthResult gains additive fatal: bool = False; fatal short-circuit fires after on_fail, before severity-branch log, no re-probe wait, on_online never fires (D-44/D-45/D-46)
-- [Phase ?]: RED-first two-commit proof recorded for LIFE-04: test-only commit 175072b is the direct parent of fix commit d7939d8 (D-13); full suite green at 78 passed, import-hygiene green at 8 passed
-- [Phase ?]: Named both WeatherBot de-hack sites (weatherbot/scheduler/wiring.py _on_fail, weatherbot/ops/daemon.py gate-return check) in 04-01-SUMMARY.md for the human-gated v0.1.2 repin; no bump/tag/repin performed (ECOSYSTEM.md §3)
-- [Phase ?]: SURF-01 fixed: summon_panel re-exported ONLY from discord/__init__.py (joined onto existing gateway import line + __all__), scoped per D-47 — not surfaced at top-level yahir_reusable_bot
-- [Phase ?]: RED-first two-commit proof recorded for SURF-01: test-only commit 1e762bf is the direct parent of fix commit eefffc9 (D-13); full suite green at 79 passed, import-hygiene green at 8 passed
+Carried into v0.2.0 (standing constraints — re-asserted every phase):
+
+- GATE-02 is milestone-standing and stays unchecked in REQUIREMENTS.md until green across all
+  three phases — same treatment GATE-01 received in v0.1.2.
+- Plans within a phase are sequenced so a deliberately-RED test never overlaps a sibling plan's
+  full-suite gate (hard-won in Phases 1–3).
+- No version bump, tag, repin, `uv sync`, or deploy is performed by the workflow — all human-gated
+  per ECOSYSTEM.md §3.
+- The hub must never call `structlog.configure()`; logging configuration is 100% consumer
+  composition-root policy. PC-01 ships as a toolkit the consumer wires.
+- `redact/` stays a pure leaf subpackage — stdlib only, plus `structlog` inside `processor.py`
+  alone; it imports no sibling `yahir_reusable_bot` subpackage.
+- No module-level mutable pattern singleton; patterns are compiled once at registration, frozen,
+  and passed explicitly (matches the hub's existing DI posture).
+- Disablement is an explicit constructor parameter, never an env-var read inside the hub.
+
+Roadmapping decisions (2026-07-29):
+
+- Phase numbering continues from v0.1.2 (which ended at Phase 4) — v0.2.0 is Phases 5–7, not a
+  reset to 1.
+- Track A ordered before Track B: the promotion is the milestone's headline and the close-out
+  parity gate depends on it; Track B is independent and absorbs any slip.
+- REDACT-06 (literal-value mode) placed in Phase 5, not with the seams — it is a pattern
+  *registration mode*, so the whole public pattern surface settles in one phase (API shape is
+  expensive to change once a consumer depends on it).
+- REDACT-03 (ReDoS vetting) placed with REDACT-02 (registration API) rather than bolted on later —
+  it is the registration call that raises.
+- DOCS-04 (SEAM-08) folded into Phase 6 rather than a documentation phase: per ECOSYSTEM.md §6 the
+  promotion is not *done* until the guide row flips to implemented.
+- Research SUMMARY.md's 9-phase proposal deliberately not followed — it is annotated in that
+  document as over-decomposed. Its build order is used as *dependency ordering within phases*.
+- `.planning/phases/999.5-secret-redaction-promotion/` (empty, parked) is superseded by Phases 5–6;
+  the ROADMAP records the promotion. Directory left in place, not deleted by the roadmapper.
+
+Full v0.1.2 decision history is archived under `.planning/milestones/v0.1.2-phases/*/`
+(`*-SUMMARY.md`, `*-VALIDATION.md`) and summarized in `.planning/v0.1.2-MILESTONE-AUDIT.md`.
+
+## Todos
+
+- Phase 7 discuss step must surface **LIFE-05** and **SURF-02** as explicit human decisions —
+  both were deliberately deferred once already; neither may be defaulted.
+- Phase 5 discuss/plan must produce the WeatherBot **parity-test plan** (which exact assertions
+  re-run, and the `client.py` scope boundary) for the human-gated close-out — not improvised at
+  repin time.
+
+## Blockers
+
+None.

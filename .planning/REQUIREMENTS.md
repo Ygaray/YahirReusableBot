@@ -142,37 +142,37 @@ surface — `redact_secrets(text, patterns)`, never `redact_appid` or an `appid`
 - [ ] **REDACT-01** (PC-01): `redact_secrets(text, patterns) -> str` scrubs every configured
   secret from a rendered string in one pass — idempotent, tolerant of non-`str` input (never
   raises mid-exception-handling), and masks the *value* while preserving surrounding diagnostics
-  (endpoint, HTTP status, neighbouring params).
+  (endpoint, HTTP status, neighbouring params). → Phase 5
 
 - [ ] **REDACT-02** (PC-01): A `RedactionPattern` type plus a stateless registration API —
   patterns compiled once and frozen into an immutable collection, with **zero process-wide
   mutable state**. A module-level singleton consumers mutate at import time is explicitly
-  rejected (import-order dependence + cross-test pollution in a library).
+  rejected (import-order dependence + cross-test pollution in a library). → Phase 5
 
 - [ ] **REDACT-03** (PC-01): A pattern that exceeds a wall-clock budget against adversarial input
   is **rejected at registration time**. Stdlib `re` has no timeout, hub logging is synchronous,
   and the Discord adapter runs an asyncio gateway loop — so a consumer's pathological regex would
-  otherwise starve heartbeats and drop the live connection.
+  otherwise starve heartbeats and drop the live connection. → Phase 5
 
 - [ ] **REDACT-04** (PC-01): A `RedactingWriter` sink wrapper scrubs fully-rendered output —
   event text **and** formatted tracebacks — regardless of processor-chain order or renderer
   choice. **The load-bearing seam:** verified against installed `structlog`, `dev.ConsoleRenderer`
   renders tracebacks straight to the stream bypassing `event_dict`, so a processor alone cannot
-  see them.
+  see them. → Phase 6
 
 - [ ] **REDACT-05** (PC-01): An optional structlog processor scrubs `event_dict` string values
   pre-render, with its chain-order precondition (must sit after the exception formatters) stated
-  loudly in the docstring. Secondary and additive — never the sole backstop.
+  loudly in the docstring. Secondary and additive — never the sole backstop. → Phase 6
 
 - [ ] **REDACT-06** (PC-01): A literal-value redaction mode blocks an exact secret string wherever
-  it appears, catching leak paths that pattern matching misses.
+  it appears, catching leak paths that pattern matching misses. → Phase 5
 
 - [ ] **REDACT-07** (PC-01): `assert_redaction_active` lets a consumer prove at wiring time that
   the backstop is actually installed — so a backstop silently dropped by a second
-  `structlog.configure()` call fails loudly instead of looking identical to a working one.
+  `structlog.configure()` call fails loudly instead of looking identical to a working one. → Phase 6
 
 - [ ] **REDACT-08** (PC-01): Redaction-count telemetry exposes how many substitutions fired, so a
-  consumer can observe the backstop working rather than assume it.
+  consumer can observe the backstop working rather than assume it. → Phase 6
 
 ### Command registry (Track B)
 
@@ -180,53 +180,53 @@ surface — `redact_secrets(text, patterns)`, never `redact_appid` or an `appid`
   `match_command` can never resolve to a different `CommandSpec` than `by_name` holds. The D-34
   validation loop checks non-empty + already-casefolded but not uniqueness; a duplicate silently
   overwrites in `by_name` while `by_keyword_len_desc` / `render_help` carry both.
-  **Consumer-breaking** — needs a WeatherBot sweep at repin.
+  **Consumer-breaking** — needs a WeatherBot sweep at repin. → Phase 7
 
 ### Lifecycle (Track B)
 
 - [ ] **LIFE-05** (v0.1.2 Phase 1 WR-01): The identity guard's attached `-mmodule` form behavior
   is resolved — either matched, or documented as a permanent limitation with reasoning.
   **Deliberately deferred once already; needs an explicit human decision at discuss time, not a
-  default.**
+  default.** → Phase 7
 
 ### Public surface (Track B)
 
 - [ ] **SURF-02** (v0.1.2 Phase 4 IN-02): `on_online`'s annotation is narrowed to
   `Callable[[HealthResult], None]`. **A public hub-surface change — needs an explicit human
-  decision at discuss time.**
+  decision at discuss time.** → Phase 7
 
 ### Discord adapter (Track B)
 
 - [ ] **DISC-07** (v0.1.2 Phase 2 IN-01): The retry-pin path distinguishes `discord.Forbidden`
   from a generic `HTTPException` in its log, so a permissions failure is not mislabeled as a
-  pin-cap failure.
+  pin-cap failure. **Lands with DISC-08.** → Phase 7
 
 - [ ] **DISC-08** (v0.1.2 Phase 2 IN-02): A failed eviction-delete no longer drops that stray from
-  the call's cleanup.
+  the call's cleanup. **Lands with DISC-07** — both touch `summon_panel`. → Phase 7
 
 ### Hygiene (Track B)
 
 - [ ] **HYG-02** (v0.1.2 Phase 4 IN-01): `_best_effort_hook` logs via a structured `label=` kwarg
-  instead of an f-string — in both it and the shared site in `config/reload.py`.
+  instead of an f-string — in both it and the shared site in `config/reload.py`. → Phase 7
 
 - [ ] **HYG-03** (v0.1.2 Phase 2 IN-03): The full suite emits zero warnings — the
-  unawaited-coroutine `RuntimeWarning` from the `test_gateway.py` fake client is eliminated.
+  unawaited-coroutine `RuntimeWarning` from the `test_gateway.py` fake client is eliminated. → Phase 7
 
 ### Documentation (Track B)
 
 - [ ] **DOCS-02** (audit DOC-DRIFT-01): Every planning artifact naming a consumer de-hack site
   names a path that **exists**. `weatherbot/ops/daemon.py` appears across 11 artifacts; the real
-  path is `weatherbot/scheduler/daemon.py`.
+  path is `weatherbot/scheduler/daemon.py`. → Phase 7
 
 - [ ] **DOCS-03** (audit DOC-DRIFT-02): The documented de-hack site set is complete — including
   the *producing* site `weatherbot/ops/selfcheck.py`, without which the consumed outcome is
   unreachable. A deliverable enumerating consumer sites must name the site that produces the
-  input, not only those that consume the outcome.
+  input, not only those that consume the outcome. → Phase 7
 
 - [ ] **DOCS-04** (PC-01): `EXTENSION-GUIDE.md` documents the redaction seam as **SEAM-08**,
   noting its architectural inversion — the hub provides a toolkit the consumer wires into its own
   `structlog.configure()`, rather than a Protocol the hub calls. (Note: `SEAM-02` is absent from
-  the guide with no recorded explanation; 08 is the next free number.)
+  the guide with no recorded explanation; 08 is the next free number.) → Phase 6
 
 ### Milestone-level
 
@@ -234,6 +234,7 @@ surface — `redact_secrets(text, patterns)`, never `redact_appid` or an `appid`
   isolated-import + AST signature litmus, `tests/test_import_hygiene.py`) stay green across every
   phase, and **every requirement ships a RED-first regression test** that fails against pre-fix
   source. No fix may regress the one-way dependency or the generic-surface litmus.
+  → all phases (milestone-standing)
 
 ### Human-gated close-out (NOT executed by the workflow)
 
@@ -255,6 +256,37 @@ Per `ECOSYSTEM.md` §3, surfaced for confirmation, never performed autonomously:
 - **EXT-01** (durable `JobStore`) and **EXT-02** (second `Channel` adapter) — deferred *by design*
   under build-in-consumer-then-promote (rule of three). No consumer needs either today; building
   them now would mean designing against imagined requirements.
+
+### Traceability
+
+Phase numbering **continues from v0.1.2** (which ended at Phase 4). See `.planning/ROADMAP.md`.
+
+| Requirement | Track | Phase | Status |
+|-------------|-------|-------|--------|
+| REDACT-01 | A (PC-01) | Phase 5 | Pending |
+| REDACT-02 | A (PC-01) | Phase 5 | Pending |
+| REDACT-03 | A (PC-01) | Phase 5 | Pending |
+| REDACT-06 | A (PC-01) | Phase 5 | Pending |
+| REDACT-04 | A (PC-01) | Phase 6 | Pending |
+| REDACT-05 | A (PC-01) | Phase 6 | Pending |
+| REDACT-07 | A (PC-01) | Phase 6 | Pending |
+| REDACT-08 | A (PC-01) | Phase 6 | Pending |
+| DOCS-04 | A (PC-01) | Phase 6 | Pending |
+| MATCH-03 | B (debt) | Phase 7 | Pending |
+| LIFE-05 | B (debt) | Phase 7 | Pending |
+| SURF-02 | B (debt) | Phase 7 | Pending |
+| DISC-07 | B (debt) | Phase 7 | Pending |
+| DISC-08 | B (debt) | Phase 7 | Pending |
+| HYG-02 | B (debt) | Phase 7 | Pending |
+| HYG-03 | B (debt) | Phase 7 | Pending |
+| DOCS-02 | B (debt) | Phase 7 | Pending |
+| DOCS-03 | B (debt) | Phase 7 | Pending |
+| GATE-02 | milestone | all phases (standing) | Pending |
+
+**Coverage: 19/19 mapped — 18 phase-assigned + 1 milestone-standing. No orphans, no duplicates.**
+
+GATE-02 is deliberately *not* a phase — same treatment GATE-01 received in v0.1.2. It stays
+unchecked until green across all three phases.
 
 ## Future / Deferred Extension Points (designed in v2.0, built later)
 
