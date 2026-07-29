@@ -264,10 +264,10 @@ Phase numbering **continues from v0.1.2** (which ended at Phase 4). See `.planni
 
 | Requirement | Track | Phase | Status |
 |-------------|-------|-------|--------|
-| REDACT-01 | A (PC-01) | Phase 5 | Pending |
-| REDACT-02 | A (PC-01) | Phase 5 | Pending |
-| REDACT-03 | A (PC-01) | Phase 5 | Pending |
-| REDACT-06 | A (PC-01) | Phase 5 | Pending |
+| REDACT-01 | A (PC-01) | Phase 5 | Complete (2026-07-29) |
+| REDACT-02 | A (PC-01) | Phase 5 | Complete (2026-07-29) |
+| REDACT-03 | A (PC-01) | Phase 5 | Complete (2026-07-29) |
+| REDACT-06 | A (PC-01) | Phase 5 | Complete (2026-07-29) |
 | REDACT-04 | A (PC-01) | Phase 6 | Pending |
 | REDACT-05 | A (PC-01) | Phase 6 | Pending |
 | REDACT-07 | A (PC-01) | Phase 6 | Pending |
