@@ -140,11 +140,17 @@ Full v0.1.2 decision history is archived under `.planning/milestones/v0.1.2-phas
   so the full 6-assertion parity gate cannot pass until Phase 6 ships. The `client.py` scope
   boundary (domain logic, stays app-local forever) is recorded there too.
 
-- **Residual from Phase 5's code review (decide before Phase 6 wires redaction into logging):**
-  `RedactionPattern.__repr__` elides a literal-constructed secret, but `dataclasses.asdict()`,
-  `vars()`, and `__dict__` bypass it and expose the raw `re.Pattern` with its default repr.
-  Documented + pinned by a tripwire test in `tests/test_redact_core.py`, deliberately not closed —
-  closing it changes the dataclass shape Phase 5 just locked.
+- ~~**Residual from Phase 5's code review (WR-02)**~~ — **RESOLVED as far as it can be without an
+  API change (2026-07-29).** `RedactionPattern` is now `slots=True`, so the *accidental* leak paths
+  are closed: `vars(rp)` raises `TypeError` and `rp.__dict__` raises `AttributeError` instead of
+  handing back the raw `re.Pattern` whose default repr prints a literal-constructed secret. Those
+  were the paths a generic serializer or logging helper hits without meaning to.
+  **Remaining, deliberate:** `dataclasses.asdict()`/`astuple()` still expose the raw pattern. That
+  is explicit dataclass introspection — no worse than reading the equally-public
+  `rp.pattern.pattern` — and closing it needs an opaque wrapper, i.e. a public API shape change.
+  Revisit only if a consumer actually needs a safe serialization form. Pinned both ways by
+  `tests/test_redact_core.py` (`..._has_no_instance_dict_so_generic_serializers_cannot_leak` and
+  `..._asdict_still_exposes_raw_pattern_source`).
 
 ## Blockers
 

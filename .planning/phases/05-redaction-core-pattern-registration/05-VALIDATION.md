@@ -63,6 +63,8 @@ validated: 2026-07-29
 | 05-02 | 2 | REDACT-03 | — | **WR-01:** a malformed replacement template is rejected at registration, so `redact_secrets` cannot raise `re.error` mid-log | unit | `uv run pytest tests/test_redact_registry.py::test_register_patterns_rejects_malformed_replacement_template -x` | ✅ | ✅ green |
 | 05-01 | 1 | REDACT-06 | T-05-02 | `RedactionPattern.literal(value)` blocks the exact value wherever it appears — including inside a `repr()` of an object embedding it, not only in a `name=value` shape | unit | `uv run pytest tests/test_redact_core.py::test_literal_matches_inside_repr -x` | ✅ | ✅ green |
 | 05-01 | 1 | REDACT-06 | T-05-02 | Literal escapes regex metacharacters; empty/blank literal rejected (a zero-width pattern would shred the whole string) | unit | `uv run pytest tests/test_redact_core.py -k "escapes_regex_metacharacters or rejects_empty_or_blank" -x` | ✅ | ✅ green |
+| post-review | — | REDACT-06 | T-05-02 | **WR-02 (accidental paths closed):** `slots=True` removes the instance `__dict__`, so `vars(rp)` raises `TypeError` and `rp.__dict__` raises `AttributeError` rather than exposing the raw `re.Pattern` — the paths a generic serializer/logger hits unintentionally | unit | `uv run pytest tests/test_redact_core.py::test_redaction_pattern_has_no_instance_dict_so_generic_serializers_cannot_leak -x` | ✅ | ✅ green |
+| post-review | — | REDACT-06 | T-05-02 | **WR-02 (explicit residual, pinned):** `asdict()`/`astuple()` still expose the raw pattern — deliberate, no worse than the public `rp.pattern.pattern`; closing it needs an opaque wrapper (API shape change) | unit (tripwire) | `uv run pytest tests/test_redact_core.py::test_redaction_pattern_asdict_still_exposes_raw_pattern_source -x` | ✅ | ✅ green |
 | 05-03 | 3 | GATE-01 (standing) | — | Full suite + grimp layering + isolated-import blocker + AST signature litmus stay green; `redact/` names are domain-noun-free and it imports no sibling subpackage; new `redact_scanned` coverage guard added | standing gate | `uv run pytest -q` (109) · `uv run pytest tests/test_import_hygiene.py -q` (8) | ✅ | ✅ green |
 
 *Status: ⬜ pending · ✅ green · ❌ red · ⚠️ flaky*
@@ -149,3 +151,21 @@ both, and both were caught by execution rather than by planning:
 **Rows added post-execution** for coverage that did not exist at plan time: the CR-01 ReDoS
 regression (T-05-06) and the WR-01 malformed-replacement-template rejection, both products of the
 code-review gate.
+
+---
+
+## Addendum 2026-07-29 — WR-02 residual narrowed
+
+After phase close, the WR-02 residual was revisited rather than carried into Phase 6 (where
+redaction gets wired into the logging path, making an accidental serialization most likely).
+`RedactionPattern` is now `slots=True` (RED `17fe469` → GREEN `eaab73a`), closing `vars(rp)` and
+`rp.__dict__` — the paths a generic serializer or logging helper reaches for without intending to
+introspect a dataclass. No public API change: field names/types, `redact_secrets`'s
+`rp.pattern.sub(...)` call path, and frozen semantics are all unchanged, so the pending WeatherBot
+repin is unaffected.
+
+`asdict()`/`astuple()` remain open **by design** and are now pinned by an explicit tripwire. The
+`__repr__` docstring previously claimed the gap "cannot be closed here"; that was overstated and is
+corrected in source. Suite 109 → 110 (the old single tripwire split in two, one per leak class).
+
+Coverage verdict unchanged: zero gaps, `nyquist_compliant: true`.
