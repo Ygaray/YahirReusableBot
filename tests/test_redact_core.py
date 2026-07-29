@@ -17,7 +17,7 @@ from __future__ import annotations
 
 import re
 import warnings
-from dataclasses import FrozenInstanceError, asdict
+from dataclasses import FrozenInstanceError, asdict, astuple
 
 import pytest
 
@@ -233,23 +233,44 @@ def test_redaction_pattern_repr_does_not_leak_pattern_source():
     assert SENTINEL not in f"{rp!r}"
 
 
-def test_redaction_pattern_asdict_and_vars_still_expose_raw_pattern_source():
-    """WR-02: documents the CURRENT (dangerous) behavior deliberately left as-is —
-    the source-eliding ``__repr__`` override covers only ``repr(rp)``/``str(rp)``/
-    ``f"{rp!r}"``. It does NOT cover ``dataclasses.asdict(rp)``, ``vars(rp)``, or
-    ``rp.__dict__``: all three still expose the RAW, unwrapped ``re.Pattern`` object,
-    which carries Python's own default ``repr`` and so still prints the secret
-    source verbatim. This test is a tripwire, not an endorsement: it pins today's
-    known-dangerous behavior so a future change that tries to "fix" this doesn't
-    silently break the ``redact_secrets`` call path that depends on the raw
-    ``pattern`` field staying reachable (see the class docstring's WR-02 warning)."""
+def test_redaction_pattern_has_no_instance_dict_so_generic_serializers_cannot_leak():
+    """WR-02, accidental-path half: ``slots=True`` removes the instance ``__dict__``
+    entirely, so the two paths a GENERIC serializer or logging helper reaches for
+    without anyone intending to introspect a dataclass — ``vars(rp)`` and
+    ``rp.__dict__`` — now raise instead of handing back the raw, unwrapped
+    ``re.Pattern`` (whose own default ``repr`` prints the secret source verbatim).
+
+    These are the paths that leak by ACCIDENT. Closing them is the point: a consumer
+    that writes ``logger.info("patterns", extra=vars(rp))`` gets a loud error instead
+    of a silently-leaked secret."""
     rp = RedactionPattern.literal(SENTINEL)
 
-    raw_repr_via_asdict = repr(asdict(rp)["pattern"])
-    assert SENTINEL in raw_repr_via_asdict
+    with pytest.raises(TypeError):
+        vars(rp)
 
-    raw_repr_via_vars = repr(vars(rp)["pattern"])
-    assert SENTINEL in raw_repr_via_vars
+    with pytest.raises(AttributeError):
+        rp.__dict__  # noqa: B018 — attribute access itself is the assertion
 
-    raw_repr_via_dunder_dict = repr(rp.__dict__["pattern"])
-    assert SENTINEL in raw_repr_via_dunder_dict
+
+def test_redaction_pattern_asdict_still_exposes_raw_pattern_source():
+    """WR-02, residual half — a tripwire, NOT an endorsement.
+
+    ``dataclasses.asdict``/``astuple`` still return the RAW ``re.Pattern``, so they
+    still print the secret source. This is NOT closable while ``pattern`` stays a
+    public field holding the live compiled object that ``redact_secrets`` calls
+    ``.sub()`` on — and it is no worse than reading ``rp.pattern.pattern`` directly,
+    which is equally public and equally explicit. Both require a caller to
+    deliberately introspect the dataclass; neither happens by accident (that class of
+    path is closed by the slots test above).
+
+    Pinned so a future change that tries to close this doesn't silently break the
+    ``redact_secrets`` call path, which depends on the raw ``pattern`` field staying
+    reachable. Closing it properly means an opaque wrapper — a PUBLIC API shape
+    change, deliberately out of scope for this phase."""
+    rp = RedactionPattern.literal(SENTINEL)
+
+    assert SENTINEL in repr(asdict(rp)["pattern"])
+    assert SENTINEL in repr(astuple(rp)[0])
+
+    # The equally-public, equally-explicit path this is no worse than:
+    assert SENTINEL in rp.pattern.pattern
