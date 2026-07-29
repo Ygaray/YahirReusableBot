@@ -24,7 +24,7 @@ progress:
 Phase: 6 — Insertion seams + provable backstop
 Plan: Not started
 Status: Ready to plan
-Progress: [__________] 0% (0/3 phases)
+Progress: [###_______] 33% (1/3 phases)
 Last activity: 2026-07-29 — Phase 05 complete, transitioned to Phase 6
 
 ## Milestone Shape
@@ -132,9 +132,19 @@ Full v0.1.2 decision history is archived under `.planning/milestones/v0.1.2-phas
 - Phase 7 discuss step must surface **LIFE-05** and **SURF-02** as explicit human decisions —
   both were deliberately deferred once already; neither may be defaulted.
 
-- Phase 5 discuss/plan must produce the WeatherBot **parity-test plan** (which exact assertions
-  re-run, and the `client.py` scope boundary) for the human-gated close-out — not improvised at
-  repin time.
+- ~~Phase 5 discuss/plan must produce the WeatherBot **parity-test plan**~~ — **DONE (Phase 5).**
+  Written in `05-RESEARCH.md` § Validation Architecture, corrected during execution, and finalized
+  in `05-VALIDATION.md` § Manual-Only. **Correction worth carrying into Phase 6:** only **4 of 6**
+  WeatherBot assertions are reachable after Phase 5. `test_discord_on_message_does_not_dump_key`
+  and `test_livestderr_write_tolerates_and_scrubs_bytes` depend on the Phase-6 sink/backstop seam,
+  so the full 6-assertion parity gate cannot pass until Phase 6 ships. The `client.py` scope
+  boundary (domain logic, stays app-local forever) is recorded there too.
+
+- **Residual from Phase 5's code review (decide before Phase 6 wires redaction into logging):**
+  `RedactionPattern.__repr__` elides a literal-constructed secret, but `dataclasses.asdict()`,
+  `vars()`, and `__dict__` bypass it and expose the raw `re.Pattern` with its default repr.
+  Documented + pinned by a tripwire test in `tests/test_redact_core.py`, deliberately not closed —
+  closing it changes the dataclass shape Phase 5 just locked.
 
 ## Blockers
 
