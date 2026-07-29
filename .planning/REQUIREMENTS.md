@@ -148,7 +148,7 @@ surface — `redact_secrets(text, patterns)`, never `redact_appid` or an `appid`
   mutable state**. A module-level singleton consumers mutate at import time is explicitly
   rejected (import-order dependence + cross-test pollution in a library). → Phase 5
 
-- [ ] **REDACT-03** (PC-01): A pattern that exceeds a wall-clock budget against adversarial input
+- [x] **REDACT-03** (PC-01): A pattern that exceeds a wall-clock budget against adversarial input
   is **rejected at registration time**. Stdlib `re` has no timeout, hub logging is synchronous,
   and the Discord adapter runs an asyncio gateway loop — so a consumer's pathological regex would
   otherwise starve heartbeats and drop the live connection. → Phase 5

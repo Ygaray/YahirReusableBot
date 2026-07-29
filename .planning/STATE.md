@@ -5,15 +5,15 @@ milestone_name: — Redaction promotion + hardening debt
 current_phase: 05
 current_phase_name: redaction-core-pattern-registration
 status: executing
-stopped_at: Completed 05-01-PLAN.md
-last_updated: "2026-07-29T18:26:46.595Z"
+stopped_at: Completed 05-02-PLAN.md
+last_updated: "2026-07-29T18:33:47.223Z"
 last_activity: 2026-07-29
 last_activity_desc: Phase 05 execution started
 progress:
   total_phases: 3
   completed_phases: 0
   total_plans: 3
-  completed_plans: 1
+  completed_plans: 2
   percent: 0
 ---
 
@@ -22,7 +22,7 @@ progress:
 ## Current Position
 
 Phase: 05 (redaction-core-pattern-registration) — EXECUTING
-Plan: 2 of 3
+Plan: 3 of 3
 Status: Ready to execute
 Progress: [__________] 0% (0/3 phases)
 Last activity: 2026-07-29 — Phase 05 execution started
@@ -40,8 +40,8 @@ litmus / grimp green, and every requirement ships a RED-first regression test.
 
 ## Session
 
-**Last session:** 2026-07-29T18:26:41.203Z
-**Stopped at:** Completed 05-01-PLAN.md
+**Last session:** 2026-07-29T18:33:47.206Z
+**Stopped at:** Completed 05-02-PLAN.md
 **Resume file:** None
 
 ## Performance Metrics
@@ -65,6 +65,7 @@ Carried from v0.1.2 for calibration (14 plans across 4 phases, ~3–25min per pl
 | Phase 04 P01 | 12min | 3 tasks | 4 files |
 | Phase 04 P02 | 3min | 2 tasks | 2 files |
 | Phase 05 P01 | 18min | 2 tasks | 3 files |
+| Phase 05 P02 | ~12min | 2 tasks | 3 files |
 
 ## Decisions
 
@@ -119,6 +120,8 @@ Full v0.1.2 decision history is archived under `.planning/milestones/v0.1.2-phas
 
 - [Phase ?]: RedactionPattern.__repr__ is explicit and source-eliding (repr=False on the dataclass) so a literal-constructed instance can never leak its held secret through its own logging representation (PR-01, T-05-02).
 - [Phase ?]: RedactionPattern.literal rejects empty/blank values with ValueError at construction, message never echoing the rejected value (D-41 precedent, stricter no-echo rule than panelkit.py's guard).
+- [Phase ?]: Implemented the plan's escalating-ladder ReDoS probe (cumulative-elapsed check after every search) rather than RESEARCH.md's single-shot probe — a single long search over a catastrophic pattern would hang the vetting call itself (T-05-06).
+- [Phase ?]: test_register_patterns_accepts_proven_appid_pattern (05-VALIDATION.md draft) renamed to test_register_patterns_accepts_proven_boundary_pattern — the draft name embedded a WeatherBot domain noun, forbidden under redact/'s litmus discipline.
 
 ## Todos
 
