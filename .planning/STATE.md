@@ -2,13 +2,13 @@
 gsd_state_version: 1.0
 milestone: v0.2.0
 milestone_name: — Redaction promotion + hardening debt
-current_phase: 05
-current_phase_name: redaction-core-pattern-registration
-status: verifying
+current_phase: 6
+current_phase_name: Insertion seams + provable backstop
+status: planning
 stopped_at: Completed 05-03-PLAN.md (Phase 5 complete)
-last_updated: "2026-07-29T18:39:13.786Z"
+last_updated: "2026-07-29T19:11:14.242Z"
 last_activity: 2026-07-29
-last_activity_desc: Phase 05 execution started
+last_activity_desc: Phase 05 complete, transitioned to Phase 6
 progress:
   total_phases: 3
   completed_phases: 1
@@ -21,11 +21,11 @@ progress:
 
 ## Current Position
 
-Phase: 05 (redaction-core-pattern-registration) — EXECUTING
-Plan: 3 of 3
-Status: Phase complete — ready for verification
+Phase: 6 — Insertion seams + provable backstop
+Plan: Not started
+Status: Ready to plan
 Progress: [__________] 0% (0/3 phases)
-Last activity: 2026-07-29 — Phase 05 execution started
+Last activity: 2026-07-29 — Phase 05 complete, transitioned to Phase 6
 
 ## Milestone Shape
 
