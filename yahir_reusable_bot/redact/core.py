@@ -93,6 +93,16 @@ class RedactionPattern:
         be unsound. ``__str__`` is deliberately not defined; Python falls back to
         ``__repr__``, so both call paths (and ``!r`` f-string interpolation) are
         covered by this one override.
+
+        WARNING (WR-02): this elision covers only ``repr(rp)``/``str(rp)``/``f"{rp!r}"``.
+        It does NOT cover ``dataclasses.asdict(rp)``, ``dataclasses.astuple(rp)``,
+        ``vars(rp)``, or ``rp.__dict__`` — all of those return/expose the RAW
+        ``pattern`` field (the underlying, unwrapped ``re.Pattern`` object), which
+        carries Python's own default ``repr`` and so still prints its source text
+        verbatim. Hiding the ``pattern`` field entirely isn't viable — ``redact_secrets``
+        needs the live compiled object for ``rp.pattern.sub(...)`` — so this gap cannot
+        be closed here. Never pass this object's raw fields (via ``asdict``/``vars``/
+        ``__dict__``) to a serializer or logger; only ``repr(rp)``/``str(rp)`` are safe.
         """
         return (
             f"RedactionPattern(pattern=<compiled len={len(self.pattern.pattern)} "

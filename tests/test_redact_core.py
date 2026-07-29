@@ -17,7 +17,7 @@ from __future__ import annotations
 
 import re
 import warnings
-from dataclasses import FrozenInstanceError
+from dataclasses import FrozenInstanceError, asdict
 
 import pytest
 
@@ -231,3 +231,25 @@ def test_redaction_pattern_repr_does_not_leak_pattern_source():
     assert SENTINEL not in repr(rp)
     assert SENTINEL not in str(rp)
     assert SENTINEL not in f"{rp!r}"
+
+
+def test_redaction_pattern_asdict_and_vars_still_expose_raw_pattern_source():
+    """WR-02: documents the CURRENT (dangerous) behavior deliberately left as-is —
+    the source-eliding ``__repr__`` override covers only ``repr(rp)``/``str(rp)``/
+    ``f"{rp!r}"``. It does NOT cover ``dataclasses.asdict(rp)``, ``vars(rp)``, or
+    ``rp.__dict__``: all three still expose the RAW, unwrapped ``re.Pattern`` object,
+    which carries Python's own default ``repr`` and so still prints the secret
+    source verbatim. This test is a tripwire, not an endorsement: it pins today's
+    known-dangerous behavior so a future change that tries to "fix" this doesn't
+    silently break the ``redact_secrets`` call path that depends on the raw
+    ``pattern`` field staying reachable (see the class docstring's WR-02 warning)."""
+    rp = RedactionPattern.literal(SENTINEL)
+
+    raw_repr_via_asdict = repr(asdict(rp)["pattern"])
+    assert SENTINEL in raw_repr_via_asdict
+
+    raw_repr_via_vars = repr(vars(rp)["pattern"])
+    assert SENTINEL in raw_repr_via_vars
+
+    raw_repr_via_dunder_dict = repr(rp.__dict__["pattern"])
+    assert SENTINEL in raw_repr_via_dunder_dict
