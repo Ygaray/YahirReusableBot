@@ -3,15 +3,15 @@ gsd_state_version: 1.0
 milestone: v0.2.0
 milestone_name: — Redaction promotion + hardening debt
 current_phase: 5
-status: roadmapped
-stopped_at: Phase 5 context gathered
-last_updated: "2026-07-29T17:42:01.044Z"
+status: planned
+stopped_at: Phase 5 planned — ready to execute
+last_updated: "2026-07-29T18:25:00.000Z"
 last_activity: 2026-07-29
-last_activity_desc: ROADMAP.md written for v0.2.0 (Phases 5–7, 19/19 requirements mapped)
+last_activity_desc: Phase 5 planned — 3 plans across Waves 1→2→3, plan-checker PASSED
 progress:
   total_phases: 3
   completed_phases: 0
-  total_plans: 0
+  total_plans: 3
   completed_plans: 0
   percent: 0
 ---
@@ -20,11 +20,11 @@ progress:
 
 ## Current Position
 
-Phase: 5 — Redaction core + pattern registration (not started)
-Plan: —
-Status: Roadmapped — ready for `/gsd-discuss-phase 5`
+Phase: 5 — Redaction core + pattern registration (planned, not started)
+Plan: 0/3 complete
+Status: Ready to execute — `/gsd-execute-phase 5`
 Progress: [__________] 0% (0/3 phases)
-Last activity: 2026-07-29 — ROADMAP.md written for v0.2.0 (Phases 5–7, 19/19 requirements mapped)
+Last activity: 2026-07-29 — Phase 5 planned: 3 plans across Waves 1→2→3, plan-checker PASSED
 
 ## Milestone Shape
 
