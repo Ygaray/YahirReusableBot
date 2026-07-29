@@ -44,6 +44,17 @@ def _overlapping_alternation_pattern() -> RedactionPattern:
     return RedactionPattern(pattern=re.compile(r"(a|a)*$"), replacement="***")
 
 
+def _fibonacci_style_pattern() -> RedactionPattern:
+    """A Fibonacci-style overlapping-alternation shape — no nested-quantifier
+    substring, so the structural pass cannot see it, AND a backtracking blowup slow
+    enough to survive well past the ladder's original fine-tier tail (CR-01 / T-05-06).
+    This is the exact shape that exposed the fine-to-coarse termination gap: pre-fix,
+    the next ladder rung after the fine tier's tail jumped straight from 24 to 100,
+    and a single `search()` call at that rung against this pattern would run for an
+    effectively unbounded amount of wall-clock time."""
+    return RedactionPattern(pattern=re.compile(r"(a|aa)+$"), replacement="***")
+
+
 def _proven_boundary_pattern() -> RedactionPattern:
     """The proven boundary pattern ported verbatim (as a string literal only — no
     identifier in this module carries the originating app's domain noun) from the
@@ -96,11 +107,33 @@ def test_register_patterns_vetting_stays_far_under_budget():
 
 
 def test_register_patterns_vetting_terminates_in_bounded_time():
-    """Pins the termination correction (T-05-06): the escalating ladder bounds the
-    overshoot past the budget, so a catastrophic pattern is rejected quickly rather
-    than running one huge probe search to completion and hanging the very call meant
-    to prevent hangs."""
+    """This pins only the STRUCTURAL short-circuit's own speed: `_nested_quantifier_pattern()`
+    is caught by `_looks_pathological`, and Python's `or` in `register_patterns` never
+    evaluates `_blows_budget` once the left operand is True — so this test does NOT
+    exercise the ladder's own termination behavior (CR-01 correction to this
+    docstring's prior, misleading claim). The ladder's fine-to-coarse termination
+    property is pinned separately by
+    `test_register_patterns_catches_slow_ramping_pattern_before_coarse_tier_hangs`
+    below, using a pattern the structural check cannot see."""
     rp = _nested_quantifier_pattern()
+    assert _looks_pathological(rp.pattern) is True
+    start = time.perf_counter()
+    with pytest.raises(ValueError):
+        register_patterns([rp])
+    elapsed = time.perf_counter() - start
+    assert elapsed < 5.0
+
+
+def test_register_patterns_catches_slow_ramping_pattern_before_coarse_tier_hangs():
+    """CR-01 / T-05-06: a Fibonacci-style catastrophic pattern that the structural
+    check misses AND whose backtracking blowup is too slow to trip the budget within
+    the ladder's original fine tier must still be caught — proving the fine-to-coarse
+    transition itself (not just the fine tier in isolation) is bounded. Pre-fix, the
+    next rung past the fine tier's tail jumped straight to 100 and this call would
+    never return; the wall-clock ceiling below re-fails this test if that termination
+    gap is ever reintroduced."""
+    rp = _fibonacci_style_pattern()
+    assert _looks_pathological(rp.pattern) is False
     start = time.perf_counter()
     with pytest.raises(ValueError):
         register_patterns([rp])

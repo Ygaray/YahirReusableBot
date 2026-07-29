@@ -46,15 +46,20 @@ _NESTED_QUANTIFIER_RX = re.compile(r"\([^()]*[+*][^()]*\)[+*]")
 # module's signature (D-50).
 _REDOS_BUDGET_S = 0.3
 
-# Ascending repeat counts probed against the corpus below. The fine tier (the first
-# nine rungs) grows by exactly +2 per rung — this bounds the overshoot for an
-# exponentially-growing pattern to roughly a 4x jump between two consecutive rungs
-# (2**(n+2) / 2**n == 4), so a catastrophic pattern is caught at a small rung instead
-# of at one huge probe. The coarse tier (the last four rungs) is reached only by a
-# pattern that showed no superlinear growth in the fine tier, and exists to catch a
-# polynomial (not exponential) blowup that the fine tier's short probes are too small
-# to reveal.
-_REDOS_LADDER: tuple[int, ...] = (8, 10, 12, 14, 16, 18, 20, 22, 24, 100, 400, 1600, 4000)
+# Ascending repeat counts probed against the corpus below, from a low floor through a
+# high ceiling that still catches a slow polynomial (not just exponential) blowup.
+# EVERY rung — not just an early subset — differs from the rung before it by at most
+# ``_REDOS_LADDER_MAX_RATIO``. This is what bounds the overshoot past the budget for
+# an exponentially-growing pattern to that same ratio AT EVERY STEP, so a catastrophic
+# pattern is always caught at a small rung instead of surfacing for the first time as
+# one huge, uninterruptible probe (T-05-06 / CR-01). A prior version of this ladder
+# jumped straight from 24 to 100 after a bounded-growth run of small rungs — for a
+# pattern whose exponential blowup was just slow enough to stay under budget through
+# rung 24, that single jump was not "a small rung," it was an effectively unbounded
+# wall-clock probe. ``_validate_ladder_growth_bound`` below enforces the ratio cap at
+# import time so a future edit can't silently reintroduce that gap.
+_REDOS_LADDER_MAX_RATIO = 2.0
+_REDOS_LADDER: tuple[int, ...] = tuple(range(8, 41, 2)) + (48, 64, 96, 144, 216, 324)
 
 # Pattern-agnostic adversarial SHAPES (the registry knows nothing about any consumer's
 # pattern shape, so this corpus must stay generic): a single repeated character, a
@@ -64,6 +69,28 @@ _REDOS_LADDER: tuple[int, ...] = (8, 10, 12, 14, 16, 18, 20, 22, 24, 100, 400, 1
 # ``_blows_budget`` — a character unlikely to satisfy a well-formed pattern's tail,
 # forcing the "almost but not quite" backtracking that triggers catastrophic patterns.
 _REDOS_CORPUS: tuple[str, ...] = ("a", "0123456789", "abc=def&")
+
+
+def _validate_ladder_growth_bound(ladder: tuple[int, ...], max_ratio: float) -> None:
+    """Fail loud at import time if any two consecutive ``ladder`` rungs grow by more
+    than ``max_ratio`` — the invariant ``_blows_budget`` relies on to keep every probe
+    bounded (T-05-06 / CR-01). Deliberately a plain function call (not a bare
+    ``assert``) so this self-check survives ``-O``: a silently-widened ladder gap is
+    exactly the defect this exists to catch, and stripping the check under an
+    optimize flag would defeat the point.
+    """
+    for previous, current in zip(ladder, ladder[1:]):
+        ratio = current / previous
+        if ratio > max_ratio:
+            raise AssertionError(
+                f"_REDOS_LADDER rung {current} is a {ratio:.2f}x jump from the "
+                f"preceding rung {previous}, exceeding the {max_ratio}x growth bound "
+                f"a single _blows_budget probe must stay within to remain bounded "
+                f"(T-05-06). Add intermediate rungs instead of widening this jump."
+            )
+
+
+_validate_ladder_growth_bound(_REDOS_LADDER, _REDOS_LADDER_MAX_RATIO)
 
 
 def _looks_pathological(pattern: re.Pattern[str]) -> bool:
@@ -82,10 +109,19 @@ def _blows_budget(pattern: re.Pattern[str]) -> bool:
     returning True the moment it is exceeded. This module never builds one large
     probe string and times a single search over it — ``re`` cannot be interrupted, so
     a single search over a long probe against a catastrophic pattern would run to
-    completion and hang the very call this check exists to bound (T-05-06). Because
-    the fine tier of ``_REDOS_LADDER`` grows by only +2 repeats per rung, an
-    exponentially-growing pattern's per-rung cost rises by at most ~4x, bounding the
-    overshoot past the budget instead of leaving it unbounded.
+    completion and hang the very call this check exists to bound (T-05-06).
+
+    That correction is only sound if the elapsed-time check actually gets a chance to
+    fire BEFORE an unbounded probe — which means every rung of ``_REDOS_LADDER``, not
+    just an early subset of them, must grow by a bounded ratio over the rung before it
+    (enforced at import time by ``_validate_ladder_growth_bound``, against
+    ``_REDOS_LADDER_MAX_RATIO``). With that invariant held throughout the whole
+    ladder, an exponentially-growing pattern's per-rung cost rises by at most
+    ``_REDOS_LADDER_MAX_RATIO`` between any two consecutive probes — so the probe that
+    finally exceeds the budget is itself still bounded, and it is that probe's own
+    bounded runtime, never a disproportionate jump to a much larger rung, that returns
+    control to the caller (CR-01: a prior ladder shape violated this for a rung near
+    the fine/coarse boundary and could hang indefinitely).
     """
     start = time.perf_counter()
     for count in _REDOS_LADDER:
