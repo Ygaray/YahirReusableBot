@@ -5,8 +5,8 @@ milestone_name: — Redaction promotion + hardening debt
 current_phase: 6
 current_phase_name: Insertion seams + provable backstop
 status: planning
-stopped_at: Completed 05-03-PLAN.md (Phase 5 complete)
-last_updated: "2026-07-29T19:11:14.242Z"
+stopped_at: Phase 6 context gathered
+last_updated: "2026-07-29T20:05:33.904Z"
 last_activity: 2026-07-29
 last_activity_desc: Phase 05 complete, transitioned to Phase 6
 progress:
@@ -40,9 +40,9 @@ litmus / grimp green, and every requirement ships a RED-first regression test.
 
 ## Session
 
-**Last session:** 2026-07-29T18:39:13.777Z
-**Stopped at:** Completed 05-03-PLAN.md (Phase 5 complete)
-**Resume file:** None
+**Last session:** 2026-07-29T20:05:33.891Z
+**Stopped at:** Phase 6 context gathered
+**Resume file:** .planning/phases/06-insertion-seams-provable-backstop/06-CONTEXT.md
 
 ## Performance Metrics
 
