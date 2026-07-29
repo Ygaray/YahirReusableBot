@@ -23,7 +23,7 @@ from collections.abc import Sequence
 from dataclasses import dataclass
 
 
-@dataclass(frozen=True, repr=False)
+@dataclass(frozen=True, repr=False, slots=True)
 class RedactionPattern:
     """A pre-compiled pattern paired with its replacement template (D-48).
 
@@ -45,6 +45,11 @@ class RedactionPattern:
     carried value.
 
     Frozen: assigning to any field raises ``dataclasses.FrozenInstanceError``.
+
+    Slotted (``slots=True``): instances carry no ``__dict__`` at all, so ``vars(rp)``
+    raises ``TypeError`` and ``rp.__dict__`` raises ``AttributeError`` instead of
+    handing back the raw compiled pattern. That is a deliberate secret-containment
+    measure, not a memory optimization — see :meth:`__repr__`.
     """
 
     pattern: re.Pattern[str]
@@ -94,15 +99,27 @@ class RedactionPattern:
         ``__repr__``, so both call paths (and ``!r`` f-string interpolation) are
         covered by this one override.
 
-        WARNING (WR-02): this elision covers only ``repr(rp)``/``str(rp)``/``f"{rp!r}"``.
-        It does NOT cover ``dataclasses.asdict(rp)``, ``dataclasses.astuple(rp)``,
-        ``vars(rp)``, or ``rp.__dict__`` — all of those return/expose the RAW
-        ``pattern`` field (the underlying, unwrapped ``re.Pattern`` object), which
-        carries Python's own default ``repr`` and so still prints its source text
-        verbatim. Hiding the ``pattern`` field entirely isn't viable — ``redact_secrets``
-        needs the live compiled object for ``rp.pattern.sub(...)`` — so this gap cannot
-        be closed here. Never pass this object's raw fields (via ``asdict``/``vars``/
-        ``__dict__``) to a serializer or logger; only ``repr(rp)``/``str(rp)`` are safe.
+        Scope (WR-02). Two different classes of leak path, handled differently:
+
+        - **Accidental paths — CLOSED** by ``slots=True`` on this class. ``vars(rp)``
+          raises ``TypeError`` and ``rp.__dict__`` raises ``AttributeError``, because a
+          slotted instance has no ``__dict__``. These are the paths a GENERIC
+          serializer or logging helper reaches for without intending to introspect a
+          dataclass, so a consumer writing ``logger.info(..., extra=vars(rp))`` now
+          gets a loud error instead of a silently-leaked secret.
+        - **Explicit paths — STILL OPEN, by design.** ``dataclasses.asdict(rp)`` and
+          ``dataclasses.astuple(rp)`` return the RAW ``pattern`` field (the unwrapped
+          ``re.Pattern``), which carries Python's own default ``repr`` and prints its
+          source verbatim. This is not closable while ``pattern`` remains a public
+          field holding the live compiled object ``redact_secrets`` calls ``.sub()``
+          on — and it is no worse than reading ``rp.pattern.pattern``, which is equally
+          public and equally deliberate. Closing it would mean wrapping the compiled
+          pattern in an opaque holder: a PUBLIC API shape change, deliberately out of
+          scope here.
+
+        So: ``repr(rp)``/``str(rp)``/``f"{rp!r}"`` are safe, and the accidental
+        dict-shaped paths now fail loudly. Do not hand ``asdict``/``astuple`` output —
+        or ``rp.pattern`` itself — to a serializer or logger.
         """
         return (
             f"RedactionPattern(pattern=<compiled len={len(self.pattern.pattern)} "
