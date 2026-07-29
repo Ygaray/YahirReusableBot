@@ -218,7 +218,7 @@ collection) at a distinct dotted path — do not merge the two by analogy-confus
 
 | Phase | Plans Complete | Status | Completed |
 |-------|----------------|--------|-----------|
-| 5. Redaction core + pattern registration | 0/TBD | Not started | - |
+| 5. Redaction core + pattern registration | 1/3 | In Progress|  |
 | 6. Insertion seams + provable backstop | 0/TBD | Not started | - |
 | 7. v0.1.2 debt paydown | 0/TBD | Not started | - |
 
@@ -236,29 +236,35 @@ register the patterns it uses — no domain noun, no process-wide mutable state,
      survive intact (endpoint, HTTP status, neighbouring params), is idempotent under
      re-application, and returns non-`str` input without raising mid-exception-handling —
      WeatherBot's boundary-case matrix, ported into the hub suite, passes.
+
   2. Patterns are compiled once at registration and frozen into an immutable collection; the hub's
      own suite produces identical results run in isolation and run in full-suite order — no
      cross-test pollution, no import-order dependence, no module-level mutable singleton.
+
   3. A pattern with nested/overlapping quantifiers that blows a wall-clock budget against
      adversarial input is **rejected at registration** with a raised error, never silently accepted
      to hang at log time.
+
   4. A registered literal secret value is blocked wherever it appears — including inside a
      `repr()` of an object that embeds it — not only in a `name=value` shape.
+
   5. Every `def`/`class`/param/annotation name under `redact/` passes the AST signature litmus, and
      `redact/` imports no sibling `yahir_reusable_bot` subpackage (pure leaf: stdlib only).
 
-**Plans**: 3 plans
+**Plans**: 1/3 plans executed
 
 Plans (strictly serial Waves 1→2→3 — each plan commits its RED test then its GREEN fix and
 re-verifies the standing gates green before the next plan's RED commit, so a deliberately-RED test
 never overlaps a sibling plan's full-suite gate; the Phases 1–3 lesson):
 
-- [ ] 05-01-PLAN.md — REDACT-01 / REDACT-06 / REDACT-02 (type half): `tests/test_redact_core.py` RED,
+- [x] 05-01-PLAN.md — REDACT-01 / REDACT-06 / REDACT-02 (type half): `tests/test_redact_core.py` RED,
   then `redact/core.py` — the `RedactionPattern` pattern+replacement pair (D-48), the escaped-literal
   constructor (D-51), and the `redact_secrets` scrubbing loop (D-49/D-52/D-53)
+
 - [ ] 05-02-PLAN.md — REDACT-02 (registration half) / REDACT-03: `tests/test_redact_registry.py` RED,
   then `redact/registry.py` — `register_patterns` with the structural check plus a
   bounded-termination wall-clock ReDoS probe (D-50)
+
 - [ ] 05-03-PLAN.md — Phase gate: confirm the import-hygiene no-edit claim, add the `redact/` litmus
   coverage guard, and audit GATE-02's RED-first ancestry + the human-gated close-out record
 
@@ -267,11 +273,13 @@ never overlaps a sibling plan's full-suite gate; the Phases 1–3 lesson):
 - Build order inside the phase is `core.py` → `registry.py` (research ARCHITECTURE Q6 steps 1–2).
   REDACT-03's ReDoS vetting is part of the registration API, not bolted on afterwards — it is the
   registration call that raises.
+
 - The API shape must make late compilation structurally impossible (accept compiled pattern
   objects / a registered handle, never raw strings at the call site) and must expose disablement
   as an explicit constructor parameter — **never** an env-var read inside the hub
   (PITFALLS 6, 7, 9). These are expensive to change once a consumer depends on them; settle them
   here, not retrofitted later.
+
 - The parity-test plan for the human-gated close-out (which exact WeatherBot assertions must
   re-pass, and the explicit scope boundary around `client.py`) is written and agreed at this
   phase's discuss/plan time, not improvised at repin time (PITFALLS 10).
@@ -289,13 +297,17 @@ every rendered log line — event fields and formatted tracebacks alike — prov
      masked, asserted against the **full captured output**, never `str(exc)` alone; and a
      `JSONRenderer`-produced line carrying an escaped secret still round-trips through
      `json.loads` after redaction.
+
   2. The optional structlog processor scrubs `event_dict` string values pre-render, and its
      chain-order precondition (must sit after the exception formatters) is stated loudly in its own
      docstring — shipped as additive defense-in-depth, never as the sole backstop.
+
   3. `assert_redaction_active` fails loudly when the backstop is not actually installed — e.g.
      after a second `structlog.configure()` call drops it — and passes when it is.
+
   4. Redaction-count telemetry reports how many substitutions fired, so a consumer can observe the
      backstop working rather than assume it.
+
   5. `EXTENSION-GUIDE.md` carries SEAM-08 with its row flipped to **implemented**, naming the
      architectural inversion explicitly: the hub supplies a toolkit the consumer wires into its own
      `structlog.configure()`, so no `Redactor` Protocol exists to go looking for.
@@ -308,11 +320,14 @@ every rendered log line — event fields and formatted tracebacks alike — prov
   satisfies the hard requirement (event fields *and* formatted tracebacks, renderer-agnostic,
   chain-order-independent). Proving it first means the milestone goal is met even if scope pressure
   later trims REDACT-05.
+
 - REDACT-05 (processor) is secondary and additive — it could be deferred within the milestone
   without breaking the goal. It lands last among the seams.
+
 - REDACT-07 / REDACT-08 depend on a seam existing; they land after REDACT-04, and their own tests
   become the assertion mechanism for the seam integration tests rather than hand-rolled capture
   setup per test.
+
 - DOCS-04 closes the phase: per `ECOSYSTEM.md` §6 the promotion is not *done* until the guide row
   flips. The hub must **not** call `structlog.configure()` itself at any point.
 
@@ -326,14 +341,18 @@ open item from the retrospective audit is closed or explicitly decided.
 
   1. Registering two `CommandSpec`s with the same `name` raises `ValueError` at registration, so
      `match_command` can never resolve a different `CommandSpec` than `by_name` holds.
+
   2. The retry-pin path's log distinguishes `discord.Forbidden` from a generic `HTTPException`, so
      a permissions failure is never mislabeled as a pin-cap failure; and a failed eviction-delete
      leaves that stray in the call's cleanup instead of dropping it.
+
   3. `_best_effort_hook` logs via a structured `label=` kwarg instead of an f-string, at both its
      sites; and `uv run pytest` completes with **zero** warnings — the unawaited-coroutine
      `RuntimeWarning` from the `test_gateway.py` fake client is gone.
+
   4. The identity guard's attached `-mmodule` behavior and `on_online`'s annotation each land as an
      explicitly decided outcome, with the reasoning recorded — see the human-decision note below.
+
   5. Every active planning artifact naming a consumer de-hack site names a path that **exists** in
      WeatherBot, and the enumeration includes the *producing* site (`weatherbot/ops/selfcheck.py`),
      not only the sites that consume the outcome — verified against the filesystem, not against the
@@ -357,6 +376,7 @@ open item from the retrospective audit is closed or explicitly decided.
   was applied in v0.1.2 and the behavioral fix was **deliberately deferred to a human call**. The
   discuss step must surface "fix the behavior" vs. "document as a permanent limitation, with
   reasoning" as a decision, not pick one.
+
 - **SURF-02** (v0.1.2 Phase 4 IN-02): narrowing `on_online` from `Callable[..., None] | None` to
   `Callable[[HealthResult], None]`. This is a **public hub-surface change** — deferred deliberately
   in v0.1.2 as needing a decision, not a drive-by. The discuss step must surface it.
@@ -382,12 +402,15 @@ discuss time whether they are corrected or annotated.
    import swapped. All 6 assertions must pass unchanged. **Only then** delete the app-local
    `weatherbot/_redact.py` in favour of the hub import. Deleting it in the same commit that wires
    the replacement is the failure mode this gate exists to prevent.
+
 4. **Sweep WeatherBot for duplicate `spec.name` values** (MATCH-03 is consumer-breaking).
 5. Verify the PC-01 parity suite and the MATCH-03 duplicate sweep as **two separate, individually
    green checks** before treating the combined repin as ready — one bundled repin otherwise
    conflates the two failure causes.
+
 6. Confirm the live daemon picked the change up: check the startup `module provenance` log line
    against `deploy/PROMOTION-LEDGER.md` post-deploy (`ECOSYSTEM.md` §7).
+
 7. **Permanently out of PC-01 scope:** `weatherbot/weather/client.py`'s domain-specific redacted
    re-raise (with `from None`) stays app-local forever — it is domain logic, not a generic
    backstop, and it must be confirmed *untouched* by the swap.

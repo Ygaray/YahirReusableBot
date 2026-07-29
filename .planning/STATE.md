@@ -2,17 +2,18 @@
 gsd_state_version: 1.0
 milestone: v0.2.0
 milestone_name: — Redaction promotion + hardening debt
-current_phase: 5
-status: planned
-stopped_at: Phase 5 planned — ready to execute
-last_updated: "2026-07-29T18:25:00.000Z"
+current_phase: 05
+current_phase_name: redaction-core-pattern-registration
+status: executing
+stopped_at: Completed 05-01-PLAN.md
+last_updated: "2026-07-29T18:26:46.595Z"
 last_activity: 2026-07-29
-last_activity_desc: Phase 5 planned — 3 plans across Waves 1→2→3, plan-checker PASSED
+last_activity_desc: Phase 05 execution started
 progress:
   total_phases: 3
   completed_phases: 0
   total_plans: 3
-  completed_plans: 0
+  completed_plans: 1
   percent: 0
 ---
 
@@ -20,11 +21,11 @@ progress:
 
 ## Current Position
 
-Phase: 5 — Redaction core + pattern registration (planned, not started)
-Plan: 0/3 complete
-Status: Ready to execute — `/gsd-execute-phase 5`
+Phase: 05 (redaction-core-pattern-registration) — EXECUTING
+Plan: 2 of 3
+Status: Ready to execute
 Progress: [__________] 0% (0/3 phases)
-Last activity: 2026-07-29 — Phase 5 planned: 3 plans across Waves 1→2→3, plan-checker PASSED
+Last activity: 2026-07-29 — Phase 05 execution started
 
 ## Milestone Shape
 
@@ -39,9 +40,9 @@ litmus / grimp green, and every requirement ships a RED-first regression test.
 
 ## Session
 
-**Last session:** 2026-07-29T17:42:01.034Z
-**Stopped at:** Phase 5 context gathered
-**Resume file:** .planning/phases/05-redaction-core-pattern-registration/05-CONTEXT.md
+**Last session:** 2026-07-29T18:26:41.203Z
+**Stopped at:** Completed 05-01-PLAN.md
+**Resume file:** None
 
 ## Performance Metrics
 
@@ -63,6 +64,7 @@ Carried from v0.1.2 for calibration (14 plans across 4 phases, ~3–25min per pl
 | Phase 03 P05 | 12min | 2 tasks | 2 files |
 | Phase 04 P01 | 12min | 3 tasks | 4 files |
 | Phase 04 P02 | 3min | 2 tasks | 2 files |
+| Phase 05 P01 | 18min | 2 tasks | 3 files |
 
 ## Decisions
 
@@ -114,6 +116,9 @@ Roadmapping decisions (2026-07-29):
 
 Full v0.1.2 decision history is archived under `.planning/milestones/v0.1.2-phases/*/`
 (`*-SUMMARY.md`, `*-VALIDATION.md`) and summarized in `.planning/v0.1.2-MILESTONE-AUDIT.md`.
+
+- [Phase ?]: RedactionPattern.__repr__ is explicit and source-eliding (repr=False on the dataclass) so a literal-constructed instance can never leak its held secret through its own logging representation (PR-01, T-05-02).
+- [Phase ?]: RedactionPattern.literal rejects empty/blank values with ValueError at construction, message never echoing the rejected value (D-41 precedent, stricter no-echo rule than panelkit.py's guard).
 
 ## Todos
 

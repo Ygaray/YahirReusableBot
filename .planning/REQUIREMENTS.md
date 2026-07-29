@@ -20,7 +20,6 @@
 > `.planning/v0.1.2-MILESTONE-AUDIT.md` (status `tech_debt` — no blockers, 9 open items, which
 > are carried into v0.2.0 below).
 
-
 Source of record: `.planning/backlog/HUB-HARDENING-REPORT-v0.1.2.md` (fix direction per finding)
 and `.planning/backlog/HUB-FINDINGS-HANDOFF.md` (failure scenario + evidence). One requirement per
 audit finding, so every REQ traces back to an H-number. **Every requirement ships with a RED-first
@@ -139,12 +138,12 @@ surface — `redact_secrets(text, patterns)`, never `redact_appid` or an `appid`
 
 ### Redaction mechanism — new `yahir_reusable_bot/redact/` subpackage (Track A)
 
-- [ ] **REDACT-01** (PC-01): `redact_secrets(text, patterns) -> str` scrubs every configured
+- [x] **REDACT-01** (PC-01): `redact_secrets(text, patterns) -> str` scrubs every configured
   secret from a rendered string in one pass — idempotent, tolerant of non-`str` input (never
   raises mid-exception-handling), and masks the *value* while preserving surrounding diagnostics
   (endpoint, HTTP status, neighbouring params). → Phase 5
 
-- [ ] **REDACT-02** (PC-01): A `RedactionPattern` type plus a stateless registration API —
+- [x] **REDACT-02** (PC-01): A `RedactionPattern` type plus a stateless registration API —
   patterns compiled once and frozen into an immutable collection, with **zero process-wide
   mutable state**. A module-level singleton consumers mutate at import time is explicitly
   rejected (import-order dependence + cross-test pollution in a library). → Phase 5
@@ -164,7 +163,7 @@ surface — `redact_secrets(text, patterns)`, never `redact_appid` or an `appid`
   pre-render, with its chain-order precondition (must sit after the exception formatters) stated
   loudly in the docstring. Secondary and additive — never the sole backstop. → Phase 6
 
-- [ ] **REDACT-06** (PC-01): A literal-value redaction mode blocks an exact secret string wherever
+- [x] **REDACT-06** (PC-01): A literal-value redaction mode blocks an exact secret string wherever
   it appears, catching leak paths that pattern matching misses. → Phase 5
 
 - [ ] **REDACT-07** (PC-01): `assert_redaction_active` lets a consumer prove at wiring time that
@@ -246,8 +245,10 @@ Per `ECOSYSTEM.md` §3, surfaced for confirmation, never performed autonomously:
    `tests/test_redact_hygiene.py` (6 tests) against the hub-backed replacement. All assertions
    must pass unchanged. Only then delete the app-local `weatherbot/_redact.py` in favour of the
    hub import.
+
 4. **Sweep WeatherBot for duplicate `spec.name` values** — MATCH-03 turns a previously-silent
    overwrite into a `ValueError` at registration.
+
 5. **Permanently out of PC-01 scope:** `weatherbot/weather/client.py`'s domain-specific redacted
    re-raise stays app-local forever — it is domain logic, not a generic backstop.
 
