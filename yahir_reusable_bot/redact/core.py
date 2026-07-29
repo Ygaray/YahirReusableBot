@@ -114,7 +114,15 @@ def redact_secrets(text: str, patterns: Sequence[RedactionPattern]) -> str:
     regex work, no raise and no warning — a consumer wiring this mechanism before
     registering anything is a legitimate, silent no-op state, not an error.
 
-    This function never raises. It is strict ``str -> str``: matching happens at
+    This function never raises FOR A WELL-FORMED pattern/replacement pair. An
+    out-of-range backreference in ``replacement`` (e.g. ``r"\\2"`` against a
+    single-group ``pattern``) is a consumer wiring bug caught at registration time by
+    ``register_patterns`` — not by this function — so any ``RedactionPattern`` that
+    reached here via that registration path is already guaranteed well-formed. Calling
+    this function directly with a hand-built, unregistered, malformed pattern is out
+    of contract and can still raise ``re.error``.
+
+    It is strict ``str -> str``: matching happens at
     Python ``str`` code-point level, with no Unicode normalization and no case
     folding performed by this function itself (a pattern's own ``re.IGNORECASE``
     flag, if set, travels with it). A caller needing NFC/NFD equivalence normalizes

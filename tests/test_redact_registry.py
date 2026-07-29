@@ -231,3 +231,29 @@ def test_register_patterns_error_does_not_echo_pattern_source():
     message = str(excinfo.value)
     assert sentinel not in message
     assert "1" in message
+
+
+def test_register_patterns_rejects_malformed_replacement_template():
+    """WR-01: a `replacement` template referencing a capture group that does not
+    exist in `pattern` (a consumer typo, e.g. `\\2` against a single-group pattern)
+    must be rejected at REGISTRATION time with a `ValueError`, not sail through
+    silently and raise for the first time deep inside `redact_secrets` at a hot log
+    call site. This holds regardless of `skip_redos_check` — the malformed-template
+    check is independent of ReDoS vetting."""
+    malformed = RedactionPattern(pattern=re.compile(r"(a)"), replacement=r"\2***")
+    with pytest.raises(ValueError, match="malformed"):
+        register_patterns([malformed])
+
+    malformed_opted_out = RedactionPattern(
+        pattern=re.compile(r"(a)"), replacement=r"\2***", skip_redos_check=True
+    )
+    with pytest.raises(ValueError, match="malformed"):
+        register_patterns([malformed_opted_out])
+
+
+def test_register_patterns_accepts_well_formed_backreference_replacement():
+    """WR-01 companion (no false-reject): a `replacement` template whose
+    backreference DOES correspond to a real capture group registers cleanly."""
+    rp = _proven_boundary_pattern()
+    result = register_patterns([rp])
+    assert result == (rp,)

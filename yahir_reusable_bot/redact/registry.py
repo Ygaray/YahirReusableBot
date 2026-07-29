@@ -145,10 +145,15 @@ def register_patterns(
 
     Every entry is checked in one pass, before any derived state exists, mirroring the
     validate-then-derive idiom in ``registry/registry.py`` (borrowed as an idiom only —
-    this is a free function, not a stateful class). An entry whose ``skip_redos_check``
-    is True skips both checks entirely (D-50's explicit, per-pattern opt-out). Every
-    other entry is rejected if it looks structurally pathological OR blows the
-    wall-clock budget against the adversarial corpus.
+    this is a free function, not a stateful class). Every entry — regardless of
+    ``skip_redos_check`` — first has its ``replacement`` template validated against its
+    own ``pattern``'s group count: a malformed template (e.g. a backreference to a
+    capture group that does not exist) is a consumer wiring bug that must surface here,
+    not for the first time deep inside ``redact_secrets`` at a hot log call site with no
+    runtime rescue. An entry whose ``skip_redos_check`` is True then skips both ReDoS
+    checks (D-50's explicit, per-pattern opt-out). Every other entry is rejected if it
+    looks structurally pathological OR blows the wall-clock budget against the
+    adversarial corpus.
 
     On success, returns a NEW ``tuple(patterns)`` — a frozen collection positionally
     equal to the input, preserving order, keeping duplicates, and never sorting or
@@ -158,6 +163,21 @@ def register_patterns(
     results (SC2).
     """
     for index, rp in enumerate(patterns):
+        try:
+            # A trivial, empty probe is enough: `re.Pattern.sub` validates a
+            # replacement template's backreferences eagerly, at template-compile
+            # time, before it ever attempts a match — so this raises `re.error` for a
+            # malformed template regardless of whether the probe text matches
+            # `rp.pattern` (WR-01). Never echoes `rp.pattern.pattern`: the message
+            # names the entry by INDEX only, same convention as the ReDoS rejection
+            # below (PR-02, T-05-02).
+            rp.pattern.sub(rp.replacement, "")
+        except re.error as exc:
+            raise ValueError(
+                f"RedactionPattern at index {index} rejected at registration — its "
+                f"replacement template is malformed against its pattern's capture "
+                f"groups: {exc}"
+            ) from exc
         if rp.skip_redos_check:
             continue
         if _looks_pathological(rp.pattern) or _blows_budget(rp.pattern):
