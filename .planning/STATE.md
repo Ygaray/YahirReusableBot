@@ -4,17 +4,17 @@ milestone: v0.2.0
 milestone_name: — Redaction promotion + hardening debt
 current_phase: 05
 current_phase_name: redaction-core-pattern-registration
-status: executing
-stopped_at: Completed 05-02-PLAN.md
-last_updated: "2026-07-29T18:33:47.223Z"
+status: verifying
+stopped_at: Completed 05-03-PLAN.md (Phase 5 complete)
+last_updated: "2026-07-29T18:39:13.786Z"
 last_activity: 2026-07-29
 last_activity_desc: Phase 05 execution started
 progress:
   total_phases: 3
-  completed_phases: 0
+  completed_phases: 1
   total_plans: 3
-  completed_plans: 2
-  percent: 0
+  completed_plans: 3
+  percent: 33
 ---
 
 # Project State
@@ -23,7 +23,7 @@ progress:
 
 Phase: 05 (redaction-core-pattern-registration) — EXECUTING
 Plan: 3 of 3
-Status: Ready to execute
+Status: Phase complete — ready for verification
 Progress: [__________] 0% (0/3 phases)
 Last activity: 2026-07-29 — Phase 05 execution started
 
@@ -40,8 +40,8 @@ litmus / grimp green, and every requirement ships a RED-first regression test.
 
 ## Session
 
-**Last session:** 2026-07-29T18:33:47.206Z
-**Stopped at:** Completed 05-02-PLAN.md
+**Last session:** 2026-07-29T18:39:13.777Z
+**Stopped at:** Completed 05-03-PLAN.md (Phase 5 complete)
 **Resume file:** None
 
 ## Performance Metrics
@@ -66,6 +66,7 @@ Carried from v0.1.2 for calibration (14 plans across 4 phases, ~3–25min per pl
 | Phase 04 P02 | 3min | 2 tasks | 2 files |
 | Phase 05 P01 | 18min | 2 tasks | 3 files |
 | Phase 05 P02 | ~12min | 2 tasks | 3 files |
+| Phase 05 P03 | ~10min | 2 tasks | 2 files |
 
 ## Decisions
 
@@ -122,6 +123,9 @@ Full v0.1.2 decision history is archived under `.planning/milestones/v0.1.2-phas
 - [Phase ?]: RedactionPattern.literal rejects empty/blank values with ValueError at construction, message never echoing the rejected value (D-41 precedent, stricter no-echo rule than panelkit.py's guard).
 - [Phase ?]: Implemented the plan's escalating-ladder ReDoS probe (cumulative-elapsed check after every search) rather than RESEARCH.md's single-shot probe — a single long search over a catastrophic pattern would hang the vetting call itself (T-05-06).
 - [Phase ?]: test_register_patterns_accepts_proven_appid_pattern (05-VALIDATION.md draft) renamed to test_register_patterns_accepts_proven_boundary_pattern — the draft name embedded a WeatherBot domain noun, forbidden under redact/'s litmus discipline.
+- [Phase ?]: redact_scanned litmus coverage guard added to test_import_hygiene.py — an addition for convention consistency (standing gate already auto-covered redact/ unedited), not a fix, matching the lifecycle/registry/discord guard shape
+- [Phase ?]: GATE-02 RED-first ancestry for REDACT-01/02/03/06 proven from git trees (git rev-parse adjacency + git ls-tree RED-ness + commit purity), not asserted in prose
+- [Phase ?]: WeatherBot parity-test plan verified against actual source: 4 of 6 assertions are Phase-5-core-only, 2 of 6 (test_discord_on_message_does_not_dump_key, test_livestderr_write_tolerates_and_scrubs_bytes) depend on the Phase-6 sink/backstop seam and cannot fully re-pass until Phase 6 ships
 
 ## Todos
 

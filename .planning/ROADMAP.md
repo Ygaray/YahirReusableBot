@@ -218,7 +218,7 @@ collection) at a distinct dotted path — do not merge the two by analogy-confus
 
 | Phase | Plans Complete | Status | Completed |
 |-------|----------------|--------|-----------|
-| 5. Redaction core + pattern registration | 2/3 | In Progress|  |
+| 5. Redaction core + pattern registration | 3/3 | In Progress|  |
 | 6. Insertion seams + provable backstop | 0/TBD | Not started | - |
 | 7. v0.1.2 debt paydown | 0/TBD | Not started | - |
 
@@ -251,7 +251,7 @@ register the patterns it uses — no domain noun, no process-wide mutable state,
   5. Every `def`/`class`/param/annotation name under `redact/` passes the AST signature litmus, and
      `redact/` imports no sibling `yahir_reusable_bot` subpackage (pure leaf: stdlib only).
 
-**Plans**: 2/3 plans executed
+**Plans**: 3/3 plans executed
 
 Plans (strictly serial Waves 1→2→3 — each plan commits its RED test then its GREEN fix and
 re-verifies the standing gates green before the next plan's RED commit, so a deliberately-RED test
@@ -265,7 +265,7 @@ never overlaps a sibling plan's full-suite gate; the Phases 1–3 lesson):
   then `redact/registry.py` — `register_patterns` with the structural check plus a
   bounded-termination wall-clock ReDoS probe (D-50)
 
-- [ ] 05-03-PLAN.md — Phase gate: confirm the import-hygiene no-edit claim, add the `redact/` litmus
+- [x] 05-03-PLAN.md — Phase gate: confirm the import-hygiene no-edit claim, add the `redact/` litmus
   coverage guard, and audit GATE-02's RED-first ancestry + the human-gated close-out record
 
 **Scope notes for discuss/plan:**

@@ -327,3 +327,8 @@ None - no external service configuration required.
 ---
 *Phase: 05-redaction-core-pattern-registration*
 *Completed: 2026-07-29*
+
+## Self-Check: PASSED
+
+`tests/test_import_hygiene.py` and this SUMMARY verified present on disk; both task commit hashes
+(`6cfba0e`, `cfbe7cf`) verified present in git history.
