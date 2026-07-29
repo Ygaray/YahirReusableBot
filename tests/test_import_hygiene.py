@@ -284,6 +284,16 @@ def test_litmus_clean():
         "discord adapter package not in the litmus scan tree (coverage gap): "
         f"{sorted(discord_scanned)}"
     )
+    # This is an ADDITION for convention consistency, not a fix for a failing gate — the
+    # rglob scan above already auto-covers redact/ today. It exists so a future refactor
+    # that relocates it cannot silently drop it from litmus coverage.
+    redact_scanned = {
+        path.name for path in (_MODULE_ROOT / "redact").rglob("*.py")
+    }
+    assert {"core.py", "registry.py"} <= redact_scanned, (
+        "redact package not in the litmus scan tree (coverage gap): "
+        f"{sorted(redact_scanned)}"
+    )
     hits = {
         (path.name, name)
         for path in _MODULE_ROOT.rglob("*.py")
