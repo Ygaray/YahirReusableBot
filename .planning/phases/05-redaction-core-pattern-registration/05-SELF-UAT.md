@@ -12,8 +12,8 @@ run: 2026-07-29T00:00:00Z
 # Self-UAT Log — Phase 5 (Redaction core + pattern registration)
 
 **Target:** No device/browser surface exists for this project (`yahir_reusable_bot` is a pure
-library, "never run on its own" per its own `CLAUDE.md`). Per `AGENT-LIBRARY-TESTING.md` (authored
-this run — no driver playbook previously existed; project config now points
+library, "never run on its own" per its own `CLAUDE.md`). Per `.planning/AGENT-LIBRARY-TESTING.md`
+(authored this run — no driver playbook previously existed; project config now points
 `workflow.uat_driver_playbook` at it), the consumer-facing rung for this platform is: build the
 wheel from HEAD, install it into a disposable scratch venv, and exercise the public API from a
 Python process whose `cwd` is outside the repo (so the repo root is never on `sys.path` — the same
@@ -177,7 +177,7 @@ infra: 0
 
 - No UAT driver playbook existed for this project before this run (`workflow.uat_driver_playbook`
   was `null`). This project has no device/browser/server surface at all — it is a pure library.
-  Authored `AGENT-LIBRARY-TESTING.md` at the project root this run (build wheel → scratch venv
+  Authored `.planning/AGENT-LIBRARY-TESTING.md` this run (build wheel → scratch venv
   install → exercise public API from a non-repo `cwd`) and pointed
   `.planning/config.json:workflow.uat_driver_playbook` at it so future Gate-1 runs on this hub reuse
   it without re-bootstrapping.
