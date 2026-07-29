@@ -645,6 +645,15 @@ This is NOT executed by this phase's workflow — it is the plan the human-gated
 `ECOSYSTEM.md` §3) will execute, written now so it isn't improvised at repin time (PITFALLS.md
 Pitfall 10, STATE.md Todos).
 
+> **⚠ CORRECTED POST-EXECUTION (2026-07-29) — read `05-VALIDATION.md` § Manual-Only for the
+> authoritative version.** This list was written from the requirement text before anyone read the
+> WeatherBot test file. Plan 05-03's executor read it and found the list overstates what Phase 5
+> alone can deliver: only **4 of the 6** below are reachable after Phase 5. Items **4**
+> (`test_discord_on_message_does_not_dump_key`) and **6**
+> (`test_livestderr_write_tolerates_and_scrubs_bytes`) depend on the Phase-6 sink/backstop seam and
+> **cannot fully re-pass until Phase 6 ships** — item 6 says so below, item 4 does not. Do not treat
+> this section as a Phase-5 exit gate.
+
 **Which exact WeatherBot assertions must re-pass**, run unmodified from
 `/home/yahir/Projects/WeatherBot/tests/test_redact_hygiene.py` against the hub-backed replacement,
 with only the import swapped:
