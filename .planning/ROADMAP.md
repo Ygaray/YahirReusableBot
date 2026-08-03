@@ -219,7 +219,7 @@ collection) at a distinct dotted path — do not merge the two by analogy-confus
 | Phase | Plans Complete | Status | Completed |
 |-------|----------------|--------|-----------|
 | 5. Redaction core + pattern registration | 3/3 | Complete    | 2026-07-29 |
-| 6. Insertion seams + provable backstop | 0/TBD | Not started | - |
+| 6. Insertion seams + provable backstop | 0/4 | Not started | - |
 | 7. v0.1.2 debt paydown | 0/TBD | Not started | - |
 
 ### v0.2.0 Phase Details
@@ -312,7 +312,28 @@ every rendered log line — event fields and formatted tracebacks alike — prov
      architectural inversion explicitly: the hub supplies a toolkit the consumer wires into its own
      `structlog.configure()`, so no `Redactor` Protocol exists to go looking for.
 
-**Plans**: TBD
+**Plans**: 4 plans
+
+Plans (strictly serial Waves 1→2→3→4 — each requirement plan commits its RED test then its GREEN fix
+and re-verifies the standing gates green before the next plan's RED commit, so a deliberately-RED test
+never overlaps a sibling plan's full-suite gate; the Phases 1–3 lesson, re-proven in Phase 5):
+
+- [ ] 06-01-PLAN.md — REDACT-04 / REDACT-08: `tests/test_redact_sink.py` RED, then `redact/sink.py` —
+  `RedactingWriter` (rendered-text backstop, D-52 triage, D-53 explicit disablement, D-54 both wiring
+  recipes proven per D-55), the D-59 lock-guarded D-58 changed-write counter with its D-57 optional
+  hook, and the D-56 in-memory dry-run probe
+
+- [ ] 06-02-PLAN.md — REDACT-07: `tests/test_redact_verify.py` RED, then `redact/verify.py` —
+  `assert_redaction_active` (D-56) with three distinct failure messages, the opt-in deep behaviour
+  check, and D-60's warn-only processor-ordering sub-check discovered by a published marker attribute
+
+- [ ] 06-03-PLAN.md — REDACT-05: `tests/test_redact_processor.py` RED, then `redact/processor.py` —
+  the optional additive `redaction_processor`, its loud chain-order docstring (D-60), and the pinned
+  limitation test proving a processor-only configuration still leaks
+
+- [ ] 06-04-PLAN.md — DOCS-04 + phase gate: `EXTENSION-GUIDE.md` SEAM-08 flipped to implemented, the
+  `redact/` litmus coverage guard extended, a new gate proving the load-bearing sink stays
+  framework-agnostic, and GATE-02's RED-first ancestry re-derived from git
 
 **Sequencing constraint — the sink is proven first:**
 
