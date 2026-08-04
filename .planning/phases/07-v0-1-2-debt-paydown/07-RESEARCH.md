@@ -581,9 +581,18 @@ data alone.
 `uv run pytest` execution) — no user confirmation needed beyond the decisions already locked in
 `07-CONTEXT.md`.
 
-## Open Questions
+## Open Questions (RESOLVED)
 
-1. **Exact wording of DISC-07's new log message and HYG-03's two split messages.**
+> Both questions were plan-time choices, not research gaps, and both were resolved by the Phase 7
+> plans (commit `3bd3f6b`) exactly as recommended below. Recorded here so the resolution lives with
+> the question.
+
+1. **Exact wording of DISC-07's new log message and HYG-03's two split messages.** — **RESOLVED**
+   in `07-02-PLAN.md`: the retry-pin Forbidden branch logs the event string
+   `"panel pin forbidden on retry (permission revoked mid-summon); fresh panel left unpinned"`,
+   following the mirrored site's house style (short, human-readable sentence; structured fields via
+   kwargs; no f-string). The plan additionally pins the branch ordering and records that the branch
+   logs-and-swallows rather than re-raising.
    - What we know: CONTEXT.md explicitly marks the HYG-03 code shape as "illustrative, not a
      literal patch — the planner owns the final form," and DISC-07 has no prescribed string either
      (Claude's Discretion section only pins the `except` clause placement and the mirrored idiom).
@@ -595,7 +604,11 @@ data alone.
      research gap.
 
 2. **Whether DOCS-03's corrected three-site enumeration needs its own standing test, or rides
-   entirely on DOCS-02's `ops/daemon` gate.**
+   entirely on DOCS-02's `ops/daemon` gate.** — **RESOLVED** in `07-06-PLAN.md` / `07-07-PLAN.md`:
+   DOCS-03 is treated as **manual-only**, per the recommendation. No positive-content grep test was
+   added (it would be over-fitted prose-coupled churn). The three-site correctness is signed off
+   against the WeatherBot checkout and recorded in the phase SUMMARY, consistent with D-67's
+   "evidence, not test" treatment of the filesystem-existence half.
    - What we know: D-67's gate asserts a STRING (`ops/daemon`) is absent from active artifacts —
      it does not assert that a CORRECT enumeration is present (i.e., it can't verify
      `weatherbot/ops/selfcheck.py` is actually mentioned anywhere).
