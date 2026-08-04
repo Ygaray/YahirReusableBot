@@ -218,15 +218,18 @@ def test_processor_carries_the_self_check_marker():
 
 def test_processor_scrubs_a_formatted_traceback_when_ordered_after_the_exception_formatter():
     """The positive additive-value case: correctly ordered AFTER
-    ``dict_tracebacks``, the processor DOES scrub a formatted traceback that has
-    already been rendered into the event mapping. A PLAIN capture double is the file
-    target (deliberately NO sink), so the scrubbing is attributed to the processor
-    alone."""
+    ``format_exc_info``, the processor DOES scrub a formatted traceback that has
+    already been rendered into the event mapping. ``format_exc_info`` (unlike
+    ``dict_tracebacks``, which nests the traceback as structured data rather than a
+    flat string) renders the exception into a single ``event_dict["exception"]``
+    string — the exact shape this processor's shallow, top-level scrub loop can
+    reach. A PLAIN capture double is the file target (deliberately NO sink), so the
+    scrubbing is attributed to the processor alone."""
     capture = _CaptureDouble()
     pattern = RedactionPattern.literal(SENTINEL)
     structlog.configure(
         processors=[
-            structlog.processors.dict_tracebacks,
+            structlog.processors.format_exc_info,
             redaction_processor((pattern,)),
             structlog.processors.JSONRenderer(),
         ],
