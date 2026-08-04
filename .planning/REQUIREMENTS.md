@@ -268,11 +268,11 @@ Phase numbering **continues from v0.1.2** (which ended at Phase 4). See `.planni
 | REDACT-02 | A (PC-01) | Phase 5 | Complete (2026-07-29) |
 | REDACT-03 | A (PC-01) | Phase 5 | Complete (2026-07-29) |
 | REDACT-06 | A (PC-01) | Phase 5 | Complete (2026-07-29) |
-| REDACT-04 | A (PC-01) | Phase 6 | Pending |
-| REDACT-05 | A (PC-01) | Phase 6 | Pending |
-| REDACT-07 | A (PC-01) | Phase 6 | Pending |
-| REDACT-08 | A (PC-01) | Phase 6 | Pending |
-| DOCS-04 | A (PC-01) | Phase 6 | Pending |
+| REDACT-04 | A (PC-01) | Phase 6 | Complete (2026-08-04) |
+| REDACT-05 | A (PC-01) | Phase 6 | Complete (2026-08-04) |
+| REDACT-07 | A (PC-01) | Phase 6 | Complete (2026-08-04) |
+| REDACT-08 | A (PC-01) | Phase 6 | Complete (2026-08-04) |
+| DOCS-04 | A (PC-01) | Phase 6 | Complete (2026-08-04) |
 | MATCH-03 | B (debt) | Phase 7 | Pending |
 | LIFE-05 | B (debt) | Phase 7 | Pending |
 | SURF-02 | B (debt) | Phase 7 | Pending |
