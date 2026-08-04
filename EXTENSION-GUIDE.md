@@ -94,6 +94,20 @@ generic process-identity guard, and the `HealthResult` type. The host supplies t
 health-check callback the READY gate fires once at startup self-check. Generic seam names
 (`health` / `ready` / `identity`) are exactly what the module exposes — no host nouns.
 
+**Launch-form constraint on the process-identity guard (D-61):** the identity guard
+recognizes a daemon launched as `python -m yourmodule` and its attached twin
+`python -myourmodule`, but it deliberately does NOT recognize the bundled short-option
+group form, where `-m` is fused onto a preceding single-letter flag (`python -Omyourmodule`,
+`python -Imyourmodule`). **Do not launch your daemon that way** — the guard will report a
+live daemon as not-running. This is a permanent, deliberate limitation, not an unfixed bug:
+the guard's two failure directions are asymmetric. A false negative (this case) merely
+reports a live daemon as dead — annoying, but recoverable. A false positive delivers SIGHUP
+— whose default disposition is *terminate* — to an unrelated, recycled PID. Partially
+reconstructing CPython's short-option-bundling grammar to decode the bundled form risks
+exactly that trade in the wrong direction, so the boundary stays where it is. See
+`_argv_matches_marker`'s docstring in `yahir_reusable_bot/lifecycle/identity.py` for the
+full argument.
+
 ## 5. Command registration — `registry` / `bind` (SEAM-06, implemented)
 
 **Source:** `yahir_reusable_bot/registry/` (`spec.py`, `registry.py`, `match.py`, `dispatch.py`, `__init__.py`)

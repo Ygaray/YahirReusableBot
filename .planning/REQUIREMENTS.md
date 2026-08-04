@@ -183,10 +183,14 @@ surface — `redact_secrets(text, patterns)`, never `redact_appid` or an `appid`
 
 ### Lifecycle (Track B)
 
-- [ ] **LIFE-05** (v0.1.2 Phase 1 WR-01): The identity guard's attached `-mmodule` form behavior
-  is resolved — either matched, or documented as a permanent limitation with reasoning.
-  **Deliberately deferred once already; needs an explicit human decision at discuss time, not a
-  default.** → Phase 7
+- [ ] **LIFE-05** (v0.1.2 Phase 1 WR-01): The identity guard's BUNDLED short-option group form
+  (`python -Om<module>` / `-Im<module>`) behavior is resolved — either matched, or documented as
+  a permanent limitation with reasoning. **Correction (Phase 7 PC-A):** the requirement text
+  previously named the ATTACHED `-mmodule` form; that form was already fixed in v0.1.2
+  (`identity.py:226-227`, three passing tests) and needed no decision. The real residual is the
+  bundled form. **Resolved (D-61):** documented as a permanent limitation, not fixed — the
+  consumer-facing constraint lives in `EXTENSION-GUIDE.md` section 4, and the reasoning in the
+  `_argv_matches_marker` docstring. → Phase 7
 
 ### Public surface (Track B)
 
