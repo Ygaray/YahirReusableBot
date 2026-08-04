@@ -359,21 +359,43 @@ class BotThread:
         """Stop the bot: schedule ``client.close()`` cross-thread, then join.
 
         **Degrade-not-raise (D-28):** ``loop.is_running()`` is a fast path only, NOT a
-        guarantee — the loop can close in the gap between that check and the
-        ``run_coroutine_threadsafe`` schedule (the TOCTOU this guards against), so the
-        schedule call is made INSIDE the same ``try`` as ``future.result()``. A
-        ``RuntimeError`` ("Event loop is closed") from either is logged as "loop already
-        stopped" and swallowed. ``stop()`` must NEVER raise, and the thread join below is
-        ALWAYS reached — never early-return inside the except.
+        guarantee — the loop can close in the gap between that check and the schedule call
+        below (the TOCTOU this guards against). ``stop()`` must NEVER raise, and the thread
+        join below is ALWAYS reached — never early-return inside either except branch below.
+
+        **Bind-before-schedule and cause-specific reclaim (HYG-03 / D-64):** ``coro`` is
+        bound to a name BEFORE any scheduling attempt, so the coroutine object returned by
+        ``self._client.close()`` is reachable on every failure path. The schedule and the
+        await (``future.result()``) are split into two separate ``try`` blocks:
+
+        - If scheduling itself fails (the TOCTOU race above — the loop closed before the
+          schedule call ran), the coroutine was never scheduled, so it is explicitly
+          reclaimed before logging. This reclaim is safe ONLY on this branch: a coroutine
+          already live on the loop raises ``RuntimeError: cannot close a running
+          coroutine`` if closed, so the await branch below must never do this.
+        - If scheduling succeeds but ``future.result()`` raises or times out, ``coro`` is
+          live on the loop and is left alone — the existing message is logged unchanged.
+
+        The two branches log deliberately DISTINCT messages so an operator can tell "the
+        loop died early" from "the client hung" — the same don't-conflate-two-causes
+        posture DISC-07 takes in ``summon_panel``.
         """
         loop = self._loop
         if loop is not None and loop.is_running():
+            coro = self._client.close()
             try:
-                future = asyncio.run_coroutine_threadsafe(self._client.close(), loop)
-                future.result(timeout=timeout)
-            except Exception:  # noqa: BLE001 — close best-effort (incl. "loop already
-                # stopped" RuntimeError on the TOCTOU race); still join below
-                _log.warning("bot client.close() did not complete cleanly")
+                future = asyncio.run_coroutine_threadsafe(coro, loop)
+            except Exception:  # noqa: BLE001 — never scheduled; reclaim best-effort
+                coro.close()
+                _log.warning(
+                    "bot client.close() could not be scheduled (bot loop already closed)"
+                )
+            else:
+                try:
+                    future.result(timeout=timeout)
+                except Exception:  # noqa: BLE001 — scheduled but await failed;
+                    # coro is live on the loop, do NOT close it here
+                    _log.warning("bot client.close() did not complete cleanly")
         self._thread.join(timeout=timeout)
         if self._thread.is_alive():
             _log.warning("bot thread did not stop within timeout")
