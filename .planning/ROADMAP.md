@@ -220,7 +220,7 @@ collection) at a distinct dotted path — do not merge the two by analogy-confus
 |-------|----------------|--------|-----------|
 | 5. Redaction core + pattern registration | 3/3 | Complete    | 2026-07-29 |
 | 6. Insertion seams + provable backstop | 4/4 | Complete    | 2026-08-04 |
-| 7. v0.1.2 debt paydown | 2/7 | In Progress|  |
+| 7. v0.1.2 debt paydown | 3/7 | In Progress|  |
 
 ### v0.2.0 Phase Details
 
@@ -379,7 +379,7 @@ open item from the retrospective audit is closed or explicitly decided.
      not only the sites that consume the outcome — verified against the filesystem, not against the
      string that produced the drift.
 
-**Plans**: 2/7 plans executed
+**Plans**: 3/7 plans executed
 
 Plans (strictly serial Waves 1→7 — each plan commits its RED test then its GREEN fix and re-verifies
 the standing gates green before the next plan's RED commit, so a deliberately-RED test never overlaps
@@ -392,7 +392,7 @@ a sibling plan's full-suite gate; the Phases 1–3 lesson, re-proven in 5 and 6)
   `except discord.Forbidden` branch ordered before `HTTPException` with its own message, and
   eviction removal tied to a successful delete
 
-- [ ] 07-03-PLAN.md — HYG-03 + D-65: `tests/test_gateway.py` RED, then `BotThread.stop` bound-coroutine
+- [x] 07-03-PLAN.md — HYG-03 + D-65: `tests/test_gateway.py` RED, then `BotThread.stop` bound-coroutine
   restructure with cause-split logging, then `filterwarnings = ["error"]` verified under the real filter
 
 - [ ] 07-04-PLAN.md — SURF-02: `get_type_hints` assertions RED, then the three D-62 verdicts

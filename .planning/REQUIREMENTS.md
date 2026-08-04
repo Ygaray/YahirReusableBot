@@ -208,7 +208,7 @@ surface — `redact_secrets(text, patterns)`, never `redact_appid` or an `appid`
 - [ ] **HYG-02** (v0.1.2 Phase 4 IN-01): `_best_effort_hook` logs via a structured `label=` kwarg
   instead of an f-string — in both it and the shared site in `config/reload.py`. → Phase 7
 
-- [ ] **HYG-03** (v0.1.2 Phase 2 IN-03): The full suite emits zero warnings — the
+- [x] **HYG-03** (v0.1.2 Phase 2 IN-03): The full suite emits zero warnings — the
   unawaited-coroutine `RuntimeWarning` from the `test_gateway.py` fake client is eliminated. → Phase 7
 
 ### Documentation (Track B)

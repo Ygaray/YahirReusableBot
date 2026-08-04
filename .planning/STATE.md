@@ -5,16 +5,16 @@ milestone_name: — Redaction promotion + hardening debt
 current_phase: 07
 current_phase_name: v0.1.2 debt paydown
 status: executing
-stopped_at: Completed 07-02-PLAN.md
-last_updated: "2026-08-04T05:04:18.145Z"
+stopped_at: Completed 07-03-PLAN.md
+last_updated: "2026-08-04T05:12:35.684Z"
 last_activity: 2026-08-04
 last_activity_desc: Phase 07 execution started
 progress:
   total_phases: 3
   completed_phases: 2
   total_plans: 14
-  completed_plans: 9
-  percent: 64
+  completed_plans: 10
+  percent: 67
 ---
 
 # Project State
@@ -22,7 +22,7 @@ progress:
 ## Current Position
 
 Phase: 07 (v0.1.2 debt paydown) — EXECUTING
-Plan: 3 of 7
+Plan: 4 of 7
 Status: Ready to execute
 Progress: [###_______] 33% (1/3 phases)
 Last activity: 2026-08-04 — Phase 07 execution started
@@ -40,8 +40,8 @@ litmus / grimp green, and every requirement ships a RED-first regression test.
 
 ## Session
 
-**Last session:** 2026-08-04T05:04:18.136Z
-**Stopped at:** Completed 07-02-PLAN.md
+**Last session:** 2026-08-04T05:12:35.673Z
+**Stopped at:** Completed 07-03-PLAN.md
 **Resume file:** None
 
 ## Performance Metrics
@@ -73,6 +73,7 @@ Carried from v0.1.2 for calibration (14 plans across 4 phases, ~3–25min per pl
 | Phase 06 P04 | ~10min | 3 tasks | 2 files |
 | Phase 07 P01 | 10min | 2 tasks | 2 files |
 | Phase 07 P02 | 15min | 2 tasks | 2 files |
+| Phase 07 P03 | 12min | 3 tasks | 3 files |
 
 ## Decisions
 
@@ -149,6 +150,9 @@ Full v0.1.2 decision history is archived under `.planning/milestones/v0.1.2-phas
 - [Phase ?]: [Phase 7, 07-01] MATCH-03 closed: seen: set[str] added inside the existing D-34 loop (one pass), ValueError names only spec.name, no Unicode normalization applied to the uniqueness check — pinned by a dedicated NFC/NFD regression test
 - [Phase ?]: [Phase 7, 07-02] DISC-07 retry-pin Forbidden branch ordered before HTTPException (subclass + first-match except) and logs-and-swallows rather than re-raises, preserving the cleanup loop
 - [Phase ?]: [Phase 7, 07-02] DISC-08 eviction bookkeeping switched from unconditional matches.pop(0) to peek-then-conditional-pop tied to delete() success, so a failed eviction is retried by the cleanup loop instead of dropped
+- [Phase ?]: [Phase 7, 07-03] HYG-03: coro = self._client.close() bound before scheduling; coro.close() reclaim runs ONLY in the scheduling-failure except (closing a live coroutine raises RuntimeError), so the schedule and await got split try/except/else blocks with two distinct log messages
+- [Phase ?]: [Phase 7, 07-03] D-65: filterwarnings = ["error"] added to the existing [tool.pytest.ini_options] table; verified green under uv run pytest -q -o 'filterwarnings=error' (171 passed) BEFORE the config edit landed, confirming the production fix alone closed both the RuntimeWarning and PytestUnraisableExceptionWarning pathways per 07-RESEARCH.md Pitfall 1
+- [Phase ?]: [Phase 7, 07-03] Deviation: two literal-grep acceptance criteria (coro.close()==1, run_coroutine_threadsafe==1, and the ignore:: absence check) conflicted with either a pre-existing out-of-scope class docstring or the plan's own instructed comment content; resolved by rephrasing prose to satisfy intent without gutting required documentation — see 07-03-SUMMARY.md Deviations
 
 ## Todos
 
