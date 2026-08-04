@@ -84,17 +84,24 @@ class RedactingWriter:
         D-52 triage, in exactly this order:
 
         1. ``bytes``, ``bytearray``, and ``memoryview`` are all decoded UTF-8 with
-           ``errors="replace"`` FIRST — every buffer-protocol payload, not only
-           ``bytes`` itself (``isinstance(bytearray(b"x"), bytes)`` is ``False``, so
-           a ``bytes``-only check would let a ``bytearray``/``memoryview`` payload
-           bypass redaction entirely). An undecodable payload must never raise
-           inside logging, which could mask the very error being logged.
+           ``errors="replace"`` — every buffer-protocol payload, not only ``bytes``
+           itself (``isinstance(bytearray(b"x"), bytes)`` is ``False``, so a
+           ``bytes``-only check would let a ``bytearray``/``memoryview`` payload
+           bypass redaction entirely) — but ONLY when redaction is enabled AND the
+           pattern set is non-empty, i.e. only when substitution is actually about
+           to run. A disabled or unpatterned writer never decodes a bytes-like
+           payload at all, so it reaches point 3 below as the exact original object,
+           never a newly decoded ``str`` copy (which would also raise ``TypeError``
+           against a real binary-mode target). An undecodable payload must never
+           raise inside logging, which could mask the very error being logged.
         2. Only if the payload is now a ``str`` AND redaction is enabled AND the
            pattern set is non-empty does substitution run — delegated to
            :func:`yahir_reusable_bot.redact.core.redact_secrets` in exactly one call;
            this method never re-implements the scrub loop.
         3. Every other path — not text, redaction off, or an empty pattern set —
-           forwards the payload to the target UNTOUCHED and BY IDENTITY.
+           forwards the payload to the target UNTOUCHED and BY IDENTITY. This holds
+           for a ``bytes``/``bytearray``/``memoryview`` payload too: point 1's decode
+           is skipped entirely in this case, so identity is preserved.
 
         D-58: the redaction counter counts CHANGED WRITES, not individual
         substitutions. Comparing the scrubbed result to the input with one ``!=`` on
@@ -114,6 +121,8 @@ class RedactingWriter:
         destination.
         """
         if isinstance(data, (bytes, bytearray, memoryview)):
+            if not (self._enabled and self._patterns):
+                return self._target.write(data)
             data = bytes(data).decode("utf-8", "replace")
         if isinstance(data, str) and self._enabled and self._patterns:
             scrubbed = redact_secrets(data, self._patterns)

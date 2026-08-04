@@ -296,6 +296,29 @@ def test_sink_disabled_forwards_untouched_and_never_counts():
     assert SENTINEL not in capture_on.all_output
 
 
+def test_sink_disabled_or_unpatterned_forwards_bytes_by_identity():
+    """WR-02 regression: the method's own docstring promises a ``not text,
+    redaction off, or an empty pattern set`` write is forwarded ``UNTOUCHED and BY
+    IDENTITY``. For a ``bytes`` payload that promise only holds if the disabled or
+    unpatterned path never decodes it into a brand-new ``str`` object first — a
+    disabled/unpatterned writer must hand the target the EXACT original ``bytes``
+    object it was given, not a decoded copy (which would also raise ``TypeError``
+    against a real binary-mode target)."""
+    payload = f"appid={SENTINEL}".encode()
+
+    capture_disabled = _CaptureDouble()
+    writer_disabled = RedactingWriter(
+        capture_disabled, (RedactionPattern.literal(SENTINEL),), enabled=False
+    )
+    writer_disabled.write(payload)
+    assert capture_disabled.pieces[0] is payload
+
+    capture_unpatterned = _CaptureDouble()
+    writer_unpatterned = RedactingWriter(capture_unpatterned, ())
+    writer_unpatterned.write(payload)
+    assert capture_unpatterned.pieces[0] is payload
+
+
 def test_sink_delegates_unknown_stream_attributes_to_target():
     """``__getattr__`` delegates attributes this class does not define to the wrapped
     target, proving the writer is a usable ``sys.stderr`` stand-in for callers that
