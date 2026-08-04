@@ -88,7 +88,13 @@ class ReadyGate:
         notifier: Any,
         *,
         re_probe_interval: float = RE_PROBE_INTERVAL_S,
-        on_online: Callable[..., None] | None = None,
+        # SURF-02 (D-62): narrowed from the loose `Callable[..., None] | None` to match
+        # `on_fail`'s already-correct shape below — the hub always invokes this hook with
+        # exactly one argument (`self._best_effort_hook(self._on_online, result,
+        # label="on_online")` at line 135), so the loose form was drift, not a design
+        # stance; the only live consumer already conforms with a single-positional-param
+        # handler. Pinned by `tests/test_ready_gate.py::test_on_online_annotation_is_narrowed_to_health_result`.
+        on_online: Callable[[HealthResult], None] | None = None,
         on_fail: Callable[[HealthResult], None] | None = None,
     ) -> None:
         self._health_check = health_check
