@@ -138,7 +138,7 @@ only the requirement text would re-derive the wrong premise.
 
 ### Telemetry (REDACT-08)
 
-- **D-57 (hybrid: lock-guarded monotonic counter is the source of truth, optional push hook):**
+- **D-57 (hybrid — lock-guarded monotonic counter is the source of truth, optional push hook):**
   `RedactingWriter` carries a counter the consumer can read off the instance, plus an **optional**
   `on_redaction`-style callable fired from inside the same guarded increment (off by default). One
   lock, one increment site, so the two views can never disagree. Monotonic for process lifetime —
@@ -150,8 +150,8 @@ only the requirement text would re-derive the wrong premise.
   Any consumer-supplied hook runs **on the write path** and therefore inherits D-52 — it must be
   wrapped in a swallow-and-continue guard so a raising or slow hook can never break logging.
 
-- **D-58 (the counter counts CHANGED WRITES, not individual substitutions — a deliberate, documented
-  reading of REDACT-08):** the requirement says "how many substitutions fired." Exact substitution
+- **D-58 (the counter counts CHANGED WRITES, not individual substitutions — a deliberate, documented reading of REDACT-08):**
+  the requirement says "how many substitutions fired." Exact substitution
   counts are **not cheaply obtainable**: `redact_secrets` returns only the scrubbed string (pinned,
   WeatherBot about to pin against it), so an exact count would mean either re-running every pattern
   with `.subn()` — roughly doubling regex cost on **every log line, forever** — or maintaining a
@@ -173,8 +173,8 @@ only the requirement text would re-derive the wrong premise.
 
 ### Mis-wiring protection for the optional processor (REDACT-05)
 
-- **D-60 (loud docstring PLUS an ordering check folded into `assert_redaction_active`; it WARNS,
-  never raises):** the processor's docstring states the chain-order precondition loudly (the
+- **D-60 (loud docstring PLUS an ordering check folded into `assert_redaction_active`; it WARNS, never raises):**
+  the processor's docstring states the chain-order precondition loudly (the
   requirement's literal ask). The *detection* rides inside D-56's existing self-check rather than
   becoming its own API: `structlog.get_config()["processors"]` exposes the live chain, and every
   built-in exception formatter (`format_exc_info`, `dict_tracebacks`, `ExceptionRenderer`) is an
