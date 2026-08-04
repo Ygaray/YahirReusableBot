@@ -18,6 +18,8 @@ import threading
 import typing
 from typing import Callable
 
+from structlog.testing import capture_logs
+
 from yahir_reusable_bot.lifecycle import ReadyGate, ReadyOutcome
 from yahir_reusable_bot.lifecycle.health import HealthResult
 
@@ -221,3 +223,62 @@ def test_on_fail_annotation_is_unchanged():
     hints = typing.get_type_hints(ReadyGate.__init__)
 
     assert hints["on_fail"] == Callable[[HealthResult], None] | None
+
+
+# -- HYG-02 (D-09): _best_effort_hook logs the label as a structured kwarg --------- #
+
+
+def test_best_effort_hook_logs_the_label_as_a_structured_kwarg():
+    """RED pre-fix: ``_best_effort_hook`` bakes ``label`` into the message via an
+    f-string (``f"{label} hook failed; engine result unaffected"``), so the captured
+    event reads ``"on_online hook failed; engine result unaffected"`` and there is no
+    separate ``label`` key at all. Post-fix the event string is the fixed sentence and
+    the hook name travels as its own structured ``label`` field."""
+
+    def _raising_hook(_arg):
+        raise RuntimeError("boom")
+
+    with capture_logs() as cap:
+        ReadyGate._best_effort_hook(_raising_hook, object(), label="on_online")
+
+    assert len(cap) == 1
+    assert cap[0]["event"] == "hook failed; engine result unaffected"
+    assert cap[0]["label"] == "on_online"
+
+
+def test_best_effort_hook_event_string_is_identical_across_labels():
+    """Proves the label is carried as DATA, never interpolated into the message: two
+    calls with different labels — one plain, one containing formatting characters
+    (``{}`` / ``%``) plus a non-ASCII character — must produce the SAME ``event``
+    string and their own distinct ``label`` values. RED pre-fix: the f-string bakes
+    each label into its own event string, so the two ``event`` values differ
+    (HYG-02/encoding probe)."""
+
+    def _raising_hook(_arg):
+        raise RuntimeError("boom")
+
+    with capture_logs() as cap:
+        ReadyGate._best_effort_hook(_raising_hook, object(), label="on_online")
+        ReadyGate._best_effort_hook(_raising_hook, object(), label="{weird}%café")
+
+    assert len(cap) == 2
+    assert cap[0]["event"] == cap[1]["event"]
+    assert cap[0]["label"] == "on_online"
+    assert cap[1]["label"] == "{weird}%café"
+
+
+def test_best_effort_hook_none_and_clean_hooks_emit_no_log():
+    """A ``None`` hook is a no-op, and a hook that returns normally never logs either.
+    GREEN both before and after the fix — a boundary guard pinning the existing no-op
+    contract, not a gap (HYG-02/empty probe)."""
+
+    def _clean_hook(_arg):
+        return None
+
+    with capture_logs() as cap:
+        ReadyGate._best_effort_hook(None, object(), label="on_online")
+    assert cap == []
+
+    with capture_logs() as cap:
+        ReadyGate._best_effort_hook(_clean_hook, object(), label="on_online")
+    assert cap == []
