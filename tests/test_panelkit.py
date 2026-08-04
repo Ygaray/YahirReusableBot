@@ -34,7 +34,10 @@ from __future__ import annotations
 
 import asyncio
 import types
+import typing
+from typing import Any, Callable
 
+import discord
 import pytest
 
 from yahir_reusable_bot.discord.panelkit import PanelKit
@@ -179,3 +182,35 @@ def test_disc_06_value_error_names_the_offending_marker():
     with pytest.raises(ValueError) as exc_info:
         _build_test_panel(marker="")
     assert repr("") in str(exc_info.value)
+
+
+# -- SURF-02 (D-62): render annotation arity-narrowing, get_type_hints enforcement -- #
+
+
+def test_render_annotation_is_arity_narrowed_to_two_positional_args():
+    """``PanelKit.__init__``'s ``render`` hint must equal ``Callable[[Any, Any],
+    discord.Embed]``. RED pre-fix (verified live, RESEARCH.md § Pattern 4): the loose
+    ``Callable[..., discord.Embed]`` does not equal the arity-narrowed form below.
+
+    The ``localns={"SelectedContext": SelectedContext}`` argument is LOAD-BEARING and must
+    NEVER be dropped (RESEARCH.md § Pitfall 2, reproduced live this session):
+    ``panelkit.py`` imports ``SelectedContext`` only under ``if TYPE_CHECKING:`` (module
+    lines 50-51), and with ``from __future__ import annotations`` active (module line 41)
+    every annotation is a deferred string that ``get_type_hints`` must ``eval()`` against
+    the module's runtime globals — where ``SelectedContext`` does not exist without the
+    ``localns`` override. Calling ``get_type_hints(PanelKit.__init__)`` bare raises
+    ``NameError: name 'SelectedContext' is not defined`` — a failure that LOOKS like a RED
+    result but never reaches this assertion at all; that trap is exactly what this
+    docstring exists to prevent a future editor from reintroducing.
+
+    WHY ``[Any, Any]`` (not a more specific pair) is the accurate contract, not laziness:
+    ``panelkit`` always calls ``render(reply, render_arg)`` with exactly two positional
+    args (`panelkit.py`'s ``on_command``), so the narrowing is arity-accurate; both
+    ``reply`` and ``render_arg`` are legitimately ``Any`` by design — injection-by-``Any``
+    at these seams is deliberate architecture (``DispatchOutcome.render_arg: Any``), not an
+    unexamined gap."""
+    hints = typing.get_type_hints(
+        PanelKit.__init__, localns={"SelectedContext": SelectedContext}
+    )
+
+    assert hints["render"] == Callable[[Any, Any], discord.Embed]

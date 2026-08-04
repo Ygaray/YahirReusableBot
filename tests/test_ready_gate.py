@@ -15,6 +15,8 @@ repo's standing convention, ``tests/conftest.py``). Stop doubles implement BOTH
 from __future__ import annotations
 
 import threading
+import typing
+from typing import Callable
 
 from yahir_reusable_bot.lifecycle import ReadyGate, ReadyOutcome
 from yahir_reusable_bot.lifecycle.health import HealthResult
@@ -190,3 +192,32 @@ def test_health_result_fatal_defaults_false():
     result = HealthResult(ok=False, reason="x")
 
     assert result.fatal is False
+
+
+# -- SURF-02 (D-62): on_online annotation narrowing, get_type_hints enforcement ----- #
+
+
+def test_on_online_annotation_is_narrowed_to_health_result():
+    """``ReadyGate.__init__``'s ``on_online`` hint must equal ``on_fail``'s already-correct
+    shape. RED pre-fix (verified live, RESEARCH.md § Pattern 4): the loose
+    ``Callable[..., None] | None`` resolves to
+    ``typing.Optional[typing.Callable[..., NoneType]]``, which does not equal the narrowed
+    form below. WHY the narrowing is accurate, not merely stylistic: the hub always invokes
+    the hook with exactly one argument — ``self._best_effort_hook(self._on_online, result,
+    label="on_online")`` at ``ready_gate.py:135`` — so there is no variadic call shape in
+    reality; the loose annotation was drift, and this assertion is the enforcement
+    mechanism a static type checker would otherwise provide (this repo runs none, D-63)."""
+    hints = typing.get_type_hints(ReadyGate.__init__)
+
+    assert hints["on_online"] == Callable[[HealthResult], None] | None
+
+
+def test_on_fail_annotation_is_unchanged():
+    """Regression guard on the sibling: ``on_fail`` was ALREADY
+    ``Callable[[HealthResult], None] | None`` before this plan touched anything, and this
+    plan's edit narrows ``on_online`` TO match this shape rather than perturbing the
+    sibling. GREEN both before and after Task 2's fix — proving the fix is additive to
+    ``on_online`` alone."""
+    hints = typing.get_type_hints(ReadyGate.__init__)
+
+    assert hints["on_fail"] == Callable[[HealthResult], None] | None
