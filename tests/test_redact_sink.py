@@ -432,6 +432,32 @@ def test_on_redaction_hook_receives_count_and_cannot_break_logging():
     writer_default.write(f"{SENTINEL} four")  # no hook supplied — nothing to call
 
 
+def test_write_never_raises_and_never_leaks_on_a_malformed_hand_built_pattern():
+    """WR-03 regression. ``core.py``'s own contract for ``redact_secrets`` is
+    explicit that a hand-built, unregistered, malformed pattern (out of
+    ``register_patterns``'s vetting contract) can raise ``re.error`` — e.g. a
+    replacement template referencing an out-of-range group. ``verify.py``'s module
+    docstring nonetheless asserts ``write()`` "never raises." This is the guard that
+    makes that claim literally true: two failure modes are on the table and only one
+    is acceptable — propagating the exception would break the caller's hot logging
+    call (the precise failure mode this module otherwise guards against for
+    ``on_redaction``); forwarding the payload untouched would silently emit text
+    this writer could not prove was clean, defeating the backstop. The guard fails
+    CLOSED: the write must not raise, AND the original (possibly secret-bearing)
+    text must never reach the target un-redacted."""
+    malformed = RedactionPattern(pattern=re.compile(r"(a)"), replacement=r"\2")
+    capture = _CaptureDouble()
+    writer = RedactingWriter(capture, (malformed,))
+
+    result = writer.write(f"a secret appid={SENTINEL} a")  # must not raise
+
+    assert isinstance(result, int)
+    assert capture.pieces  # something was written — the write path was not skipped
+    forwarded = capture.pieces[0]
+    assert f"appid={SENTINEL}" not in forwarded
+    assert SENTINEL not in forwarded
+
+
 def test_probe_redaction_path_never_writes_to_target():
     """D-56 / open question 1. On an enabled writer with a non-empty pattern set,
     ``probe_redaction_path()`` returns ``None`` and the capture double's ``pieces``

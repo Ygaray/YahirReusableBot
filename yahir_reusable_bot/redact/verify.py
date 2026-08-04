@@ -5,12 +5,16 @@ warn-only processor-ordering sub-check D-60 folds into the same call.
 This module reads the CONSUMER's live ``structlog`` configuration and never writes it.
 Its raise happens at wiring time — before anything is serving — which is why this
 module's fail-loud posture does not conflict with the degrade-don't-raise rule that
-governs the write path itself (``RedactingWriter.write`` in ``sink.py`` never raises;
-this module's own check, called once at boot or mid-run, does). The ordering sub-check
-deliberately WARNS while the writer check RAISES — a reader must not mistake that
-asymmetry for an inconsistency: D-60 records exactly why (the sink already catches
-every traceback unconditionally regardless of processor order, so a mis-ordered
-*optional, additive* processor is reduced defense-in-depth, not a security regression).
+governs the write path itself (``RedactingWriter.write`` in ``sink.py`` never raises —
+including against a hand-built, unregistered, malformed ``RedactionPattern`` that
+would make ``redact_secrets`` itself raise ``re.error``; ``write`` guards exactly that
+call and fails CLOSED, withholding the payload rather than forwarding it unredacted or
+letting the exception escape (WR-03) — this module's own check, called once at boot or
+mid-run, does raise). The ordering sub-check deliberately WARNS while the writer check
+RAISES — a reader must not mistake that asymmetry for an inconsistency: D-60 records
+exactly why (the sink already catches every traceback unconditionally regardless of
+processor order, so a mis-ordered *optional, additive* processor is reduced
+defense-in-depth, not a security regression).
 
 A backstop silently dropped by a second ``structlog.configure()`` call looks
 byte-identical to a working one from the outside. This is the only mechanism in the

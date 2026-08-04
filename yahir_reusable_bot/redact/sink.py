@@ -32,6 +32,7 @@ any write target, not only a structlog render target.
 
 from __future__ import annotations
 
+import re
 import threading
 from collections.abc import Callable, Iterable, Sequence
 
@@ -40,6 +41,17 @@ from yahir_reusable_bot.redact.core import RedactionPattern, redact_secrets
 # D-56's fixed, non-secret dry-run sentinel. Self-describing in any accidental sighting
 # so an operator who spots it in output immediately knows it is not a real leak.
 _PROBE_TEXT = "redaction-self-check-probe-not-a-secret"
+
+# WR-03's fail-closed placeholder (see `write`'s docstring, point 2a): forwarded
+# INSTEAD of the original payload when a hand-built, unregistered, malformed
+# `RedactionPattern` makes `redact_secrets` itself raise `re.error`. Self-describing
+# and echoes neither the withheld text nor any pattern source, so an operator who
+# spots it immediately understands why the original line is missing.
+_MALFORMED_PATTERN_PLACEHOLDER = (
+    "[yahir_reusable_bot.redact: a malformed RedactionPattern raised during "
+    "redaction — original text withheld to avoid an unproven, possibly "
+    "unredacted write]"
+)
 
 
 class RedactingWriter:
@@ -98,6 +110,21 @@ class RedactingWriter:
            pattern set is non-empty does substitution run — delegated to
            :func:`yahir_reusable_bot.redact.core.redact_secrets` in exactly one call;
            this method never re-implements the scrub loop.
+
+           2a. WR-03 guard: ``redact_secrets``'s own contract (``core.py``) promises
+               no raise only for a WELL-FORMED, ``register_patterns``-vetted
+               pattern — a hand-built, unregistered ``RedactionPattern`` (e.g. a
+               replacement template referencing an out-of-range group) is out of
+               that contract and can still raise ``re.error``. This call is guarded:
+               on ``re.error`` the ORIGINAL payload is never forwarded (an unproven
+               payload might still carry the very secret redaction exists to catch)
+               and the exception never propagates (which would break the caller's
+               hot logging call — precisely the failure mode this module otherwise
+               guards against for ``on_redaction`` just below). Instead a fixed,
+               non-secret placeholder is written in its place: this method fails
+               CLOSED, not open. The redaction counter is not incremented and
+               ``on_redaction`` does not fire for this path — no substitution
+               actually happened, only a withholding.
         3. Every other path — not text, redaction off, or an empty pattern set —
            forwards the payload to the target UNTOUCHED and BY IDENTITY. This holds
            for a ``bytes``/``bytearray``/``memoryview`` payload too: point 1's decode
@@ -125,7 +152,16 @@ class RedactingWriter:
                 return self._target.write(data)
             data = bytes(data).decode("utf-8", "replace")
         if isinstance(data, str) and self._enabled and self._patterns:
-            scrubbed = redact_secrets(data, self._patterns)
+            try:
+                scrubbed = redact_secrets(data, self._patterns)
+            except re.error:
+                # WR-03 (see this method's own docstring, point 2a): a hand-built,
+                # unregistered pattern is out of `redact_secrets`'s documented
+                # contract and can raise here. Fail CLOSED — withhold the original
+                # (possibly secret-bearing) payload rather than forward it
+                # unredacted, and never let the exception itself reach the caller's
+                # hot logging call.
+                return self._target.write(_MALFORMED_PATTERN_PLACEHOLDER)
             if scrubbed != data:
                 with self._lock:
                     self._count += 1
