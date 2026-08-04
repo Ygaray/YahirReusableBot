@@ -1,10 +1,11 @@
 ---
 phase: 7
 slug: v0-1-2-debt-paydown
-status: draft
-nyquist_compliant: false
-wave_0_complete: false
+status: complete
+nyquist_compliant: true
+wave_0_complete: true
 created: 2026-08-03
+finalized: 2026-08-04
 ---
 
 # Phase 7 — Validation Strategy
@@ -43,19 +44,19 @@ created: 2026-08-03
 
 | Task ID | Plan | Wave | Requirement | Threat Ref | Secure Behavior | Test Type | Automated Command | File Exists | Status |
 |---------|------|------|-------------|------------|-----------------|-----------|-------------------|-------------|--------|
-| TBD | TBD | 0 | DOCS-02 | — | N/A | unit (new standing gate) | `uv run pytest tests/test_doc_drift.py -x` | ❌ W0 | ⬜ pending |
-| TBD | TBD | 1 | MATCH-03 | — | Duplicate `spec.name` cannot silently shadow a registered command | unit | `uv run pytest tests/test_registry.py -k duplicate -x` | ✅ | ⬜ pending |
-| TBD | TBD | 1 | SURF-02 (`on_online`) | — | N/A | unit | `uv run pytest tests/test_ready_gate.py -k on_online_annotation -x` | ✅ | ⬜ pending |
-| TBD | TBD | 1 | SURF-02 (`render`) | — | N/A | unit | `uv run pytest tests/test_panelkit.py -k render_annotation -x` (needs `localns` workaround, Pitfall 2) | ✅ | ⬜ pending |
-| TBD | TBD | 1 | SURF-02 (`callback`) | — | N/A | manual-only | Manual read of `scheduler/engine.py` docstring recording the decision | N/A | ⬜ pending |
-| TBD | TBD | 1 | DISC-07 | — | A permissions failure is never mislabeled as a pin-cap failure | unit | `uv run pytest tests/test_gateway.py -k retry_pin_forbidden -x` | ✅ | ⬜ pending |
-| TBD | TBD | 1 | DISC-08 | — | A failed eviction-delete leaves the stray in cleanup instead of dropping it | unit | `uv run pytest tests/test_gateway.py -k eviction_delete_failure -x` | ✅ | ⬜ pending |
-| TBD | TBD | 1 | HYG-02 | — | N/A | unit | `uv run pytest tests/test_ready_gate.py tests/test_reload.py -k label_kwarg -x` | ✅ | ⬜ pending |
-| TBD | TBD | 1 | HYG-03 | — | N/A | unit + suite | `uv run pytest tests/test_gateway.py -k stop_does_not_raise -x`, then `uv run pytest -q -o 'filterwarnings=error'` | ✅ | ⬜ pending |
-| TBD | TBD | 1 | LIFE-05 (behavior) | — | N/A | unit (already green — pinned, D-61a) | `uv run pytest tests/test_identity.py -k bundled_short_option -x` | ✅ | ⬜ pending |
-| TBD | TBD | 2 | LIFE-05 (doc) | — | N/A | manual-only | Manual read of `EXTENSION-GUIDE.md` §4 | N/A | ⬜ pending |
-| TBD | TBD | 2 | DOCS-03 | — | N/A | manual-only | Manual read of corrected enumeration vs. SUMMARY's filesystem-verification record | N/A | ⬜ pending |
-| TBD | TBD | 2 | GATE-02 | — | N/A | suite-level | `uv run pytest -q` (zero warnings) + `uv run pytest tests/test_import_hygiene.py -q` | ✅ | ⬜ pending |
+| 07-06-01 | 07-06 | 6 | DOCS-02 | — | N/A | unit (new standing gate) | `uv run pytest tests/test_doc_drift.py -x` | ✅ | ✅ green |
+| 07-01-02 | 07-01 | 1 | MATCH-03 | — | Duplicate `spec.name` cannot silently shadow a registered command | unit | `uv run pytest tests/test_registry.py -k duplicate -x` | ✅ | ✅ green |
+| 07-04-01 | 07-04 | 4 | SURF-02 (`on_online`) | — | N/A | unit | `uv run pytest tests/test_ready_gate.py -k on_online_annotation -x` | ✅ | ✅ green |
+| 07-04-01 | 07-04 | 4 | SURF-02 (`render`) | — | N/A | unit | `uv run pytest tests/test_panelkit.py -k render_annotation -x` (needs `localns` workaround, Pitfall 2) | ✅ | ✅ green |
+| 07-04-02 | 07-04 | 4 | SURF-02 (`callback`) | — | N/A | manual-only | Manual read of `scheduler/engine.py` docstring recording the decision | N/A | ✅ green |
+| 07-02-02 | 07-02 | 2 | DISC-07 | — | A permissions failure is never mislabeled as a pin-cap failure | unit | `uv run pytest tests/test_gateway.py -k retry_pin_forbidden -x` | ✅ | ✅ green |
+| 07-02-02 | 07-02 | 2 | DISC-08 | — | A failed eviction-delete leaves the stray in cleanup instead of dropping it | unit | `uv run pytest tests/test_gateway.py -k eviction_delete_failure -x` | ✅ | ✅ green |
+| 07-05-02 | 07-05 | 5 | HYG-02 | — | N/A | unit | `uv run pytest tests/test_ready_gate.py tests/test_reload.py -k label_kwarg -x` | ✅ | ✅ green |
+| 07-03-02 | 07-03 | 3 | HYG-03 | — | N/A | unit + suite | `uv run pytest tests/test_gateway.py -k stop_does_not_raise -x`, then `uv run pytest -q -o 'filterwarnings=error'` | ✅ | ✅ green |
+| 07-05-03 | 07-05 | 5 | LIFE-05 (behavior) | — | N/A | unit (already green — pinned, D-61a) | `uv run pytest tests/test_identity.py -k bundled_short_option -x` | ✅ | ✅ green |
+| 07-05-03 | 07-05 | 5 | LIFE-05 (doc) | — | N/A | manual-only | Manual read of `EXTENSION-GUIDE.md` §4 | N/A | ✅ green |
+| 07-07-01 | 07-07 | 7 | DOCS-03 | — | N/A | manual-only | Manual read of corrected enumeration vs. SUMMARY's filesystem-verification record | N/A | ✅ green |
+| 07-07-01 | 07-07 | 7 | GATE-02 | — | N/A | suite-level | `uv run pytest -q` (zero warnings) + `uv run pytest tests/test_import_hygiene.py -q` | ✅ | ✅ green |
 
 *Status: ⬜ pending · ✅ green · ❌ red · ⚠️ flaky*
 
@@ -63,23 +64,19 @@ created: 2026-08-03
 
 ## Wave 0 Requirements
 
-- [ ] `tests/test_doc_drift.py` — new file, DOCS-02's standing gate. Walk `.planning/**/*.md` (via
-  `Path(__file__).resolve().parent.parent / ".planning"`, mirroring `test_import_hygiene.py`'s
-  `_MODULE_ROOT` convention at line 64), search each file for the **bare** regex `ops[/.]daemon`
-  (bare, *not* `weatherbot/ops/daemon` — a fully-qualified pattern misses the bare form, which is
-  PC-D's own lesson), and assert every match falls inside an explicit commented exempt-list of
-  `(relative_path, line_number)` tuples covering the 3 intentional mentions (`REQUIREMENTS.md:217`,
-  `v0.1.2-MILESTONE-AUDIT.md:21`, `v0.1.2-MILESTONE-AUDIT.md:142`) plus the 7 annotated-archive
-  files. Include a self-proof half (synthetic string injected into a temp file, proving the scan
-  logic itself catches an unexempted match) per this repo's established
-  `test_import_hygiene.py` "every gate has a self-proof" convention.
-- [ ] No framework install needed — `pytest` and `structlog` are already pinned and installed.
-- [ ] No other test-infrastructure gaps — every other requirement extends an existing test file
-  using an already-established convention (plain-construction doubles, no mocking library,
-  `_spec`/`_Fake*` factory helpers). `structlog.testing.capture_logs()` works out of the box and
-  returns `[{"label": ..., "event": ..., "log_level": ...}]` — the exact shape HYG-02/DISC-07's new
-  log-content tests need.
-
+- [x] `tests/test_doc_drift.py` — **DELIVERED** (plan 07-06, commit `2793076`). Standing gate walking
+  `.planning/**/*.md` via the `_MODULE_ROOT` idiom mirrored from `test_import_hygiene.py`, matching the
+  **bare** regex `ops[/.]daemon` (bare, *not* `weatherbot/ops/daemon` — a fully-qualified pattern
+  misses the bare form, which is PC-D's own lesson). 5 tests: the real gate, 2 self-proofs, and 2
+  phantom-exemption guards.
+  **Implementation note — deviation from this draft, deliberate:** the draft specified an exempt-list
+  of `(relative_path, line_number)` tuples. The shipped gate uses **whole-subtree path prefixes plus a
+  content-located window** instead, because line numbers self-invalidate — plan 07-05's own
+  REQUIREMENTS.md edit shifts the DOCS-02 block and the archive banners shift ~12 lines, so a
+  line-pinned exempt-list would have gone stale within the same phase. Non-vacuity guards were added
+  so an exemption that silently matches nothing fails the suite.
+- [x] No framework install needed — `pytest` and `structlog` already pinned and installed. Confirmed.
+- [x] No other test-infrastructure gaps — every other requirement extended an existing test file.
 ---
 
 ## Manual-Only Verifications
@@ -94,16 +91,44 @@ created: 2026-08-03
 
 ## Validation Sign-Off
 
-> **Plan-time state is a DRAFT.** Frontmatter stays `status: draft` and `nyquist_compliant: false`.
-> These are finalized ONLY post-execution by the Nyquist finalizer (the `verify:post` →
-> `validate-phase` hook, invoked by execute-phase `finalize_nyquist_validation` after Gate-1).
+> **FINALIZED post-execution** by the Nyquist finalizer (`verify:post` → `validate-phase`,
+> invoked by execute-phase `finalize_nyquist_validation`). Plan-time draft state has been superseded.
 
-- [ ] All tasks have `<automated>` verify or Wave 0 dependencies
-- [ ] Sampling continuity: no 3 consecutive tasks without automated verify
-- [ ] Wave 0 covers all MISSING references
-- [ ] No watch-mode flags
-- [ ] Feedback latency < 5s
-- [ ] _(finalizer-only, post-execution)_ `nyquist_compliant` — leave `false` at plan time; the
-      finalizer sets `true` iff its gap analysis finds zero gaps
+- [x] All tasks have `<automated>` verify or Wave 0 dependencies
+- [x] Sampling continuity: no 3 consecutive tasks without automated verify
+- [x] Wave 0 covers all MISSING references — `tests/test_doc_drift.py` delivered
+- [x] No watch-mode flags
+- [x] Feedback latency < 5s — full suite runs in ~2s
+- [x] _(finalizer-only)_ `nyquist_compliant: true` — gap analysis found **zero** MISSING/PARTIAL rows
 
-**Approval:** pending — finalizer-owned, not set at plan time
+**Approval:** approved 2026-08-04 — finalizer-owned.
+
+---
+
+## Validation Audit 2026-08-04
+
+| Metric | Count |
+|--------|-------|
+| Requirements mapped | 13 rows (9 REQ-IDs + GATE-02, SURF-02/LIFE-05 split by site) |
+| Gaps found | 0 |
+| Resolved | 0 |
+| Escalated | 0 |
+| Automated (COVERED) | 10 |
+| Manual-only (documented, signed off) | 3 |
+
+**Method.** Each mapped `-k` selector was re-run through `pytest --collect-only` to confirm the named
+test actually exists and collects — not merely that a SUMMARY claimed it. Collection counts:
+`test_registry.py -k duplicate` 5 · `test_identity.py -k bundled` 1 · `test_ready_gate.py -k on_online` 2 ·
+`test_panelkit.py -k render` 1 · `test_gateway.py -k forbidden` 1 · `test_gateway.py -k evict` 2 ·
+`test_ready_gate.py -k label` 2 · `test_reload.py -k label` 1 · `test_gateway.py -k stop` 4 ·
+`test_doc_drift.py` 5. Zero selectors resolved to zero tests, so no row is vacuous.
+
+**On the 3 manual-only rows.** These are *planned* manual-only entries with recorded justification
+(see § Manual-Only above and `07-RESEARCH.md` § Validation Architecture), not coverage gaps. Each was
+signed off with evidence in plan 07-07. They are deliberately not automated because a positive-content
+grep derived from the same prose it verifies cannot catch an error in that prose — the v0.1.2 audit's
+own headline lesson, and the reason DOCS-02 splits into a string-absence gate plus separate
+filesystem evidence (D-67).
+
+**Gate-1 agentic self-UAT** was skipped for this phase with reasoning recorded in `07-VERIFICATION.md`
+(headless library, no drivable surface; detector matched the structlog kwarg name `label=`).
