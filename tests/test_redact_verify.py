@@ -370,3 +370,33 @@ def test_ordering_warning_is_attributed_to_the_consumers_call_site():
 
     assert len(record) == 1
     assert record[0].filename == __file__
+
+
+def test_reads_live_configuration_exactly_once(monkeypatch):
+    """IN-01 regression. The function docstring's numbered list opens with "Read the
+    live configuration once," but ``structlog.get_config()`` was actually called
+    twice — once to validate the factory, again inside the ordering sub-check to
+    read ``processors``. Harmless single-threaded, but a latent TOCTOU gap if
+    ``structlog.configure()`` reconfigures concurrently between the two reads: the
+    factory could be validated against one configuration while the ordering
+    sub-check evaluates a different one. Wraps ``structlog.get_config`` with a call
+    counter (``monkeypatch``, not a mocking library — this repo's house convention)
+    to prove exactly one read happens per call, matching the docstring's own claim."""
+    capture = _CaptureDouble()
+    writer = RedactingWriter(capture, (RedactionPattern.literal(SENTINEL),))
+    fmt = structlog.processors.format_exc_info
+    _wire([_marked_processor, fmt], writer=writer)
+
+    calls: list[int] = []
+    original_get_config = structlog.get_config
+
+    def _counting_get_config():
+        calls.append(1)
+        return original_get_config()
+
+    monkeypatch.setattr(structlog, "get_config", _counting_get_config)
+
+    with pytest.warns(UserWarning):
+        assert assert_redaction_active() is None
+
+    assert len(calls) == 1

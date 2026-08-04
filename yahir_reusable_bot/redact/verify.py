@@ -85,7 +85,8 @@ def assert_redaction_active(*, deep: bool = False) -> None:
     configuration — the whole point is that this is safe to call at boot AND mid-run
     in production.
     """
-    factory = structlog.get_config()["logger_factory"]
+    config = structlog.get_config()
+    factory = config["logger_factory"]
     if not isinstance(factory, _RECOGNISED_FACTORY_TYPES):
         raise ValueError(
             f"assert_redaction_active: the configured logger_factory is "
@@ -111,18 +112,25 @@ def assert_redaction_active(*, deep: bool = False) -> None:
         )
     if deep:
         target.probe_redaction_path()
-    _warn_if_processor_misordered()
+    _warn_if_processor_misordered(config)
 
 
-def _warn_if_processor_misordered() -> None:
+def _warn_if_processor_misordered(config: dict[str, object]) -> None:
     """D-60: locate any processor in the live chain that opted in via
     ``REDACTION_PROCESSOR_MARKER`` and compare its position to the first recognised
     exception formatter. WARNS ONLY, never raises — the sink (``RedactingWriter``)
     already catches every traceback unconditionally regardless of processor order, so
     a mis-ordered *optional, additive* processor is reduced defense-in-depth, not a
     security regression.
+
+    ``config`` is the SAME ``structlog.get_config()`` snapshot
+    :func:`assert_redaction_active` already read to validate the factory (IN-01) —
+    passed in rather than re-read here, so the factory check and this ordering
+    sub-check are always evaluated against one consistent configuration even if
+    ``structlog.configure()`` is called concurrently from another thread between
+    what would otherwise have been two separate reads.
     """
-    processors = structlog.get_config()["processors"]
+    processors = config["processors"]
     marked_indices = [
         index
         for index, processor in enumerate(processors)
