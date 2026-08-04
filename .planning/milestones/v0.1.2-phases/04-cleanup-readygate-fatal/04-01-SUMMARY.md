@@ -127,6 +127,8 @@ completed: 2026-07-28
 status: complete
 ---
 
+> **Archival note (added 2026-08-04, Phase 7 DOCS-02/DOCS-03):** this is an archived v0.1.2 record; the consumer gate-return de-hack path this record names does not exist as spelled — the correct path is `weatherbot/scheduler/daemon.py`, and the enumeration is also incomplete without the producing site `weatherbot/ops/selfcheck.py`. The body below is preserved unrevised as the historical record. See `.planning/v0.1.2-MILESTONE-AUDIT.md` DOC-DRIFT-01 / DOC-DRIFT-02.
+
 # Phase 4 Plan 1: ReadyGate fatal outcome (LIFE-04) Summary
 
 **ReadyGate.run now returns a three-member ReadyOutcome enum (ONLINE/SHUTDOWN/FATAL, only ONLINE truthy) instead of bool, with HealthResult gaining an additive `fatal` field so a terminal probe short-circuits without a re-probe wait.**
