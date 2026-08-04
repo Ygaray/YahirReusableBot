@@ -196,11 +196,11 @@ surface — `redact_secrets(text, patterns)`, never `redact_appid` or an `appid`
 
 ### Discord adapter (Track B)
 
-- [ ] **DISC-07** (v0.1.2 Phase 2 IN-01): The retry-pin path distinguishes `discord.Forbidden`
+- [x] **DISC-07** (v0.1.2 Phase 2 IN-01): The retry-pin path distinguishes `discord.Forbidden`
   from a generic `HTTPException` in its log, so a permissions failure is not mislabeled as a
   pin-cap failure. **Lands with DISC-08.** → Phase 7
 
-- [ ] **DISC-08** (v0.1.2 Phase 2 IN-02): A failed eviction-delete no longer drops that stray from
+- [x] **DISC-08** (v0.1.2 Phase 2 IN-02): A failed eviction-delete no longer drops that stray from
   the call's cleanup. **Lands with DISC-07** — both touch `summon_panel`. → Phase 7
 
 ### Hygiene (Track B)
