@@ -286,11 +286,13 @@ def test_litmus_clean():
     )
     # This is an ADDITION for convention consistency, not a fix for a failing gate — the
     # rglob scan above already auto-covers redact/ today. It exists so a future refactor
-    # that relocates it cannot silently drop it from litmus coverage.
+    # that relocates it cannot silently drop it from litmus coverage. Phase 6 (06-04)
+    # extended the required set from {core.py, registry.py} to the three modules this
+    # phase shipped: sink.py, verify.py, processor.py.
     redact_scanned = {
         path.name for path in (_MODULE_ROOT / "redact").rglob("*.py")
     }
-    assert {"core.py", "registry.py"} <= redact_scanned, (
+    assert {"core.py", "registry.py", "sink.py", "verify.py", "processor.py"} <= redact_scanned, (
         "redact package not in the litmus scan tree (coverage gap): "
         f"{sorted(redact_scanned)}"
     )
@@ -323,6 +325,113 @@ def test_selfproof_litmus_catches_weather_noun():
     )
     prose_hits = [n for n in _public_names(prose_only) if _LITMUS.search(n)]
     assert prose_hits == [], f"litmus must ignore prose, but flagged: {prose_hits}"
+
+
+# ---------------------------------------------------------------------------
+# Gate 4 (Phase 6 / 06-04): redact/ framework-confinement — the load-bearing sink
+# stays framework-agnostic, never coupled to structlog.
+# ---------------------------------------------------------------------------
+
+
+def _scan_framework_leaks(
+    importers_to_targets: dict[str, set[str]],
+    forbidden_top_level: str,
+    allowed_modules: set[str],
+) -> list[tuple[str, str]]:
+    """Flag every ``(importer, imported)`` edge pointing at ``forbidden_top_level``, for
+    any importer NOT in ``allowed_modules``.
+
+    Mirrors ``_scan_app_leaks``'s shape: takes a plain edge mapping (importer -> set of
+    imported module names), the top-level package name to police, and the set of module
+    names permitted to declare that edge. Keeping the scan in this standalone helper is
+    what lets the self-proof below drive the SAME code path with a SYNTHETIC edge set
+    (proving the scan logic, not a copy) — the property that makes the app-edge gate
+    non-vacuous, applied identically here.
+    """
+    leaks: list[tuple[str, str]] = []
+    for importer, targets in importers_to_targets.items():
+        if importer in allowed_modules:
+            continue
+        for target in targets:
+            if target == forbidden_top_level or target.startswith(
+                forbidden_top_level + "."
+            ):
+                leaks.append((importer, target))
+    return sorted(leaks)
+
+
+def test_redact_sink_never_imports_structlog():
+    """The load-bearing sink (``redact/sink.py``) is the primary representation of the
+    redaction seam and must work against ANY file-like target, so it stays pure duck
+    typing with no logging-library coupling. The two modules PERMITTED to import
+    ``structlog`` — the wiring self-check (``verify.py``) and the optional
+    event-mapping processor (``processor.py``) — are an explicit, enumerated allowlist
+    rather than an accident (``__init__.py``'s own module docstring enumerates them).
+
+    Builds the grimp graph FRESH (``cache_dir=None``, no stale-cache false-pass/fail)
+    with ``include_external_packages=True`` — a deliberate, necessary deviation from the
+    other two grimp gates in this file. Verified live (grimp 3.14): grimp's DEFAULT
+    ``include_external_packages=False`` drops every third-party edge from the graph
+    entirely, not just the offending ones — under that default, `structlog` never
+    appears in ANY module's edge set, including ``verify.py``'s genuine ``import
+    structlog``. Without the flag this gate would be permanently vacuous regardless of
+    what ``sink.py`` imports, silently proving nothing.
+
+    Collects the direct-import edges for every module under ``yahir_reusable_bot.redact``
+    and asserts two things: the scan returns an empty list when the allowlist is
+    ``{verify, processor}`` (the core, registry, sink and package-barrel modules declare
+    zero edges to the logging library); AND the allowlist is not excusing a phantom —
+    ``verify.py`` (the module whose introspection genuinely depends on
+    ``structlog.get_config()`` / ``PrintLoggerFactory`` / ``WriteLoggerFactory``) MUST
+    show a real ``structlog`` edge, or this gate would be a test of nothing.
+
+    ``processor.py`` stays in the allowlist, matching the package docstring's stated
+    permission and 06-03's design intent, but is NOT asserted to carry its own direct
+    edge: verified live that it imports only ``REDACTION_PROCESSOR_MARKER`` (a string
+    constant) from ``verify.py``, never ``structlog`` itself — a stronger purity property
+    than "permitted to import structlog" implies, documented here rather than silently
+    asserted away as if it were identical to ``verify.py``'s coupling.
+    """
+    graph = grimp.build_graph(MODULE, cache_dir=None, include_external_packages=True)
+    redact_pkg = MODULE + ".redact"
+    edges = {
+        module: graph.find_modules_directly_imported_by(module)
+        for module in graph.modules
+        if module == redact_pkg or module.startswith(redact_pkg + ".")
+    }
+    allowed = {redact_pkg + ".verify", redact_pkg + ".processor"}
+
+    leaks = _scan_framework_leaks(edges, "structlog", allowed)
+    assert leaks == [], (
+        f"a redact/ module outside the {sorted(allowed)} allowlist imports "
+        f"structlog — the sink must stay framework-agnostic: {leaks}"
+    )
+
+    verify_targets = edges.get(redact_pkg + ".verify", set())
+    assert "structlog" in verify_targets, (
+        "redact/verify.py must genuinely import structlog, or the allowlist above is "
+        f"excusing a phantom coupling and this gate proves nothing: {sorted(verify_targets)}"
+    )
+
+
+def test_selfproof_sink_framework_gate_catches_injected_edge():
+    """Prove ``_scan_framework_leaks`` is not a no-op: a synthetic offender edge from
+    the sink module MUST be flagged, and a benign stdlib edge must NOT be.
+
+    Drives the SAME ``_scan_framework_leaks`` helper the real gate above uses, against a
+    SYNTHETIC edge mapping (plain strings, no real imports) carrying one injected
+    offender edge from the sink module plus one benign stdlib edge that must NOT be
+    flagged — so it survives any future relocation of the real modules. If the scan
+    were ever loosened to a no-op, this self-proof goes RED.
+    """
+    synthetic = {
+        "yahir_reusable_bot.redact.sink": {
+            "structlog",  # the injected offender — must be flagged
+            "threading",  # a benign stdlib edge — must NOT be flagged
+        }
+    }
+    leaks = _scan_framework_leaks(synthetic, "structlog", set())
+    assert leaks == [("yahir_reusable_bot.redact.sink", "structlog")]
 
 
 # ---------------------------------------------------------------------------
