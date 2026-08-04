@@ -214,6 +214,24 @@ def test_sink_decodes_bytes_before_scrubbing():
     assert isinstance(capture.pieces[1], str)
 
 
+def test_sink_decodes_bytearray_and_memoryview_before_scrubbing():
+    """WR-01 regression: ``bytearray`` and ``memoryview`` are buffer-protocol
+    payloads, not instances of ``bytes`` (``isinstance(bytearray(b"x"), bytes)`` is
+    ``False``), so an `isinstance(data, bytes)`-only triage lets a secret carried in
+    either type reach the target completely unscrubbed. Both must be decoded and
+    scrubbed exactly like a ``bytes`` payload."""
+    capture = _CaptureDouble()
+    writer = RedactingWriter(capture, (RedactionPattern.literal(SENTINEL),))
+
+    writer.write(bytearray(f"appid={SENTINEL}".encode()))
+    assert isinstance(capture.pieces[0], str)
+    assert SENTINEL not in capture.pieces[0]
+
+    writer.write(memoryview(f"appid={SENTINEL}".encode()))
+    assert isinstance(capture.pieces[1], str)
+    assert SENTINEL not in capture.pieces[1]
+
+
 def test_sink_forwards_non_text_payload_untouched():
     """A payload that is neither ``str`` nor ``bytes`` is forwarded to the target
     UNTOUCHED and BY IDENTITY, nothing raises, and the count does not advance."""

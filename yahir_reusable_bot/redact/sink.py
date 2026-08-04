@@ -83,9 +83,12 @@ class RedactingWriter:
 
         D-52 triage, in exactly this order:
 
-        1. ``bytes`` is decoded UTF-8 with ``errors="replace"`` FIRST — an undecodable
-           payload must never raise inside logging, which could mask the very error
-           being logged.
+        1. ``bytes``, ``bytearray``, and ``memoryview`` are all decoded UTF-8 with
+           ``errors="replace"`` FIRST — every buffer-protocol payload, not only
+           ``bytes`` itself (``isinstance(bytearray(b"x"), bytes)`` is ``False``, so
+           a ``bytes``-only check would let a ``bytearray``/``memoryview`` payload
+           bypass redaction entirely). An undecodable payload must never raise
+           inside logging, which could mask the very error being logged.
         2. Only if the payload is now a ``str`` AND redaction is enabled AND the
            pattern set is non-empty does substitution run — delegated to
            :func:`yahir_reusable_bot.redact.core.redact_secrets` in exactly one call;
@@ -110,8 +113,8 @@ class RedactingWriter:
         fabricated length, so the caller learns how much actually reached the real
         destination.
         """
-        if isinstance(data, bytes):
-            data = data.decode("utf-8", "replace")
+        if isinstance(data, (bytes, bytearray, memoryview)):
+            data = bytes(data).decode("utf-8", "replace")
         if isinstance(data, str) and self._enabled and self._patterns:
             scrubbed = redact_secrets(data, self._patterns)
             if scrubbed != data:
