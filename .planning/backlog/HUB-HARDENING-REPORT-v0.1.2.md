@@ -208,9 +208,16 @@ Package `__init__` docstring says it exports "the create-before-delete summon or
 `ReadyGate.run(stop)` loops until ok-or-`stop`; a fatal probe result is only logged louder and
 re-probed forever. Consumers must overload the `stop` Event to break on fatal. WeatherBot works
 around this with a separate `fatal` marker. **Enhancement:** return a distinct fatal outcome (enum
-/ dedicated return) so consumers branch on it directly. **Consumer de-hack after ship+repin:**
-WeatherBot removes its `stop`-overload at `weatherbot/scheduler/wiring.py:_on_fail` (fatal branch)
-and `weatherbot/ops/daemon.py` (gate-return exit-code check), consuming the hub outcome instead.
+/ dedicated return) so consumers branch on it directly. **Consumer de-hack after ship+repin
+(corrected 2026-08-04, DOCS-02/DOCS-03 — see `.planning/v0.1.2-MILESTONE-AUDIT.md` DOC-DRIFT-01 /
+DOC-DRIFT-02):** WeatherBot removes its `stop`-overload at `weatherbot/scheduler/wiring.py:_on_fail`
+(fatal branch); the gate-return exit-code check at `weatherbot/scheduler/daemon.py` (the correct
+gate-return path); and, upstream of both, the classification at
+`weatherbot/ops/selfcheck.py:to_health_result` (the PRODUCING site — without it classifying
+`CONFIG_INVALID` as fatal, `HealthResult.fatal` is never set and the `ReadyOutcome.FATAL` branch is
+unreachable downstream). All three collapse onto the hub outcome. A hub-side deliverable
+enumerating consumer de-hack sites must name the site that PRODUCES the input, not only the sites
+that CONSUME the outcome.
 
 ---
 

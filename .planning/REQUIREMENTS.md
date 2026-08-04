@@ -115,8 +115,13 @@ regression test** — the test must fail against current source before the fix l
 Per `ECOSYSTEM.md` §3, these are surfaced for confirmation, never performed autonomously:
 `pyproject.toml` version bump `0.1.1 → 0.1.2` · cut tag `v0.1.2` · repin WeatherBot
 `[tool.uv.sources]` `v0.1.1 → v0.1.2` + `uv sync --frozen` · after LIFE-04 ships, WeatherBot
-de-hacks its separate `fatal` Event at `weatherbot/scheduler/wiring.py:_on_fail` and the
-gate-return check in `weatherbot/ops/daemon.py`.
+de-hacks three sites onto the hub outcome (corrected 2026-08-04, DOCS-02/DOCS-03 — see
+`.planning/v0.1.2-MILESTONE-AUDIT.md` DOC-DRIFT-01 / DOC-DRIFT-02): its separate `fatal` Event at
+`weatherbot/scheduler/wiring.py:_on_fail`; the gate-return check at
+`weatherbot/scheduler/daemon.py` (the correct gate-return path); and
+the classification at `weatherbot/ops/selfcheck.py:to_health_result` (the PRODUCING site — without
+it classifying `CONFIG_INVALID` as fatal, `HealthResult.fatal` is never set and the
+`ReadyOutcome.FATAL` branch is unreachable downstream).
 
 ## Milestone v0.2.0 — Redaction promotion + hardening debt (active)
 
@@ -218,8 +223,11 @@ surface — `redact_secrets(text, patterns)`, never `redact_appid` or an `appid`
 ### Documentation (Track B)
 
 - [ ] **DOCS-02** (audit DOC-DRIFT-01): Every planning artifact naming a consumer de-hack site
-  names a path that **exists**. `weatherbot/ops/daemon.py` appears across 11 artifacts; the real
-  path is `weatherbot/scheduler/daemon.py`. → Phase 7
+  names a path that **exists**. `weatherbot/ops/daemon.py` appears across 9 files / 14 lines of
+  genuine drift (corrected count — the audit's original "11 artifacts" figure counted
+  `STATE.md:101`, since rewritten for v0.2.0; the live figure was independently reproduced twice,
+  at discuss time and again during research, both 2026-08-03); the real path is
+  `weatherbot/scheduler/daemon.py`. → Phase 7
 
 - [ ] **DOCS-03** (audit DOC-DRIFT-02): The documented de-hack site set is complete — including
   the *producing* site `weatherbot/ops/selfcheck.py`, without which the consumed outcome is
