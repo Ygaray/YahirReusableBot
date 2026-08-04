@@ -21,6 +21,7 @@ module under the rule of three (build-in-consumer-then-promote).
 | Health-check (READY-gate callback) | SEAM-05 (P25) | **implemented** | host-provided callback | — |
 | Command registration (`registry` / `bind`) | SEAM-06 (P26) | **implemented** | host registers specs; CLI / Discord / help derive | — |
 | Panel `SelectedContext[I]` | SEAM-07 (P27) | **implemented** | generic holder + injected `render` | — |
+| `RedactingWriter` / `redaction_processor` | SEAM-08 (P06) | **implemented** | the rendered-text sink, its redaction counter, the wiring self-check, and the optional event-mapping processor | a safe pattern-builder helper, per-pattern replacement beyond the template mechanism and partial masking, config-driven pattern loading, a chain-builder helper for processor ordering, and an unwrap convention for a consumer proxy nested around the writer |
 
 ---
 
@@ -115,6 +116,100 @@ and is injected at the composition root — the render cycle was resolved by **o
 deferred import). The `discord.py==2.7.1` pin lives in this module's `pyproject.toml`; the
 panel's persistent-view `custom_id` routing contract is valid only against that exact version —
 do NOT loosen it.
+
+## 7. Secret redaction — insertion seams into a consumer's own logging (SEAM-08, implemented)
+
+**Source:** `yahir_reusable_bot/redact/` (`core.py`, `registry.py`, `sink.py`, `verify.py`,
+`processor.py`, `__init__.py`)
+
+Every other seam in this guide is the host implementing a Protocol the module calls. SEAM-08
+**inverts** that shape: the module supplies callable mechanism — `RedactingWriter`,
+`assert_redaction_active`, `REDACTION_PROCESSOR_MARKER`, `redaction_processor` — plus a
+registration entry point (`register_patterns`, Phase 5), and the HOST wires that mechanism into
+its OWN `structlog.configure()` call. There is no redaction Protocol here and none to go looking
+for — this is the single most useful sentence in this section for a future reader.
+
+**What the module owns versus what the host injects.** The module owns the pattern-pair type and
+its literal mode (`RedactionPattern`, Phase 5), the substitution loop (`redact_secrets`), the
+vetting registration call (`register_patterns`), the sink (`RedactingWriter`), its redaction
+counter, the wiring self-check (`assert_redaction_active`), and the optional processor
+(`redaction_processor`). The host owns every pattern's CONTENT (what a secret shape looks like),
+the decision to wire redaction at all, the wiring itself, and the disablement value. The module
+hardcodes no pattern and never configures logging on its own initiative — it never calls
+`structlog.configure()` and never assigns to `sys.stderr` by itself.
+
+**Recipe 1 — required.** Pass `RedactingWriter` as the render target of the host's own logger
+factory, in the host's own composition root:
+
+```python
+import sys
+import structlog
+from yahir_reusable_bot.redact import RedactingWriter
+
+structlog.configure(
+    logger_factory=structlog.PrintLoggerFactory(
+        file=RedactingWriter(sys.stderr, patterns)
+    ),
+)
+```
+
+**Recipe 2 — optional, broader.** The host assigns `RedactingWriter` over the process's own
+`sys.stderr` in its own composition root:
+
+```python
+sys.stderr = RedactingWriter(sys.stderr, patterns)
+```
+
+This additionally covers stdlib `logging` records, bare `print()` calls, and third-party library
+output the structlog-only recipe never sees. The ordering constraint is a hard requirement, not a
+tip: this assignment must happen **before any** stdlib `logging` handler is constructed, because a
+handler resolves its stream at construction time — an already-bound handler keeps writing to the
+original stream even after the swap. The module never performs this assignment itself; the host's
+own visible line of code does, which is what keeps a security-relevant process-wide mutation
+auditable.
+
+**Proving it is on.** `assert_redaction_active(*, deep=False)` raises rather than returns a status
+— call it once at boot AND again after any reconfiguration, because `structlog`'s configuration is
+global mutable state and a second `structlog.configure()` call can drop the wiring with no error of
+its own. The opt-in `deep=True` option proves the scrub code path executes against a non-secret
+probe entirely in memory, and catches an empty pattern set and a disabled writer; it does NOT prove
+that any particular secret shape is covered, and it deliberately does not require a canary pattern.
+
+**The optional processor.** `redaction_processor(patterns)` is additive defense-in-depth for
+field-level `event_dict` scrubbing before serialization. It has a chain-order precondition — place
+it after the exception formatters (`structlog.processors.format_exc_info` /
+`structlog.processors.dict_tracebacks`) in the processors chain, or it never sees traceback text —
+and, stated at least as prominently as its benefit: it is **NOT** a substitute for the sink, because
+some renderers (`structlog.dev.ConsoleRenderer`) format exception output directly into their own
+output buffer regardless of where the processor sits in the chain. The self-check warns, never
+raises, about ordering; a host's own hand-written redaction processor can opt into that same check
+by setting `REDACTION_PROCESSOR_MARKER` truthy on its own callable.
+
+**Telemetry, described accurately.** `RedactingWriter.redaction_count` is readable off the live
+writer instance, and an optional `on_redaction` push hook can be supplied at construction. It
+counts **changed writes**, not individual substitutions, and is monotonic for process lifetime — a
+rate is obtained by diffing two point-in-time reads, never by treating it as a per-substitution
+total.
+
+**Known limitations.**
+
+- The self-check cannot see a writer nested inside the host's own proxy and will raise — wrap the
+  stream with `RedactingWriter` FIRST, then wrap that in any additional proxy.
+- The self-check reads a private attribute of the logging library's shipped factories, and the
+  dependency is pinned with a lower bound only — a future release can break it; it fails loudly
+  with a distinct message naming the installed version rather than silently passing.
+- Recipe 2 is a Python-level stream proxy and therefore cannot intercept a write made through the
+  stream's raw byte buffer or a direct file-descriptor write.
+- A `name=value`-shaped pattern whose value boundary excludes a quote or backslash can under-redact
+  a secret whose own value contains one of those characters inside already-escaped text —
+  literal-value mode (`RedactionPattern.literal`) matches verbatim and sidesteps it.
+
+**Implemented:** `RedactingWriter` (rendered-text sink, both recipes, redaction counter,
+`probe_redaction_path`), `assert_redaction_active` (wiring proof, opt-in deep check, ordering
+warning), `redaction_processor` (optional event-mapping scrub). **Deferred:** a safe
+pattern-builder helper, per-pattern replacement beyond the template mechanism and partial masking,
+config-driven pattern loading, a chain-builder helper for processor ordering, and an unwrap
+convention for a consumer proxy nested around the writer.
 
 ---
 
