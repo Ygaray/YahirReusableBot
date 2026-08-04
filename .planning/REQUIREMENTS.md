@@ -183,7 +183,7 @@ surface — `redact_secrets(text, patterns)`, never `redact_appid` or an `appid`
 
 ### Lifecycle (Track B)
 
-- [ ] **LIFE-05** (v0.1.2 Phase 1 WR-01): The identity guard's BUNDLED short-option group form
+- [x] **LIFE-05** (v0.1.2 Phase 1 WR-01): The identity guard's BUNDLED short-option group form
   (`python -Om<module>` / `-Im<module>`) behavior is resolved — either matched, or documented as
   a permanent limitation with reasoning. **Correction (Phase 7 PC-A):** the requirement text
   previously named the ATTACHED `-mmodule` form; that form was already fixed in v0.1.2
@@ -209,7 +209,7 @@ surface — `redact_secrets(text, patterns)`, never `redact_appid` or an `appid`
 
 ### Hygiene (Track B)
 
-- [ ] **HYG-02** (v0.1.2 Phase 4 IN-01): `_best_effort_hook` logs via a structured `label=` kwarg
+- [x] **HYG-02** (v0.1.2 Phase 4 IN-01): `_best_effort_hook` logs via a structured `label=` kwarg
   instead of an f-string — in both it and the shared site in `config/reload.py`. → Phase 7
 
 - [x] **HYG-03** (v0.1.2 Phase 2 IN-03): The full suite emits zero warnings — the

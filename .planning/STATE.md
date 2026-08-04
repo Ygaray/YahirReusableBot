@@ -5,15 +5,15 @@ milestone_name: — Redaction promotion + hardening debt
 current_phase: 07
 current_phase_name: v0.1.2 debt paydown
 status: executing
-stopped_at: Completed 07-04-PLAN.md
-last_updated: "2026-08-04T05:16:54.041Z"
+stopped_at: Completed 07-05-PLAN.md
+last_updated: "2026-08-04T05:23:15.297Z"
 last_activity: 2026-08-04
 last_activity_desc: Phase 07 execution started
 progress:
   total_phases: 3
   completed_phases: 2
   total_plans: 14
-  completed_plans: 11
+  completed_plans: 12
   percent: 67
 ---
 
@@ -22,7 +22,7 @@ progress:
 ## Current Position
 
 Phase: 07 (v0.1.2 debt paydown) — EXECUTING
-Plan: 5 of 7
+Plan: 6 of 7
 Status: Ready to execute
 Progress: [###_______] 33% (1/3 phases)
 Last activity: 2026-08-04 — Phase 07 execution started
@@ -40,8 +40,8 @@ litmus / grimp green, and every requirement ships a RED-first regression test.
 
 ## Session
 
-**Last session:** 2026-08-04T05:16:54.031Z
-**Stopped at:** Completed 07-04-PLAN.md
+**Last session:** 2026-08-04T05:23:15.289Z
+**Stopped at:** Completed 07-05-PLAN.md
 **Resume file:** None
 
 ## Performance Metrics
@@ -75,6 +75,7 @@ Carried from v0.1.2 for calibration (14 plans across 4 phases, ~3–25min per pl
 | Phase 07 P02 | 15min | 2 tasks | 2 files |
 | Phase 07 P03 | 12min | 3 tasks | 3 files |
 | Phase 07 P04 | ~5min | 2 tasks | 5 files |
+| Phase 07 P05 | 12min | 3 tasks | 8 files |
 
 ## Decisions
 
@@ -155,6 +156,8 @@ Full v0.1.2 decision history is archived under `.planning/milestones/v0.1.2-phas
 - [Phase ?]: [Phase 7, 07-03] D-65: filterwarnings = ["error"] added to the existing [tool.pytest.ini_options] table; verified green under uv run pytest -q -o 'filterwarnings=error' (171 passed) BEFORE the config edit landed, confirming the production fix alone closed both the RuntimeWarning and PytestUnraisableExceptionWarning pathways per 07-RESEARCH.md Pitfall 1
 - [Phase ?]: [Phase 7, 07-03] Deviation: two literal-grep acceptance criteria (coro.close()==1, run_coroutine_threadsafe==1, and the ignore:: absence check) conflicted with either a pre-existing out-of-scope class docstring or the plan's own instructed comment content; resolved by rephrasing prose to satisfy intent without gutting required documentation — see 07-03-SUMMARY.md Deviations
 - [Phase ?]: [Phase 7, 07-04] D-62 SURF-02 three-part verdict applied: on_online and panelkit.render narrowed to their real call-site arity (pinned by get_type_hints regression tests), SchedulerEngine.register's callback deliberately left Callable[..., Any] with the leave-variadic rationale recorded in its docstring per D-63 (no static type checker introduced)
+- [Phase ?]: [Phase 7, 07-05] HYG-02 clone anti-drift guard implemented via AST comparison (ast.unparse) with docstrings stripped, not literal inspect.getsource() string diff — the two _best_effort_hook sites' docstrings legitimately differ per engine; verified live the bodies (minus docstring) were already identical pre-fix (GREEN both ways, per plan's documented fallback)
+- [Phase ?]: [Phase 7, 07-05] D-61/D-61a executed as locked: LIFE-05 ships zero behavioral change to identity.py, bundled short-option-group form stays undecoded and documented, no artificial RED test manufactured — GATE-02 exemption satisfied by the already-green pinned test_bundled_short_option_group_not_matched
 
 ## Todos
 
