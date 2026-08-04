@@ -367,3 +367,16 @@ whenever the human elects to act on it — no part of it was performed by this p
 ---
 *Phase: 07-v0-1-2-debt-paydown*
 *Completed: 2026-08-04*
+
+## Self-Check: PASSED
+
+- FOUND: .planning/backlog/ADOPT-STATIC-TYPE-CHECKER.md
+- FOUND: .planning/phases/07-v0-1-2-debt-paydown/07-07-SUMMARY.md
+- FOUND: df277b8 (Task 1 audit + Task 2 backlog/close-out commit)
+- RE-VERIFIED: `uv run pytest -q` → 184 passed, zero warnings
+- RE-VERIFIED: `uv run pytest -q -o 'filterwarnings=error'` → 184 passed
+- RE-VERIFIED: `uv run pytest tests/test_import_hygiene.py -q` → 10 passed
+- RE-VERIFIED: `uv run ruff check` → All checks passed!
+- RE-VERIFIED: `git tag --list 'v0.2.0'` empty; `pyproject.toml` still `version = "0.1.2"`;
+  `git diff HEAD~1 -- pyproject.toml` empty; WeatherBot git status unchanged from this plan's
+  pre-existing, unrelated baseline

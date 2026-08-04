@@ -220,7 +220,7 @@ collection) at a distinct dotted path — do not merge the two by analogy-confus
 |-------|----------------|--------|-----------|
 | 5. Redaction core + pattern registration | 3/3 | Complete    | 2026-07-29 |
 | 6. Insertion seams + provable backstop | 4/4 | Complete    | 2026-08-04 |
-| 7. v0.1.2 debt paydown | 6/7 | In Progress|  |
+| 7. v0.1.2 debt paydown | 7/7 | In Progress|  |
 
 ### v0.2.0 Phase Details
 
@@ -379,7 +379,7 @@ open item from the retrospective audit is closed or explicitly decided.
      not only the sites that consume the outcome — verified against the filesystem, not against the
      string that produced the drift.
 
-**Plans**: 6/7 plans executed
+**Plans**: 7/7 plans executed
 
 Plans (strictly serial Waves 1→7 — each plan commits its RED test then its GREEN fix and re-verifies
 the standing gates green before the next plan's RED commit, so a deliberately-RED test never overlaps
@@ -407,7 +407,7 @@ a sibling plan's full-suite gate; the Phases 1–3 lesson, re-proven in 5 and 6)
   active artifacts corrected to name paths that exist plus the producing site, then drift banners on
   the seven archived v0.1.2 phase-4 records
 
-- [ ] 07-07-PLAN.md — Phase gate: GATE-02 RED-first ancestry derived from git trees, the D-61a
+- [x] 07-07-PLAN.md — Phase gate: GATE-02 RED-first ancestry derived from git trees, the D-61a
   exemption and three manual-only sign-offs recorded, the deferred type-checker backlog entry filed,
   and the human-gated close-out surfaced
 
