@@ -159,7 +159,7 @@ surface — `redact_secrets(text, patterns)`, never `redact_appid` or an `appid`
   renders tracebacks straight to the stream bypassing `event_dict`, so a processor alone cannot
   see them. → Phase 6
 
-- [ ] **REDACT-05** (PC-01): An optional structlog processor scrubs `event_dict` string values
+- [x] **REDACT-05** (PC-01): An optional structlog processor scrubs `event_dict` string values
   pre-render, with its chain-order precondition (must sit after the exception formatters) stated
   loudly in the docstring. Secondary and additive — never the sole backstop. → Phase 6
 

@@ -5,15 +5,15 @@ milestone_name: — Redaction promotion + hardening debt
 current_phase: 06
 current_phase_name: insertion-seams-provable-backstop
 status: executing
-stopped_at: Completed 06-02-PLAN.md
-last_updated: "2026-08-04T00:17:43.237Z"
+stopped_at: Completed 06-03-PLAN.md
+last_updated: "2026-08-04T00:27:18.617Z"
 last_activity: 2026-08-04
 last_activity_desc: Phase 06 execution started
 progress:
   total_phases: 3
   completed_phases: 1
   total_plans: 7
-  completed_plans: 5
+  completed_plans: 6
   percent: 33
 ---
 
@@ -22,7 +22,7 @@ progress:
 ## Current Position
 
 Phase: 06 (insertion-seams-provable-backstop) — EXECUTING
-Plan: 3 of 4
+Plan: 4 of 4
 Status: Ready to execute
 Progress: [###_______] 33% (1/3 phases)
 Last activity: 2026-08-04 — Phase 06 execution started
@@ -40,8 +40,8 @@ litmus / grimp green, and every requirement ships a RED-first regression test.
 
 ## Session
 
-**Last session:** 2026-08-04T00:17:43.160Z
-**Stopped at:** Completed 06-02-PLAN.md
+**Last session:** 2026-08-04T00:27:18.608Z
+**Stopped at:** Completed 06-03-PLAN.md
 **Resume file:** None
 
 ## Performance Metrics
@@ -69,6 +69,7 @@ Carried from v0.1.2 for calibration (14 plans across 4 phases, ~3–25min per pl
 | Phase 05 P03 | ~10min | 2 tasks | 2 files |
 | Phase 06 P01 | 10min | 2 tasks | 3 files |
 | Phase 06 P02 | ~12min | 2 tasks | 3 files |
+| Phase 06 P03 | ~15min | 2 tasks | 3 files |
 
 ## Decisions
 
@@ -134,6 +135,9 @@ Full v0.1.2 decision history is archived under `.planning/milestones/v0.1.2-phas
 - [Phase ?]: D-56 introspection reads structlog.get_config()['logger_factory']._file and raises on any inconclusive result — never a false pass (06-02)
 - [Phase ?]: D-60 ordering sub-check locates redaction processors via REDACTION_PROCESSOR_MARKER (not identity/import), so verify.py ships with zero dependency on the not-yet-built optional processor (06-02)
 - [Phase ?]: RESEARCH open question 2 resolved as recommended (assumption A1): hard raise, no unwrap convention, for a writer nested inside a consumer's own proxy — message states the fix rather than attempting to walk the proxy (06-02)
+- [Phase ?]: [Phase 6, 06-03] D-60's docstring half shipped verbatim to RESEARCH Pattern 2's two-warning structure; detection half proven wired end-to-end by the marker test placing the real processor before format_exc_info
+- [Phase ?]: [Phase 6, 06-03] WR-02 residual re-checked per CONTEXT.md instruction and confirmed correctly closed: no RedactionPattern instance is ever placed into an event_dict by the processor
+- [Phase ?]: [Phase 6, 06-03] Rule 1 fix: RED test's positive-scrub case used dict_tracebacks (nests exc info as structured data, not a flat string) instead of format_exc_info (flat string) — fixed in a separate follow-up commit (67a4f42), not an amend, to preserve GATE-02 RED->GREEN adjacency
 
 ## Todos
 
