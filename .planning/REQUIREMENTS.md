@@ -190,7 +190,7 @@ surface — `redact_secrets(text, patterns)`, never `redact_appid` or an `appid`
 
 ### Public surface (Track B)
 
-- [ ] **SURF-02** (v0.1.2 Phase 4 IN-02): `on_online`'s annotation is narrowed to
+- [x] **SURF-02** (v0.1.2 Phase 4 IN-02): `on_online`'s annotation is narrowed to
   `Callable[[HealthResult], None]`. **A public hub-surface change — needs an explicit human
   decision at discuss time.** → Phase 7
 
