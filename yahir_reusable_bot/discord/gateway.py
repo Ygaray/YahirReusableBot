@@ -173,9 +173,12 @@ async def summon_panel(
     **Pin-cap headroom-reserve (D-26):** if the fresh panel's ``pin()`` fails with
     ``discord.HTTPException`` (the channel is at its pin cap — never hardcode the exact cap
     number, A1/A2 in RESEARCH.md are unresolved between discord.py's docstring and Discord's
-    documented error code) AND >=2 owned panels exist, ONE owned stray is evicted first
-    (freeing a slot; >=1 owned panel is still live throughout — D-06's no-zero-window holds)
-    and the pin is retried.
+    documented error code) AND >=1 owned panel exists, ONE owned stray is evicted first
+    (freeing a slot) and the pin is retried. The no-zero-window invariant (D-24/D-06) is
+    carried by the fresh panel itself — create-before-delete already sent it live above — so
+    it holds even when the LAST owned stray is evicted. (The original >=2 threshold was too
+    conservative: it left the common single-owned-panel re-summon fresh-but-unpinned at the
+    cap. See the inline comment at the eviction site.)
 
     **Residual limitation (D-27):** if the channel is saturated with FOREIGN (non-owned) pins
     — no owned stray to evict — or the retried pin still fails, the fresh panel is left sent
