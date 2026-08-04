@@ -153,7 +153,7 @@ surface — `redact_secrets(text, patterns)`, never `redact_appid` or an `appid`
   and the Discord adapter runs an asyncio gateway loop — so a consumer's pathological regex would
   otherwise starve heartbeats and drop the live connection. → Phase 5
 
-- [ ] **REDACT-04** (PC-01): A `RedactingWriter` sink wrapper scrubs fully-rendered output —
+- [x] **REDACT-04** (PC-01): A `RedactingWriter` sink wrapper scrubs fully-rendered output —
   event text **and** formatted tracebacks — regardless of processor-chain order or renderer
   choice. **The load-bearing seam:** verified against installed `structlog`, `dev.ConsoleRenderer`
   renders tracebacks straight to the stream bypassing `event_dict`, so a processor alone cannot
@@ -170,7 +170,7 @@ surface — `redact_secrets(text, patterns)`, never `redact_appid` or an `appid`
   the backstop is actually installed — so a backstop silently dropped by a second
   `structlog.configure()` call fails loudly instead of looking identical to a working one. → Phase 6
 
-- [ ] **REDACT-08** (PC-01): Redaction-count telemetry exposes how many substitutions fired, so a
+- [x] **REDACT-08** (PC-01): Redaction-count telemetry exposes how many substitutions fired, so a
   consumer can observe the backstop working rather than assume it. → Phase 6
 
 ### Command registry (Track B)

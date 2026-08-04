@@ -285,3 +285,10 @@ None - no external service configuration required.
 ---
 *Phase: 06-insertion-seams-provable-backstop*
 *Completed: 2026-08-03*
+
+## Self-Check: PASSED
+
+- FOUND: tests/test_redact_sink.py
+- FOUND: yahir_reusable_bot/redact/sink.py
+- FOUND commit: 96ebefd (RED)
+- FOUND commit: 5cf35d6 (GREEN)

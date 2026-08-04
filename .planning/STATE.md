@@ -2,18 +2,18 @@
 gsd_state_version: 1.0
 milestone: v0.2.0
 milestone_name: — Redaction promotion + hardening debt
-current_phase: 6
-current_phase_name: Insertion seams + provable backstop
+current_phase: 06
+current_phase_name: insertion-seams-provable-backstop
 status: executing
-stopped_at: Phase 6 context gathered
-last_updated: "2026-08-04T00:01:59.403Z"
-last_activity: 2026-07-29
-last_activity_desc: Phase 05 complete, transitioned to Phase 6
+stopped_at: Completed 06-01-PLAN.md
+last_updated: "2026-08-04T00:10:32.151Z"
+last_activity: 2026-08-04
+last_activity_desc: Phase 06 execution started
 progress:
   total_phases: 3
   completed_phases: 1
-  total_plans: 3
-  completed_plans: 3
+  total_plans: 7
+  completed_plans: 4
   percent: 33
 ---
 
@@ -21,11 +21,11 @@ progress:
 
 ## Current Position
 
-Phase: 6 — Insertion seams + provable backstop
-Plan: Not started
+Phase: 06 (insertion-seams-provable-backstop) — EXECUTING
+Plan: 2 of 4
 Status: Ready to execute
 Progress: [###_______] 33% (1/3 phases)
-Last activity: 2026-07-29 — Phase 05 complete, transitioned to Phase 6
+Last activity: 2026-08-04 — Phase 06 execution started
 
 ## Milestone Shape
 
@@ -40,9 +40,9 @@ litmus / grimp green, and every requirement ships a RED-first regression test.
 
 ## Session
 
-**Last session:** 2026-07-29T20:05:33.891Z
-**Stopped at:** Phase 6 context gathered
-**Resume file:** .planning/phases/06-insertion-seams-provable-backstop/06-CONTEXT.md
+**Last session:** 2026-08-04T00:10:32.141Z
+**Stopped at:** Completed 06-01-PLAN.md
+**Resume file:** None
 
 ## Performance Metrics
 
@@ -67,6 +67,7 @@ Carried from v0.1.2 for calibration (14 plans across 4 phases, ~3–25min per pl
 | Phase 05 P01 | 18min | 2 tasks | 3 files |
 | Phase 05 P02 | ~12min | 2 tasks | 3 files |
 | Phase 05 P03 | ~10min | 2 tasks | 2 files |
+| Phase 06 P01 | 10min | 2 tasks | 3 files |
 
 ## Decisions
 
@@ -126,6 +127,9 @@ Full v0.1.2 decision history is archived under `.planning/milestones/v0.1.2-phas
 - [Phase ?]: redact_scanned litmus coverage guard added to test_import_hygiene.py — an addition for convention consistency (standing gate already auto-covered redact/ unedited), not a fix, matching the lifecycle/registry/discord guard shape
 - [Phase ?]: GATE-02 RED-first ancestry for REDACT-01/02/03/06 proven from git trees (git rev-parse adjacency + git ls-tree RED-ness + commit purity), not asserted in prose
 - [Phase ?]: WeatherBot parity-test plan verified against actual source: 4 of 6 assertions are Phase-5-core-only, 2 of 6 (test_discord_on_message_does_not_dump_key, test_livestderr_write_tolerates_and_scrubs_bytes) depend on the Phase-6 sink/backstop seam and cannot fully re-pass until Phase 6 ships
+- [Phase ?]: D-52 non-str/bytes triage order (bytes decode-with-replace, then str+enabled+non-empty-patterns gate) copied verbatim from WeatherBot's proven _LiveStderr.write into RedactingWriter (06-01)
+- [Phase ?]: D-58 counter counts CHANGED WRITES via one != comparison, never re-running patterns with .subn() for an exact substitution total (06-01)
+- [Phase ?]: D-59 threading.Lock guards only the increment + captured read; on_redaction hook fires OUTSIDE the lock so a slow/raising hook cannot hold up concurrent writers (06-01)
 
 ## Todos
 
