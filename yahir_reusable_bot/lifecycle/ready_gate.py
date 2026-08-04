@@ -191,4 +191,4 @@ class ReadyGate:
         try:
             hook(arg)
         except Exception:  # noqa: BLE001 — best-effort; never mask the engine result
-            _log.warning(f"{label} hook failed; engine result unaffected")
+            _log.warning("hook failed; engine result unaffected", label=label)
