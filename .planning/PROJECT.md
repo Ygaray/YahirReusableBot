@@ -15,6 +15,12 @@ script** (library only). Build backend: hatchling. `requires-python >=3.12`.
 
 ## Current Milestone: v0.2.0 Redaction promotion + hardening debt
 
+**Status (2026-08-04): all three phases executed and verified — awaiting human-gated close-out.**
+Phase 5 (redaction core) ✓ · Phase 6 (insertion seams + provable backstop) ✓ · Phase 7 (v0.1.2 debt
+paydown) ✓. All 19 requirements are Complete except **GATE-02**, which is milestone-standing and is
+checked at milestone close, not by any phase. Remaining work is the close-out sequence below, which
+is deliberately **not** autonomous.
+
 **Goal:** Promote the secret-redaction backstop into the hub as a generic mechanism, and clear
 every open item the v0.1.2 audit surfaced — so the hub owns log scrubbing and carries forward no
 known footgun or stale doc.
@@ -47,6 +53,12 @@ enter the hub surface.
 **Two items need an explicit human decision at discuss time, not a default:** Phase 1 WR-01
 (behavioral fix vs. keep-documented — already deferred once) and Phase 4 IN-02 (`on_online`
 annotation narrowing is a *public* hub-surface change).
+**→ Both decided in Phase 7 (2026-08-04), reasoning recorded in `07-CONTEXT.md`:** WR-01/LIFE-05
+resolved as **keep-documented** — the bundled `-Om<module>` form stays deliberately undecoded, stated
+as a permanent limitation with reasoning in `EXTENSION-GUIDE.md` §4 (D-61; D-61a exempts it from the
+RED-first-test rule since it ships no behavioral change). IN-02/SURF-02 resolved as **narrow** for
+`on_online` and `render`, and **explicitly no-change** for `SchedulerEngine.register`'s variadic
+`callback`, whose rationale is recorded in its docstring.
 
 **Consumer-breaking note:** WR-02 makes a previously-silent duplicate registration raise
 `ValueError`. The repin needs a WeatherBot sweep for duplicate `spec.name` values.

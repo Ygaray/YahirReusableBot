@@ -214,13 +214,13 @@ collection) at a distinct dotted path — do not merge the two by analogy-confus
 
 - [x] **Phase 5: Redaction core + pattern registration** - The generic scrubbing primitive and a safe-by-construction pattern API (completed 2026-07-29)
 - [x] **Phase 6: Insertion seams + provable backstop** - The load-bearing sink, the additive processor, and proof the backstop is live (completed 2026-08-04)
-- [ ] **Phase 7: v0.1.2 debt paydown** - Every open audit item closed; no known footgun, no stale doc
+- [x] **Phase 7: v0.1.2 debt paydown** - Every open audit item closed; no known footgun, no stale doc (completed 2026-08-04)
 
 | Phase | Plans Complete | Status | Completed |
 |-------|----------------|--------|-----------|
 | 5. Redaction core + pattern registration | 3/3 | Complete    | 2026-07-29 |
 | 6. Insertion seams + provable backstop | 4/4 | Complete    | 2026-08-04 |
-| 7. v0.1.2 debt paydown | 7/7 | In Progress|  |
+| 7. v0.1.2 debt paydown | 7/7 | Complete    | 2026-08-04 |
 
 ### v0.2.0 Phase Details
 
@@ -507,7 +507,7 @@ version bump, and the consumer repin are yours.
 
 **Goal:** Promote WeatherBot's app-local secret redactor into a generic hub mechanism.
 **Requirements:** REDACT-01..08, DOCS-04 (assigned at v0.2.0 roadmapping)
-**Plans:** 4/4 plans complete
+**Plans:** 7/7 plans complete
 
 **Separate track — a promotion, not a fix.** WeatherBot ships this app-local in its Phase 30
 (`HARD-SEC-01`, origin finding F12) to keep that phase cheap and avoid a mid-phase hub tag cut.

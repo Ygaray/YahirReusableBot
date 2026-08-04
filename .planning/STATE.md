@@ -3,29 +3,29 @@ gsd_state_version: 1.0
 milestone: v0.2.0
 milestone_name: — Redaction promotion + hardening debt
 current_phase: 07
-current_phase_name: v0.1.2 debt paydown
-status: verifying
+status: completed
 stopped_at: Completed 07-07-PLAN.md — Phase 7 complete
-last_updated: "2026-08-04T05:40:22.582Z"
+last_updated: "2026-08-04T05:57:28.847Z"
 last_activity: 2026-08-04
-last_activity_desc: Phase 07 execution started
+last_activity_desc: Phase 07 complete
 progress:
   total_phases: 3
   completed_phases: 3
   total_plans: 14
   completed_plans: 14
   percent: 100
+current_phase_name: v0.1.2 debt paydown
 ---
 
 # Project State
 
 ## Current Position
 
-Phase: 07 (v0.1.2 debt paydown) — EXECUTING
-Plan: 7 of 7
-Status: Phase complete — ready for verification
+Phase: 07
+Plan: Not started
+Status: Milestone complete
 Progress: [###_______] 33% (1/3 phases)
-Last activity: 2026-08-04 — Phase 07 execution started
+Last activity: 2026-08-04 — Phase 07 complete
 
 ## Milestone Shape
 
@@ -167,8 +167,16 @@ Full v0.1.2 decision history is archived under `.planning/milestones/v0.1.2-phas
 
 ## Todos
 
-- Phase 7 discuss step must surface **LIFE-05** and **SURF-02** as explicit human decisions —
-  both were deliberately deferred once already; neither may be defaulted.
+- ~~Phase 7 discuss step must surface **LIFE-05** and **SURF-02** as explicit human decisions~~ —
+  **DONE (Phase 7, 2026-08-04).** Both surfaced at discuss time and decided, never defaulted;
+  reasoning recorded in `07-CONTEXT.md` (D-61/D-61a, D-62) and `07-DISCUSSION-LOG.md`.
+  **LIFE-05 → keep-documented:** the bundled `-Om<module>` form stays deliberately undecoded, stated
+  as a permanent limitation with reasoning in `EXTENSION-GUIDE.md` §4. D-61a exempts it from the
+  GATE-02 RED-first rule (zero behavioral change — `identity.py`'s only diff is 5 docstring lines).
+  **SURF-02 → narrow two of three:** `on_online` and `render` narrowed and pinned by `get_type_hints`
+  regression tests; `SchedulerEngine.register`'s `callback` deliberately left `Callable[..., Any]`
+  with the rationale in its docstring. The narrowing is a **public hub-surface change** — it ships to
+  consumers only at the human-gated repin.
 
 - ~~Phase 5 discuss/plan must produce the WeatherBot **parity-test plan**~~ — **DONE (Phase 5).**
   Written in `05-RESEARCH.md` § Validation Architecture, corrected during execution, and finalized

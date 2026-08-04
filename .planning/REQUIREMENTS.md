@@ -285,15 +285,15 @@ Phase numbering **continues from v0.1.2** (which ended at Phase 4). See `.planni
 | REDACT-07 | A (PC-01) | Phase 6 | Complete (2026-08-04) |
 | REDACT-08 | A (PC-01) | Phase 6 | Complete (2026-08-04) |
 | DOCS-04 | A (PC-01) | Phase 6 | Complete (2026-08-04) |
-| MATCH-03 | B (debt) | Phase 7 | Pending |
-| LIFE-05 | B (debt) | Phase 7 | Pending |
-| SURF-02 | B (debt) | Phase 7 | Pending |
-| DISC-07 | B (debt) | Phase 7 | Pending |
-| DISC-08 | B (debt) | Phase 7 | Pending |
-| HYG-02 | B (debt) | Phase 7 | Pending |
-| HYG-03 | B (debt) | Phase 7 | Pending |
-| DOCS-02 | B (debt) | Phase 7 | Pending |
-| DOCS-03 | B (debt) | Phase 7 | Pending |
+| MATCH-03 | B (debt) | Phase 7 | Complete (2026-08-04) |
+| LIFE-05 | B (debt) | Phase 7 | Complete (2026-08-04) |
+| SURF-02 | B (debt) | Phase 7 | Complete (2026-08-04) |
+| DISC-07 | B (debt) | Phase 7 | Complete (2026-08-04) |
+| DISC-08 | B (debt) | Phase 7 | Complete (2026-08-04) |
+| HYG-02 | B (debt) | Phase 7 | Complete (2026-08-04) |
+| HYG-03 | B (debt) | Phase 7 | Complete (2026-08-04) |
+| DOCS-02 | B (debt) | Phase 7 | Complete (2026-08-04) |
+| DOCS-03 | B (debt) | Phase 7 | Complete (2026-08-04) |
 | GATE-02 | milestone | all phases (standing) | Pending |
 
 **Coverage: 19/19 mapped — 18 phase-assigned + 1 milestone-standing. No orphans, no duplicates.**
