@@ -8,6 +8,8 @@ behavioral suites never dispatched a real message, so only a live `!panel` surfa
 from __future__ import annotations
 
 import asyncio
+import inspect
+import threading
 
 import discord
 from structlog.testing import capture_logs
@@ -494,3 +496,176 @@ def test_pin_cap_with_zero_owned_strays_still_logs_the_d27_residual():
         "panel pin forbidden on retry (permission revoked mid-summon); "
         "fresh panel left unpinned"
     ) not in events
+
+
+class _CoroCapturingClient:
+    """A client whose ``close()`` is a PLAIN (non-``async``) method that builds the
+    coroutine from an inner ``async def`` and appends it to ``self.coros`` before
+    returning it (HYG-03 / PC-B). Production code calls ``self._client.close()`` and
+    passes the returned object straight to ``run_coroutine_threadsafe`` — this double
+    makes that exact coroutine object reachable from the test so its lifecycle
+    (``inspect.getcoroutinestate``) can be asserted directly."""
+
+    def __init__(self) -> None:
+        self.coros: list[object] = []
+
+    def close(self):
+        async def _close() -> None:
+            pass
+
+        coro = _close()
+        self.coros.append(coro)
+        return coro
+
+
+class _RaisingCloseClient:
+    """A client whose ``close()`` raises once genuinely awaited on a live loop — drives
+    the ``future.result()`` (await-failure) branch of ``BotThread.stop`` rather than the
+    scheduling-failure branch."""
+
+    async def close(self) -> None:
+        raise RuntimeError("close boom")
+
+
+def test_stop_closes_the_never_scheduled_coroutine_on_a_closed_loop():
+    """HYG-03 / PC-B, RED pre-fix: on the TOCTOU race (fast-path proxy reports the loop
+    running while the real underlying loop is closed), ``run_coroutine_threadsafe``
+    raises before the coroutine returned by ``client.close()`` is ever scheduled.
+    Pre-fix, that coroutine is constructed INLINE inside the
+    ``run_coroutine_threadsafe(...)`` call — never bound to a name, never closed — so
+    its state stays ``CORO_CREATED`` and it is later garbage-collected unawaited. That
+    is the live production leak the suite's single warning reports; this test
+    reproduces the race, it does not create it. Post-fix, ``stop()`` binds it to
+    ``coro`` before scheduling and calls ``coro.close()`` on the scheduling-failure
+    branch, so its state is ``CORO_CLOSED``.
+    """
+    real_closed_loop = asyncio.new_event_loop()
+    real_closed_loop.close()
+
+    class _ClosedLoopFastPathProxy:
+        def __init__(self, real_loop) -> None:
+            self._real_loop = real_loop
+
+        def is_running(self) -> bool:
+            return True
+
+        def __getattr__(self, name):
+            return getattr(self._real_loop, name)
+
+    class _FakeJoinableThread:
+        def __init__(self) -> None:
+            self.joined: list[bool] = []
+
+        def join(self, timeout: float | None = None) -> None:
+            self.joined.append(True)
+
+        def is_alive(self) -> bool:
+            return False
+
+    client = _CoroCapturingClient()
+    bot = BotThread("fake-token", client=client)
+    bot._loop = _ClosedLoopFastPathProxy(real_closed_loop)
+    fake_thread = _FakeJoinableThread()
+    bot._thread = fake_thread
+
+    bot.stop()  # must NOT raise RuntimeError
+
+    assert inspect.getcoroutinestate(client.coros[0]) == inspect.CORO_CLOSED
+    assert fake_thread.joined == [True]
+
+
+def test_stop_logs_a_distinct_scheduling_failure_message_on_a_closed_loop():
+    """HYG-03 / D-64, RED pre-fix: both the scheduling-failure and await-failure
+    branches currently share the same log message
+    (``"bot client.close() did not complete cleanly"``). Post-fix, the
+    scheduling-failure branch (this same TOCTOU race — the loop is closed before
+    ``run_coroutine_threadsafe`` runs) must log a message DISTINCT from the
+    await-failure message, so an operator can tell 'the loop died early' from 'the
+    client hung' apart — the same don't-conflate-two-causes posture DISC-07 takes in
+    ``summon_panel``.
+    """
+    real_closed_loop = asyncio.new_event_loop()
+    real_closed_loop.close()
+
+    class _ClosedLoopFastPathProxy:
+        def __init__(self, real_loop) -> None:
+            self._real_loop = real_loop
+
+        def is_running(self) -> bool:
+            return True
+
+        def __getattr__(self, name):
+            return getattr(self._real_loop, name)
+
+    class _FakeJoinableThread:
+        def __init__(self) -> None:
+            self.joined: list[bool] = []
+
+        def join(self, timeout: float | None = None) -> None:
+            self.joined.append(True)
+
+        def is_alive(self) -> bool:
+            return False
+
+    client = _CoroCapturingClient()
+    bot = BotThread("fake-token", client=client)
+    bot._loop = _ClosedLoopFastPathProxy(real_closed_loop)
+    bot._thread = _FakeJoinableThread()
+
+    with capture_logs() as cap:
+        bot.stop()
+
+    events = [entry["event"] for entry in cap]
+    assert "bot client.close() could not be scheduled (bot loop already closed)" in events
+    assert "bot client.close() did not complete cleanly" not in events
+
+
+def test_stop_logs_the_await_failure_message_when_close_raises_on_a_live_loop():
+    """HYG-03 / D-64 branch guard, GREEN both pre- and post-fix by design: when
+    scheduling succeeds but ``future.result()`` raises (the client's ``close()``
+    itself raises, on a genuinely running loop), the coroutine is live on the loop and
+    must NOT be closed — closing a running coroutine raises ``RuntimeError: cannot
+    close a running coroutine`` — so the existing await-failure message is logged
+    unchanged. This is the branch D-64 deliberately leaves untouched; asserting it
+    here guards against a future edit accidentally merging the two branches back
+    together.
+    """
+
+    class _FakeJoinableThread:
+        def __init__(self) -> None:
+            self.joined: list[bool] = []
+
+        def join(self, timeout: float | None = None) -> None:
+            self.joined.append(True)
+
+        def is_alive(self) -> bool:
+            return False
+
+    loop = asyncio.new_event_loop()
+    loop_thread = threading.Thread(target=loop.run_forever, daemon=True)
+    loop_thread.start()
+    started = threading.Event()
+    loop.call_soon_threadsafe(started.set)
+    assert started.wait(timeout=5.0)
+
+    client = _RaisingCloseClient()
+    bot = BotThread("fake-token", client=client)
+    bot._loop = loop
+    fake_thread = _FakeJoinableThread()
+    bot._thread = fake_thread
+
+    try:
+        with capture_logs() as cap:
+            bot.stop()  # must NOT raise RuntimeError
+    finally:
+        loop.call_soon_threadsafe(loop.stop)
+        loop_thread.join(timeout=5.0)
+        loop.close()
+
+    events = [entry["event"] for entry in cap]
+    assert "bot client.close() did not complete cleanly" in events
+    assert (
+        "bot client.close() could not be scheduled (bot loop already closed)"
+        not in events
+    )
+    assert fake_thread.joined == [True]
