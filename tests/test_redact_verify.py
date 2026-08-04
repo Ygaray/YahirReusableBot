@@ -346,3 +346,27 @@ def test_ordering_check_warns_and_never_raises():
     for message in collected:
         assert SENTINEL not in message
         assert pattern.pattern.pattern not in message
+
+
+def test_ordering_warning_is_attributed_to_the_consumers_call_site():
+    """WR-04 regression. ``_warn_if_processor_misordered`` is called FROM
+    ``assert_redaction_active``, which is in turn called from the consumer's own
+    composition-root line — two frames deep from the ``warnings.warn`` call itself.
+    ``stacklevel=2`` reports the warning as originating at
+    ``assert_redaction_active``'s own call to the helper (inside this hub's
+    ``verify.py``), never at the consumer's line, defeating the whole point of
+    ``warnings.warn``'s stacklevel mechanism for a self-check meant to run at a
+    consumer's composition root. The reported ``filename``/``lineno`` must be THIS
+    test's own call to ``assert_redaction_active`` below, not anywhere in
+    ``verify.py``."""
+    capture = _CaptureDouble()
+    writer = RedactingWriter(capture, (RedactionPattern.literal(SENTINEL),))
+    fmt = structlog.processors.format_exc_info
+    _wire([_marked_processor, fmt], writer=writer)
+
+    with warnings.catch_warnings(record=True) as record:
+        warnings.simplefilter("always")
+        assert_redaction_active()  # the line whose lineno must be reported
+
+    assert len(record) == 1
+    assert record[0].filename == __file__

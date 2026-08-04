@@ -150,7 +150,15 @@ def _warn_if_processor_misordered() -> None:
             "(structlog.processors.ExceptionRenderer) was found — could not "
             "verify the redaction processor's position relative to traceback "
             "rendering",
-            stacklevel=2,
+            # WR-04: this helper is itself called from `assert_redaction_active`
+            # (one frame up), which is called from the consumer's own
+            # composition-root line (two frames up). `stacklevel=2` would attribute
+            # the warning to `assert_redaction_active`'s call site INSIDE this
+            # hub's own verify.py, never to the consumer — defeating the point of
+            # `warnings.warn`'s stacklevel mechanism for a self-check meant to run
+            # at a consumer's composition root. `stacklevel=3` reports the
+            # consumer's own line.
+            stacklevel=3,
         )
         return
 
@@ -163,5 +171,13 @@ def _warn_if_processor_misordered() -> None:
             "formatter (e.g. structlog.processors.format_exc_info / "
             "dict_tracebacks) for full defense-in-depth. RedactingWriter remains "
             "the load-bearing backstop regardless of this ordering.",
-            stacklevel=2,
+            # WR-04: this helper is itself called from `assert_redaction_active`
+            # (one frame up), which is called from the consumer's own
+            # composition-root line (two frames up). `stacklevel=2` would attribute
+            # the warning to `assert_redaction_active`'s call site INSIDE this
+            # hub's own verify.py, never to the consumer — defeating the point of
+            # `warnings.warn`'s stacklevel mechanism for a self-check meant to run
+            # at a consumer's composition root. `stacklevel=3` reports the
+            # consumer's own line.
+            stacklevel=3,
         )
