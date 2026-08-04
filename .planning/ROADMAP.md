@@ -219,7 +219,7 @@ collection) at a distinct dotted path — do not merge the two by analogy-confus
 | Phase | Plans Complete | Status | Completed |
 |-------|----------------|--------|-----------|
 | 5. Redaction core + pattern registration | 3/3 | Complete    | 2026-07-29 |
-| 6. Insertion seams + provable backstop | 1/4 | In Progress|  |
+| 6. Insertion seams + provable backstop | 2/4 | In Progress|  |
 | 7. v0.1.2 debt paydown | 0/TBD | Not started | - |
 
 ### v0.2.0 Phase Details
@@ -312,7 +312,7 @@ every rendered log line — event fields and formatted tracebacks alike — prov
      architectural inversion explicitly: the hub supplies a toolkit the consumer wires into its own
      `structlog.configure()`, so no `Redactor` Protocol exists to go looking for.
 
-**Plans**: 1/4 plans executed
+**Plans**: 2/4 plans executed
 
 Plans (strictly serial Waves 1→2→3→4 — each requirement plan commits its RED test then its GREEN fix
 and re-verifies the standing gates green before the next plan's RED commit, so a deliberately-RED test
@@ -323,7 +323,7 @@ never overlaps a sibling plan's full-suite gate; the Phases 1–3 lesson, re-pro
   recipes proven per D-55), the D-59 lock-guarded D-58 changed-write counter with its D-57 optional
   hook, and the D-56 in-memory dry-run probe
 
-- [ ] 06-02-PLAN.md — REDACT-07: `tests/test_redact_verify.py` RED, then `redact/verify.py` —
+- [x] 06-02-PLAN.md — REDACT-07: `tests/test_redact_verify.py` RED, then `redact/verify.py` —
   `assert_redaction_active` (D-56) with three distinct failure messages, the opt-in deep behaviour
   check, and D-60's warn-only processor-ordering sub-check discovered by a published marker attribute
 

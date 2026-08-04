@@ -5,15 +5,15 @@ milestone_name: — Redaction promotion + hardening debt
 current_phase: 06
 current_phase_name: insertion-seams-provable-backstop
 status: executing
-stopped_at: Completed 06-01-PLAN.md
-last_updated: "2026-08-04T00:10:32.151Z"
+stopped_at: Completed 06-02-PLAN.md
+last_updated: "2026-08-04T00:17:43.237Z"
 last_activity: 2026-08-04
 last_activity_desc: Phase 06 execution started
 progress:
   total_phases: 3
   completed_phases: 1
   total_plans: 7
-  completed_plans: 4
+  completed_plans: 5
   percent: 33
 ---
 
@@ -22,7 +22,7 @@ progress:
 ## Current Position
 
 Phase: 06 (insertion-seams-provable-backstop) — EXECUTING
-Plan: 2 of 4
+Plan: 3 of 4
 Status: Ready to execute
 Progress: [###_______] 33% (1/3 phases)
 Last activity: 2026-08-04 — Phase 06 execution started
@@ -40,8 +40,8 @@ litmus / grimp green, and every requirement ships a RED-first regression test.
 
 ## Session
 
-**Last session:** 2026-08-04T00:10:32.141Z
-**Stopped at:** Completed 06-01-PLAN.md
+**Last session:** 2026-08-04T00:17:43.160Z
+**Stopped at:** Completed 06-02-PLAN.md
 **Resume file:** None
 
 ## Performance Metrics
@@ -68,6 +68,7 @@ Carried from v0.1.2 for calibration (14 plans across 4 phases, ~3–25min per pl
 | Phase 05 P02 | ~12min | 2 tasks | 3 files |
 | Phase 05 P03 | ~10min | 2 tasks | 2 files |
 | Phase 06 P01 | 10min | 2 tasks | 3 files |
+| Phase 06 P02 | ~12min | 2 tasks | 3 files |
 
 ## Decisions
 
@@ -130,6 +131,9 @@ Full v0.1.2 decision history is archived under `.planning/milestones/v0.1.2-phas
 - [Phase ?]: D-52 non-str/bytes triage order (bytes decode-with-replace, then str+enabled+non-empty-patterns gate) copied verbatim from WeatherBot's proven _LiveStderr.write into RedactingWriter (06-01)
 - [Phase ?]: D-58 counter counts CHANGED WRITES via one != comparison, never re-running patterns with .subn() for an exact substitution total (06-01)
 - [Phase ?]: D-59 threading.Lock guards only the increment + captured read; on_redaction hook fires OUTSIDE the lock so a slow/raising hook cannot hold up concurrent writers (06-01)
+- [Phase ?]: D-56 introspection reads structlog.get_config()['logger_factory']._file and raises on any inconclusive result — never a false pass (06-02)
+- [Phase ?]: D-60 ordering sub-check locates redaction processors via REDACTION_PROCESSOR_MARKER (not identity/import), so verify.py ships with zero dependency on the not-yet-built optional processor (06-02)
+- [Phase ?]: RESEARCH open question 2 resolved as recommended (assumption A1): hard raise, no unwrap convention, for a writer nested inside a consumer's own proxy — message states the fix rather than attempting to walk the proxy (06-02)
 
 ## Todos
 

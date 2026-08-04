@@ -166,7 +166,7 @@ surface — `redact_secrets(text, patterns)`, never `redact_appid` or an `appid`
 - [x] **REDACT-06** (PC-01): A literal-value redaction mode blocks an exact secret string wherever
   it appears, catching leak paths that pattern matching misses. → Phase 5
 
-- [ ] **REDACT-07** (PC-01): `assert_redaction_active` lets a consumer prove at wiring time that
+- [x] **REDACT-07** (PC-01): `assert_redaction_active` lets a consumer prove at wiring time that
   the backstop is actually installed — so a backstop silently dropped by a second
   `structlog.configure()` call fails loudly instead of looking identical to a working one. → Phase 6
 
