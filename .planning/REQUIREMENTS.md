@@ -175,7 +175,7 @@ surface — `redact_secrets(text, patterns)`, never `redact_appid` or an `appid`
 
 ### Command registry (Track B)
 
-- [ ] **MATCH-03** (v0.1.2 WR-02): A duplicate `spec.name` is rejected at registration, so
+- [x] **MATCH-03** (v0.1.2 WR-02): A duplicate `spec.name` is rejected at registration, so
   `match_command` can never resolve to a different `CommandSpec` than `by_name` holds. The D-34
   validation loop checks non-empty + already-casefolded but not uniqueness; a duplicate silently
   overwrites in `by_name` while `by_keyword_len_desc` / `render_help` carry both.

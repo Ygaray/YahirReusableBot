@@ -220,7 +220,7 @@ collection) at a distinct dotted path — do not merge the two by analogy-confus
 |-------|----------------|--------|-----------|
 | 5. Redaction core + pattern registration | 3/3 | Complete    | 2026-07-29 |
 | 6. Insertion seams + provable backstop | 4/4 | Complete    | 2026-08-04 |
-| 7. v0.1.2 debt paydown | 0/7 | Planned | - |
+| 7. v0.1.2 debt paydown | 1/7 | In Progress|  |
 
 ### v0.2.0 Phase Details
 
@@ -379,13 +379,13 @@ open item from the retrospective audit is closed or explicitly decided.
      not only the sites that consume the outcome — verified against the filesystem, not against the
      string that produced the drift.
 
-**Plans**: 7 plans
+**Plans**: 1/7 plans executed
 
 Plans (strictly serial Waves 1→7 — each plan commits its RED test then its GREEN fix and re-verifies
 the standing gates green before the next plan's RED commit, so a deliberately-RED test never overlaps
 a sibling plan's full-suite gate; the Phases 1–3 lesson, re-proven in 5 and 6):
 
-- [ ] 07-01-PLAN.md — MATCH-03: `tests/test_registry.py` RED, then a `seen: set[str]` uniqueness
+- [x] 07-01-PLAN.md — MATCH-03: `tests/test_registry.py` RED, then a `seen: set[str]` uniqueness
   check inside the existing D-34 validation loop, raising `ValueError` naming the duplicate
 
 - [ ] 07-02-PLAN.md — DISC-07 + DISC-08 (pairing): `tests/test_gateway.py` RED, then the retry-pin

@@ -2,30 +2,30 @@
 gsd_state_version: 1.0
 milestone: v0.2.0
 milestone_name: — Redaction promotion + hardening debt
-current_phase: 7
+current_phase: 07
 current_phase_name: v0.1.2 debt paydown
 status: executing
-stopped_at: Phase 7 context gathered
-last_updated: "2026-08-04T04:51:43.681Z"
+stopped_at: Completed 07-01-PLAN.md
+last_updated: "2026-08-04T04:58:48.220Z"
 last_activity: 2026-08-04
-last_activity_desc: Phase 06 complete, transitioned to Phase 7
+last_activity_desc: Phase 07 execution started
 progress:
   total_phases: 3
   completed_phases: 2
-  total_plans: 7
-  completed_plans: 7
-  percent: 67
+  total_plans: 14
+  completed_plans: 8
+  percent: 57
 ---
 
 # Project State
 
 ## Current Position
 
-Phase: 7 — v0.1.2 debt paydown
-Plan: Not started
+Phase: 07 (v0.1.2 debt paydown) — EXECUTING
+Plan: 2 of 7
 Status: Ready to execute
 Progress: [###_______] 33% (1/3 phases)
-Last activity: 2026-08-04 — Phase 06 complete, transitioned to Phase 7
+Last activity: 2026-08-04 — Phase 07 execution started
 
 ## Milestone Shape
 
@@ -40,9 +40,9 @@ litmus / grimp green, and every requirement ships a RED-first regression test.
 
 ## Session
 
-**Last session:** 2026-08-04T04:06:10.875Z
-**Stopped at:** Phase 7 context gathered
-**Resume file:** .planning/phases/07-v0-1-2-debt-paydown/07-CONTEXT.md
+**Last session:** 2026-08-04T04:58:48.209Z
+**Stopped at:** Completed 07-01-PLAN.md
+**Resume file:** None
 
 ## Performance Metrics
 
@@ -71,6 +71,7 @@ Carried from v0.1.2 for calibration (14 plans across 4 phases, ~3–25min per pl
 | Phase 06 P02 | ~12min | 2 tasks | 3 files |
 | Phase 06 P03 | ~15min | 2 tasks | 3 files |
 | Phase 06 P04 | ~10min | 3 tasks | 2 files |
+| Phase 07 P01 | 10min | 2 tasks | 2 files |
 
 ## Decisions
 
@@ -144,6 +145,7 @@ Full v0.1.2 decision history is archived under `.planning/milestones/v0.1.2-phas
 - [Phase ?]: [Phase 6, 06-04] Discovered processor.py does not declare a direct structlog import edge despite its docstring's 'permitted to import structlog' framing — it imports only REDACTION_PROCESSOR_MARKER from verify.py; the new gate's non-vacuity proof asserts the real edge only for verify.py
 - [Phase ?]: [Phase 6, 06-04] GATE-02 RED-first ancestry re-derived from git trees for 06-01/06-02/06-03: all three pairs adjacent, genuinely RED, and pure — REDACT-04/05/07/08 all hold
 - [Phase ?]: [Phase 6, 06-04] WeatherBot parity: both Phase-6-gated assertions are now mechanically satisfiable by RedactingWriter, but the repin needs a signature-level test update (RedactingWriter's constructor differs from _LiveStderr's), not merely an import swap as 05-VALIDATION.md implied
+- [Phase ?]: [Phase 7, 07-01] MATCH-03 closed: seen: set[str] added inside the existing D-34 loop (one pass), ValueError names only spec.name, no Unicode normalization applied to the uniqueness check — pinned by a dedicated NFC/NFD regression test
 
 ## Todos
 
