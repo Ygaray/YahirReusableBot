@@ -38,3 +38,11 @@ dev = [
 testpaths = ["tests"]
 pythonpath = ["."]
 addopts = "-ra"
+# HYG-03 (D-65): the requirement's wording is "the full suite emits zero warnings",
+# which was previously true only by accident with nothing enforcing it. This makes
+# any future warning fail the suite, matching the posture GATE-02 takes everywhere
+# else. Remedy policy: if a dependency deprecation ever forces an exception, add a
+# targeted per-warning-class suppression entry naming the dependency and the reason
+# (pytest's standard "ignore" filter-action syntax, scoped to that one class) —
+# never remove or broaden this filter wholesale.
+filterwarnings = ["error"]
