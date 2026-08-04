@@ -205,7 +205,11 @@ async def summon_panel(
             # threshold was too conservative — it left the common single-owned-panel
             # re-summon fresh-but-unpinned at the cap, violating the success criterion (WR-01).
             if len(matches) >= 1:
-                stray = matches.pop(0)
+                # DISC-08: peek, don't pop — the stray leaves `matches` only on a
+                # SUCCESSFUL delete (the `else:` below). A failed delete leaves it
+                # in `matches`, so the `for old in matches:` cleanup loop below
+                # retries it on this same call instead of silently dropping it.
+                stray = matches[0]
                 try:
                     await stray.delete()
                 except (discord.NotFound, discord.HTTPException, discord.Forbidden):
@@ -213,8 +217,23 @@ async def summon_panel(
                         "stray panel delete failed; continuing",
                         channel_id=getattr(channel, "id", None),
                     )
+                else:
+                    matches.pop(0)
                 try:
                     await msg.pin()
+                except discord.Forbidden:
+                    # DISC-07: Forbidden is a subclass of HTTPException and Python's
+                    # except is first-match, so this branch MUST precede the
+                    # HTTPException one below or it is unreachable dead code. Log
+                    # and SWALLOW (do not re-raise): re-raising would return from
+                    # summon_panel before the `for old in matches:` cleanup loop
+                    # runs below, leaving every stray undeleted. This stays a
+                    # classification fix, not a control-flow change.
+                    _log.critical(
+                        "panel pin forbidden on retry (permission revoked "
+                        "mid-summon); fresh panel left unpinned",
+                        channel_id=getattr(channel, "id", None),
+                    )
                 except discord.HTTPException:
                     _log.critical(
                         "panel pin failed at cap even after evicting a stray",
