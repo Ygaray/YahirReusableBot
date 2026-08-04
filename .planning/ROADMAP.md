@@ -220,7 +220,7 @@ collection) at a distinct dotted path — do not merge the two by analogy-confus
 |-------|----------------|--------|-----------|
 | 5. Redaction core + pattern registration | 3/3 | Complete    | 2026-07-29 |
 | 6. Insertion seams + provable backstop | 4/4 | Complete    | 2026-08-04 |
-| 7. v0.1.2 debt paydown | 0/TBD | Not started | - |
+| 7. v0.1.2 debt paydown | 0/7 | Planned | - |
 
 ### v0.2.0 Phase Details
 
@@ -379,7 +379,37 @@ open item from the retrospective audit is closed or explicitly decided.
      not only the sites that consume the outcome — verified against the filesystem, not against the
      string that produced the drift.
 
-**Plans**: TBD
+**Plans**: 7 plans
+
+Plans (strictly serial Waves 1→7 — each plan commits its RED test then its GREEN fix and re-verifies
+the standing gates green before the next plan's RED commit, so a deliberately-RED test never overlaps
+a sibling plan's full-suite gate; the Phases 1–3 lesson, re-proven in 5 and 6):
+
+- [ ] 07-01-PLAN.md — MATCH-03: `tests/test_registry.py` RED, then a `seen: set[str]` uniqueness
+  check inside the existing D-34 validation loop, raising `ValueError` naming the duplicate
+
+- [ ] 07-02-PLAN.md — DISC-07 + DISC-08 (pairing): `tests/test_gateway.py` RED, then the retry-pin
+  `except discord.Forbidden` branch ordered before `HTTPException` with its own message, and
+  eviction removal tied to a successful delete
+
+- [ ] 07-03-PLAN.md — HYG-03 + D-65: `tests/test_gateway.py` RED, then `BotThread.stop` bound-coroutine
+  restructure with cause-split logging, then `filterwarnings = ["error"]` verified under the real filter
+
+- [ ] 07-04-PLAN.md — SURF-02: `get_type_hints` assertions RED, then the three D-62 verdicts
+  (`on_online` narrowed, `panelkit.render` arity-narrowed, `scheduler` callback left variadic with
+  the reason recorded)
+
+- [ ] 07-05-PLAN.md — HYG-02 + LIFE-05: `capture_logs` RED at both `_best_effort_hook` sites, then the
+  structured `label=` kwarg at both, then D-61's ratified `-m` boundary stated consumer-facing in
+  `EXTENSION-GUIDE.md` with the stale requirement/audit text corrected
+
+- [ ] 07-06-PLAN.md — DOCS-02 + DOCS-03: new `tests/test_doc_drift.py` standing gate RED, then the two
+  active artifacts corrected to name paths that exist plus the producing site, then drift banners on
+  the seven archived v0.1.2 phase-4 records
+
+- [ ] 07-07-PLAN.md — Phase gate: GATE-02 RED-first ancestry derived from git trees, the D-61a
+  exemption and three manual-only sign-offs recorded, the deferred type-checker backlog entry filed,
+  and the human-gated close-out surfaced
 
 **Pairing constraint — these must land together, not as independent tasks:**
 
