@@ -527,3 +527,12 @@ schedule.
 ---
 *Phase: 06-insertion-seams-provable-backstop*
 *Completed: 2026-08-04*
+
+## Self-Check: PASSED
+
+- FOUND: EXTENSION-GUIDE.md
+- FOUND: tests/test_import_hygiene.py
+- FOUND: .planning/phases/06-insertion-seams-provable-backstop/06-04-SUMMARY.md
+- FOUND commit: 117a4be (docs, Task 1)
+- FOUND commit: 656b30b (test, Task 2)
+- FOUND commit: 7d66e35 (docs, Task 3 / plan metadata)

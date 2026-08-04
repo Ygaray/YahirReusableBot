@@ -222,7 +222,7 @@ surface — `redact_secrets(text, patterns)`, never `redact_appid` or an `appid`
   unreachable. A deliverable enumerating consumer sites must name the site that produces the
   input, not only those that consume the outcome. → Phase 7
 
-- [ ] **DOCS-04** (PC-01): `EXTENSION-GUIDE.md` documents the redaction seam as **SEAM-08**,
+- [x] **DOCS-04** (PC-01): `EXTENSION-GUIDE.md` documents the redaction seam as **SEAM-08**,
   noting its architectural inversion — the hub provides a toolkit the consumer wires into its own
   `structlog.configure()`, rather than a Protocol the hub calls. (Note: `SEAM-02` is absent from
   the guide with no recorded explanation; 08 is the next free number.) → Phase 6

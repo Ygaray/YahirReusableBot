@@ -4,17 +4,17 @@ milestone: v0.2.0
 milestone_name: — Redaction promotion + hardening debt
 current_phase: 06
 current_phase_name: insertion-seams-provable-backstop
-status: executing
-stopped_at: Completed 06-03-PLAN.md
-last_updated: "2026-08-04T00:27:18.617Z"
+status: verifying
+stopped_at: Completed 06-04-PLAN.md (Phase 6 closed)
+last_updated: "2026-08-04T00:39:53.877Z"
 last_activity: 2026-08-04
 last_activity_desc: Phase 06 execution started
 progress:
   total_phases: 3
-  completed_phases: 1
+  completed_phases: 2
   total_plans: 7
-  completed_plans: 6
-  percent: 33
+  completed_plans: 7
+  percent: 67
 ---
 
 # Project State
@@ -23,7 +23,7 @@ progress:
 
 Phase: 06 (insertion-seams-provable-backstop) — EXECUTING
 Plan: 4 of 4
-Status: Ready to execute
+Status: Phase complete — ready for verification
 Progress: [###_______] 33% (1/3 phases)
 Last activity: 2026-08-04 — Phase 06 execution started
 
@@ -40,8 +40,8 @@ litmus / grimp green, and every requirement ships a RED-first regression test.
 
 ## Session
 
-**Last session:** 2026-08-04T00:27:18.608Z
-**Stopped at:** Completed 06-03-PLAN.md
+**Last session:** 2026-08-04T00:39:53.866Z
+**Stopped at:** Completed 06-04-PLAN.md (Phase 6 closed)
 **Resume file:** None
 
 ## Performance Metrics
@@ -70,6 +70,7 @@ Carried from v0.1.2 for calibration (14 plans across 4 phases, ~3–25min per pl
 | Phase 06 P01 | 10min | 2 tasks | 3 files |
 | Phase 06 P02 | ~12min | 2 tasks | 3 files |
 | Phase 06 P03 | ~15min | 2 tasks | 3 files |
+| Phase 06 P04 | ~10min | 3 tasks | 2 files |
 
 ## Decisions
 
@@ -138,6 +139,11 @@ Full v0.1.2 decision history is archived under `.planning/milestones/v0.1.2-phas
 - [Phase ?]: [Phase 6, 06-03] D-60's docstring half shipped verbatim to RESEARCH Pattern 2's two-warning structure; detection half proven wired end-to-end by the marker test placing the real processor before format_exc_info
 - [Phase ?]: [Phase 6, 06-03] WR-02 residual re-checked per CONTEXT.md instruction and confirmed correctly closed: no RedactionPattern instance is ever placed into an event_dict by the processor
 - [Phase ?]: [Phase 6, 06-03] Rule 1 fix: RED test's positive-scrub case used dict_tracebacks (nests exc info as structured data, not a flat string) instead of format_exc_info (flat string) — fixed in a separate follow-up commit (67a4f42), not an amend, to preserve GATE-02 RED->GREEN adjacency
+- [Phase ?]: [Phase 6, 06-04] EXTENSION-GUIDE.md SEAM-08 flipped to implemented (table row + new ## 7. section) — the promotion is now hub-side done per ECOSYSTEM.md §6
+- [Phase ?]: [Phase 6, 06-04] Rule 1/3 fix: the new test_redact_sink_never_imports_structlog gate required include_external_packages=True (grimp 3.14 default drops all third-party edges, making the gate permanently vacuous without it)
+- [Phase ?]: [Phase 6, 06-04] Discovered processor.py does not declare a direct structlog import edge despite its docstring's 'permitted to import structlog' framing — it imports only REDACTION_PROCESSOR_MARKER from verify.py; the new gate's non-vacuity proof asserts the real edge only for verify.py
+- [Phase ?]: [Phase 6, 06-04] GATE-02 RED-first ancestry re-derived from git trees for 06-01/06-02/06-03: all three pairs adjacent, genuinely RED, and pure — REDACT-04/05/07/08 all hold
+- [Phase ?]: [Phase 6, 06-04] WeatherBot parity: both Phase-6-gated assertions are now mechanically satisfiable by RedactingWriter, but the repin needs a signature-level test update (RedactingWriter's constructor differs from _LiveStderr's), not merely an import swap as 05-VALIDATION.md implied
 
 ## Todos
 
