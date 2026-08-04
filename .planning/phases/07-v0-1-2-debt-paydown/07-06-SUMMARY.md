@@ -183,3 +183,12 @@ None - no external service configuration required.
 ---
 *Phase: 07-v0-1-2-debt-paydown*
 *Completed: 2026-08-04*
+
+## Self-Check: PASSED
+
+- FOUND: tests/test_doc_drift.py
+- FOUND: .planning/phases/07-v0-1-2-debt-paydown/07-06-SUMMARY.md
+- FOUND: 2793076 (Task 1 commit)
+- FOUND: 824702e (Task 2 commit)
+- FOUND: 058ff75 (Task 3 commit)
+- FOUND: edc2c78 (SUMMARY commit)

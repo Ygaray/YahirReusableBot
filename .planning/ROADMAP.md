@@ -220,7 +220,7 @@ collection) at a distinct dotted path — do not merge the two by analogy-confus
 |-------|----------------|--------|-----------|
 | 5. Redaction core + pattern registration | 3/3 | Complete    | 2026-07-29 |
 | 6. Insertion seams + provable backstop | 4/4 | Complete    | 2026-08-04 |
-| 7. v0.1.2 debt paydown | 5/7 | In Progress|  |
+| 7. v0.1.2 debt paydown | 6/7 | In Progress|  |
 
 ### v0.2.0 Phase Details
 
@@ -379,7 +379,7 @@ open item from the retrospective audit is closed or explicitly decided.
      not only the sites that consume the outcome — verified against the filesystem, not against the
      string that produced the drift.
 
-**Plans**: 5/7 plans executed
+**Plans**: 6/7 plans executed
 
 Plans (strictly serial Waves 1→7 — each plan commits its RED test then its GREEN fix and re-verifies
 the standing gates green before the next plan's RED commit, so a deliberately-RED test never overlaps
@@ -403,7 +403,7 @@ a sibling plan's full-suite gate; the Phases 1–3 lesson, re-proven in 5 and 6)
   structured `label=` kwarg at both, then D-61's ratified `-m` boundary stated consumer-facing in
   `EXTENSION-GUIDE.md` with the stale requirement/audit text corrected
 
-- [ ] 07-06-PLAN.md — DOCS-02 + DOCS-03: new `tests/test_doc_drift.py` standing gate RED, then the two
+- [x] 07-06-PLAN.md — DOCS-02 + DOCS-03: new `tests/test_doc_drift.py` standing gate RED, then the two
   active artifacts corrected to name paths that exist plus the producing site, then drift banners on
   the seven archived v0.1.2 phase-4 records
 

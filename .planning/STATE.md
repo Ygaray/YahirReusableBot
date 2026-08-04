@@ -5,15 +5,15 @@ milestone_name: — Redaction promotion + hardening debt
 current_phase: 07
 current_phase_name: v0.1.2 debt paydown
 status: executing
-stopped_at: Completed 07-05-PLAN.md
-last_updated: "2026-08-04T05:23:15.297Z"
+stopped_at: Completed 07-06-PLAN.md
+last_updated: "2026-08-04T05:32:49.613Z"
 last_activity: 2026-08-04
 last_activity_desc: Phase 07 execution started
 progress:
   total_phases: 3
   completed_phases: 2
   total_plans: 14
-  completed_plans: 12
+  completed_plans: 13
   percent: 67
 ---
 
@@ -22,7 +22,7 @@ progress:
 ## Current Position
 
 Phase: 07 (v0.1.2 debt paydown) — EXECUTING
-Plan: 6 of 7
+Plan: 7 of 7
 Status: Ready to execute
 Progress: [###_______] 33% (1/3 phases)
 Last activity: 2026-08-04 — Phase 07 execution started
@@ -40,8 +40,8 @@ litmus / grimp green, and every requirement ships a RED-first regression test.
 
 ## Session
 
-**Last session:** 2026-08-04T05:23:15.289Z
-**Stopped at:** Completed 07-05-PLAN.md
+**Last session:** 2026-08-04T05:32:49.603Z
+**Stopped at:** Completed 07-06-PLAN.md
 **Resume file:** None
 
 ## Performance Metrics
@@ -76,6 +76,7 @@ Carried from v0.1.2 for calibration (14 plans across 4 phases, ~3–25min per pl
 | Phase 07 P03 | 12min | 3 tasks | 3 files |
 | Phase 07 P04 | ~5min | 2 tasks | 5 files |
 | Phase 07 P05 | 12min | 3 tasks | 8 files |
+| Phase 07 P06 | 15min | 3 tasks | 10 files |
 
 ## Decisions
 
@@ -158,6 +159,7 @@ Full v0.1.2 decision history is archived under `.planning/milestones/v0.1.2-phas
 - [Phase ?]: [Phase 7, 07-04] D-62 SURF-02 three-part verdict applied: on_online and panelkit.render narrowed to their real call-site arity (pinned by get_type_hints regression tests), SchedulerEngine.register's callback deliberately left Callable[..., Any] with the leave-variadic rationale recorded in its docstring per D-63 (no static type checker introduced)
 - [Phase ?]: [Phase 7, 07-05] HYG-02 clone anti-drift guard implemented via AST comparison (ast.unparse) with docstrings stripped, not literal inspect.getsource() string diff — the two _best_effort_hook sites' docstrings legitimately differ per engine; verified live the bodies (minus docstring) were already identical pre-fix (GREEN both ways, per plan's documented fallback)
 - [Phase ?]: [Phase 7, 07-05] D-61/D-61a executed as locked: LIFE-05 ships zero behavioral change to identity.py, bundled short-option-group form stays undecoded and documented, no artificial RED test manufactured — GATE-02 exemption satisfied by the already-green pinned test_bundled_short_option_group_not_matched
+- [Phase ?]: [Phase 7, 07-06] D-66/D-67/D-68 executed: gate regex kept bare (ops[/.]daemon), DOCS-02 exemption stayed line-scoped/content-located (not whole-file), corrected active-artifact prose avoids repeating the stale literal path so the correction cannot re-trigger the drift it fixes, 7 archive files annotated with an identical banner and bodies left byte-unchanged (git diff --stat: insertions only)
 
 ## Todos
 

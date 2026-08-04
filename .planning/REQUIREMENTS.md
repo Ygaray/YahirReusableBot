@@ -222,14 +222,14 @@ surface — `redact_secrets(text, patterns)`, never `redact_appid` or an `appid`
 
 ### Documentation (Track B)
 
-- [ ] **DOCS-02** (audit DOC-DRIFT-01): Every planning artifact naming a consumer de-hack site
+- [x] **DOCS-02** (audit DOC-DRIFT-01): Every planning artifact naming a consumer de-hack site
   names a path that **exists**. `weatherbot/ops/daemon.py` appears across 9 files / 14 lines of
   genuine drift (corrected count — the audit's original "11 artifacts" figure counted
   `STATE.md:101`, since rewritten for v0.2.0; the live figure was independently reproduced twice,
   at discuss time and again during research, both 2026-08-03); the real path is
   `weatherbot/scheduler/daemon.py`. → Phase 7
 
-- [ ] **DOCS-03** (audit DOC-DRIFT-02): The documented de-hack site set is complete — including
+- [x] **DOCS-03** (audit DOC-DRIFT-02): The documented de-hack site set is complete — including
   the *producing* site `weatherbot/ops/selfcheck.py`, without which the consumed outcome is
   unreachable. A deliverable enumerating consumer sites must name the site that produces the
   input, not only those that consume the outcome. → Phase 7
