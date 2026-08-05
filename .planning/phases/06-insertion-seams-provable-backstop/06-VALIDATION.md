@@ -1,11 +1,12 @@
 ---
 phase: 6
 slug: insertion-seams-provable-backstop
-status: validated_partial
-nyquist_compliant: false
+status: complete
+nyquist_compliant: true
 wave_0_complete: true
 created: 2026-08-03
 audited: 2026-08-03
+finalized: 2026-08-05
 ---
 
 # Phase 6 — Validation Strategy
@@ -56,7 +57,7 @@ GATE-02.
 | 06-02-02 | 06-02 | 2 | REDACT-07 | T-06-02 | `assert_redaction_active` raises when the backstop is absent and after a second `structlog.configure()` drops it; passes when installed | unit + integration | `uv run pytest tests/test_redact_verify.py -x` | ✅ (15 tests) | ✅ green |
 | 06-02-02 | 06-02 | 2 | REDACT-07 (D-60) | T-06-02 | `assert_redaction_active` **warns, never raises**, when the optional processor is mis-ordered relative to the exception formatters | unit | `uv run pytest tests/test_redact_verify.py -k ordering -x` | ✅ (2 tests) | ✅ green |
 | 06-01-02 | 06-01 | 1 | REDACT-08 | T-06-05 | Redaction-count telemetry increments on changed writes only; thread-safe under concurrent `.write()` calls (`threading.Lock`, D-59) | unit + concurrency | `uv run pytest tests/test_redact_sink.py -k telemetry -x` | ✅ (2 tests) | ✅ green |
-| 06-04-01 | 06-04 | 4 | DOCS-04 | — | `EXTENSION-GUIDE.md` SEAM-08 row present and flipped to **implemented**, naming the architectural inversion | **manual-only** (no automated doc-content test in this repo's convention) | — | — | ⚠️ manual-only — see gap below |
+| 06-04-01 | 06-04 | 4 | DOCS-04 | — | `EXTENSION-GUIDE.md` SEAM-08 row present and flipped to **implemented**, naming the architectural inversion | doc-content regression + self-proof | `uv run pytest tests/test_extension_guide.py -q` | ✅ (7 tests) | ✅ green |
 
 *Status: ⬜ pending · ✅ green · ❌ red · ⚠️ flaky*
 
@@ -76,9 +77,8 @@ GATE-02.
 
 ## Manual-Only Verifications
 
-| Behavior | Requirement | Why Manual | Test Instructions |
-|----------|-------------|------------|-------------------|
-| `EXTENSION-GUIDE.md` SEAM-08 row reads **implemented** and states the architectural inversion (hub supplies a toolkit the consumer wires into its own `structlog.configure()`; no `Redactor` Protocol exists) | DOCS-04 | This repo has no automated doc-content assertion convention; the claim is editorial, not mechanical | Open `EXTENSION-GUIDE.md`, find the SEAM-08 row, confirm status column reads implemented and the inversion note is present and accurate |
+*None.* The single former entry — DOCS-04 — was automated on 2026-08-05 by
+`tests/test_extension_guide.py`; see the Validation Audit 2026-08-05 below.
 
 ---
 
@@ -110,6 +110,57 @@ future edit that removed or regressed the SEAM-08 row would not turn any test re
 To close it: run `/gsd-validate-phase 6` (human-invoked, non-auto) and let the auditor generate a
 doc-content assertion, or accept it permanently as manual-only.
 
+---
+
+## Validation Audit 2026-08-05
+
+Human-invoked `/gsd-validate-phase 6` — the non-auto gap-FILLING run the 2026-08-03 audit above
+asked for. (`check auto-mode` still reported `active: true` from the leftover `auto_chain` flag,
+but no chain dispatched this run; the interactive gate was run deliberately, since honoring the
+stale flag would have re-reported the same gap and changed nothing.)
+
+| Metric | Count |
+|--------|-------|
+| Gaps found | 1 (DOCS-04) |
+| Resolved | 1 |
+| Escalated to Manual-Only | 0 |
+| Map rows now automated | 9 / 9 |
+
+**All 8 previously-covered commands were re-executed this audit, not inferred** — every one green;
+full suite 184 passed (~2.2s) before the new file, 191 passed after. `uv run ruff check` clean.
+
+**DOCS-04 closed.** `tests/test_extension_guide.py` (7 tests) now asserts on `EXTENSION-GUIDE.md`
+content directly, following the one existing precedent for content assertions in this repo — the
+`test_litmus_clean` grep gate in `tests/test_import_hygiene.py` and its `test_selfproof_*` sibling
+convention. Four gates plus three self-proofs:
+
+| Gate | Asserts |
+|------|---------|
+| `test_seam_08_row_exists_and_reads_implemented` | a SEAM-08 row exists in the Plug-Point Summary table **and** its status column reads `implemented` |
+| `test_seam_08_section_states_architectural_inversion` | §7 names the inversion — module supplies mechanism, HOST wires it into its own `structlog.configure()` |
+| `test_seam_08_section_names_no_protocol` | §7 states there is no redaction Protocol to implement |
+| `test_seam_08_section_documents_both_recipes` | both wiring recipes present, including Recipe 2's hard before-any-handler ordering constraint |
+| `test_selfproof_*` ×3 | each gate re-run against a temp copy with the regression injected, proving it fails |
+
+**Independently mutation-verified against the live guide** (mutation applied, suite run,
+`git checkout EXTENSION-GUIDE.md` to restore — the guide is unmodified by this audit):
+
+| Mutation applied to `EXTENSION-GUIDE.md` | Result |
+|---|---|
+| SEAM-08 table row deleted | `test_seam_08_row_exists_and_reads_implemented` RED |
+| Row status `**implemented**` → `**deferred**` | `test_seam_08_row_exists_and_reads_implemented` RED |
+| Inversion paragraph deleted | `..._states_architectural_inversion` + `..._names_no_protocol` RED |
+| Only the "no redaction Protocol" sentence deleted | `..._names_no_protocol` RED |
+
+So the gates are not vacuous: a future edit that drops or regresses the SEAM-08 row now turns the
+suite red, which is exactly what the 2026-08-03 audit said was missing.
+
+**Known brittleness (accepted, not a gap).** The self-proofs anchor their injection regexes on
+specific guide prose (`Every other seam…for a future reader.`, the `SEAM-08 (P06)` row key). A
+substantial rewording of §7 will trip a self-proof's *setup* assertion (`Self-proof setup failed:
+…`) rather than a gate. That fails loudly and in the safe direction — it demands the self-proof be
+re-pointed, it cannot silently pass a vacuous gate.
+
 ## Validation Sign-Off
 
 > **Plan-time state is a DRAFT.** Frontmatter stays `status: draft` / `nyquist_compliant: false`.
@@ -117,11 +168,12 @@ doc-content assertion, or accept it permanently as manual-only.
 > `validate-phase`, invoked by execute-phase `finalize_nyquist_validation` after Gate-1). Never set
 > `nyquist_compliant: true` — or otherwise sign off compliance — at plan time (INC-2026-07-27-01).
 
-- [x] All tasks have `<automated>` verify or Wave 0 dependencies — 8/9 map rows automated; DOCS-04 is manual-only
+- [x] All tasks have `<automated>` verify or Wave 0 dependencies — 9/9 map rows automated as of 2026-08-05
 - [x] Sampling continuity: no 3 consecutive tasks without automated verify
 - [x] Wave 0 covers all MISSING references — all four Wave 0 items landed
 - [x] No watch-mode flags
-- [x] Feedback latency < 15s — measured ~2s for the full suite
-- [ ] _(finalizer-only, post-execution)_ `nyquist_compliant` — **left `false`**: DOCS-04 has no automated regression test (see Validation Audit above). Not zero gaps, so the finalizer does not flip it.
+- [x] Feedback latency < 15s — measured ~2.5s for the full suite (191 tests)
+- [x] _(finalizer-only, post-execution)_ `nyquist_compliant` — **flipped to `true`** 2026-08-05: the one remaining gap (DOCS-04) was closed by `tests/test_extension_guide.py` and mutation-verified. Zero gaps.
 
-**Approval:** validated (partial) 2026-08-03 — 8 automated, 1 manual-only. Phase 6 is complete; the DOCS-04 row is tracked follow-up, not a blocker.
+**Approval:** validated (partial) 2026-08-03 — 8 automated, 1 manual-only.
+**Superseded:** validated (complete) 2026-08-05 — 9/9 automated, 0 manual-only, `nyquist_compliant: true`.
