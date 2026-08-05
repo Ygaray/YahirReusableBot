@@ -57,7 +57,7 @@ GATE-02.
 | 06-02-02 | 06-02 | 2 | REDACT-07 | T-06-02 | `assert_redaction_active` raises when the backstop is absent and after a second `structlog.configure()` drops it; passes when installed | unit + integration | `uv run pytest tests/test_redact_verify.py -x` | ✅ (15 tests) | ✅ green |
 | 06-02-02 | 06-02 | 2 | REDACT-07 (D-60) | T-06-02 | `assert_redaction_active` **warns, never raises**, when the optional processor is mis-ordered relative to the exception formatters | unit | `uv run pytest tests/test_redact_verify.py -k ordering -x` | ✅ (2 tests) | ✅ green |
 | 06-01-02 | 06-01 | 1 | REDACT-08 | T-06-05 | Redaction-count telemetry increments on changed writes only; thread-safe under concurrent `.write()` calls (`threading.Lock`, D-59) | unit + concurrency | `uv run pytest tests/test_redact_sink.py -k telemetry -x` | ✅ (2 tests) | ✅ green |
-| 06-04-01 | 06-04 | 4 | DOCS-04 | — | `EXTENSION-GUIDE.md` SEAM-08 row present and flipped to **implemented**, naming the architectural inversion | doc-content regression + self-proof | `uv run pytest tests/test_extension_guide.py -q` | ✅ (7 tests) | ✅ green |
+| 06-04-01 | 06-04 | 4 | DOCS-04 | — | `EXTENSION-GUIDE.md` SEAM-08 row present and flipped to **implemented**, naming the architectural inversion; the `Known limitations.` block and its four limits present (T-06-16) | doc-content regression + self-proof | `uv run pytest tests/test_extension_guide.py -q` | ✅ (9 tests) | ✅ green |
 
 *Status: ⬜ pending · ✅ green · ❌ red · ⚠️ flaky*
 
@@ -129,7 +129,13 @@ stale flag would have re-reported the same gap and changed nothing.)
 **All 8 previously-covered commands were re-executed this audit, not inferred** — every one green;
 full suite 184 passed (~2.2s) before the new file, 191 passed after. `uv run ruff check` clean.
 
-**DOCS-04 closed.** `tests/test_extension_guide.py` (7 tests) now asserts on `EXTENSION-GUIDE.md`
+> **Update 2026-08-05 (same day, post-security-gate):** extended to **9 tests** — added
+> `test_seam_08_section_carries_the_known_limitations_block` + its self-proof, closing the
+> separately-tracked T-06-16 gate (the security audit's WARNING #4: deleting the guide's
+> `Known limitations.` block previously left the suite green). Mutation-verified. See
+> `06-SECURITY.md` finding #4 (now RESOLVED).
+
+**DOCS-04 closed.** `tests/test_extension_guide.py` (9 tests) now asserts on `EXTENSION-GUIDE.md`
 content directly, following the one existing precedent for content assertions in this repo — the
 `test_litmus_clean` grep gate in `tests/test_import_hygiene.py` and its `test_selfproof_*` sibling
 convention. Four gates plus three self-proofs:

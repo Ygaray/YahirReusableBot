@@ -448,21 +448,45 @@ discuss time whether they are corrected or annotated.
 
 1. Bump `pyproject.toml` `0.1.2 → 0.2.0` · cut tag `v0.2.0`.
 2. Repin WeatherBot `[tool.uv.sources]` `v0.1.2 → v0.2.0` + `uv lock --upgrade` + `uv sync`.
-3. **Parity gate — prove before deleting anything.** Run WeatherBot's existing, *unmodified*
-   `tests/test_redact_hygiene.py` (6 tests) against the hub-backed replacement, with only the
-   import swapped. All 6 assertions must pass unchanged. **Only then** delete the app-local
-   `weatherbot/_redact.py` in favour of the hub import. Deleting it in the same commit that wires
-   the replacement is the failure mode this gate exists to prevent.
+3. **Parity gate — prove before deleting anything.** Run WeatherBot's existing
+   `tests/test_redact_hygiene.py` (6 tests) against the hub-backed replacement. All 6 assertions
+   must pass. **Correction (06-04-SUMMARY §1 — the earlier "re-pass *unmodified*, only the import
+   swapped" framing is overstated):** `RedactingWriter.__init__(target, patterns, *, enabled,
+   on_redaction)` is not a parameterless constructor like `_LiveStderr()`, so two of the six test
+   bodies (`test_discord_on_message_does_not_dump_key`,
+   `test_livestderr_write_tolerates_and_scrubs_bytes`) need a signature-level update — construct
+   `RedactingWriter(sys.stderr, patterns)` with WeatherBot's own registered pattern set, not merely
+   an import swap. Plan the repin against that, not a false zero-touch expectation. **Only then**
+   delete the app-local `weatherbot/_redact.py` in favour of the hub import — deleting it in the
+   same commit that wires the replacement is the failure mode this gate exists to prevent.
 
-4. **Sweep WeatherBot for duplicate `spec.name` values** (MATCH-03 is consumer-breaking).
-5. Verify the PC-01 parity suite and the MATCH-03 duplicate sweep as **two separate, individually
-   green checks** before treating the combined repin as ready — one bundled repin otherwise
-   conflates the two failure causes.
+4. **Adopt — or consciously decline — D-54 recipe 2 (the httpx-class gap; Phase 6 threat T-06-20).**
+   The hub upgrade does **not** by itself close WeatherBot's stdlib-`logging` bypass:
+   `weatherbot/weather/client.py:48-54` documents that httpx's stdlib-`logging` INFO line (API key
+   in the request URL) bypasses a structlog-only backstop. D-54 recipe 2
+   (`sys.stderr = RedactingWriter(sys.stderr, patterns)`) is the hub-side answer and ships in
+   v0.2.0, but *adopting* it is a consumer composition-root decision the repin must make explicitly
+   — **the repin must not silently assume the upgrade closed this gap.** **If adopted,** the
+   `sys.stderr` assignment must run **before** any stdlib `logging` handler is constructed (a
+   Python-level stream proxy cannot intercept a raw-buffer or file-descriptor write — see
+   `EXTENSION-GUIDE.md` §7 *Known limitations*).
 
-6. Confirm the live daemon picked the change up: check the startup `module provenance` log line
+5. **Sweep WeatherBot for duplicate `spec.name` values** (MATCH-03 is consumer-breaking).
+6. **Confirm the SURF-02 blast radius before narrowing the annotation.** SURF-02 narrows `on_online`
+   from `Callable[..., None] | None` to `Callable[[HealthResult], None]` — a public hub-surface
+   change. The v0.2.0 work verified on disk that WeatherBot's only handler is already a
+   single-positional-param function whose tests pass single-arg lambdas (recorded in `STATE.md` and
+   `07-07-SUMMARY.md`), so nothing breaks today — but that confirmation lives in the phase
+   artifacts, not here. Re-confirm it against live WeatherBot at repin, as its own check.
+
+7. Verify the PC-01 parity suite, the MATCH-03 duplicate sweep, and the SURF-02 confirmation as
+   **separate, individually green checks** before treating the combined repin as ready — one
+   bundled repin otherwise conflates the failure causes.
+
+8. Confirm the live daemon picked the change up: check the startup `module provenance` log line
    against `deploy/PROMOTION-LEDGER.md` post-deploy (`ECOSYSTEM.md` §7).
 
-7. **Permanently out of PC-01 scope:** `weatherbot/weather/client.py`'s domain-specific redacted
+9. **Permanently out of PC-01 scope:** `weatherbot/weather/client.py`'s domain-specific redacted
    re-raise (with `from None`) stays app-local forever — it is domain logic, not a generic
    backstop, and it must be confirmed *untouched* by the swap.
 

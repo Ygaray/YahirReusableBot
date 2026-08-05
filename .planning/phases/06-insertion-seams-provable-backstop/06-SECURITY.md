@@ -159,18 +159,22 @@ T-06-08. Pinned by `tests/test_redact_sink.py:217-232`.
 TOCTOU window between the factory check and the ordering sub-check. Strengthens T-06-02
 and T-06-09. Pinned by `tests/test_redact_verify.py:375-402`.
 
-**4. WARNING — T-06-16's limitations block has no regression gate.**
-`tests/test_extension_guide.py` was added **today** (2026-08-05, commit `b9059ba`) by the
-Nyquist validation gate. Stated plainly, it asserts **only**: the SEAM-08 table row exists
-and reads *implemented* (`:18-46`), the architectural-inversion tokens (`:76-98`), both
-recipes plus the literal string `"before any"` (`:101-126`), the no-Protocol statement
-(`:129-148`), and three self-proofs (`:151-321`). It does **not** assert the
-`Known limitations.` block, the four limitation bullets, the changed-writes semantics, or
-the reconfigure discipline. Of T-06-16's six declared concepts, only **wiring order** has
-ongoing automated protection. A future edit deleting `EXTENSION-GUIDE.md:208-219` outright
-would leave the entire 191-test suite green. T-06-16 is CLOSED because the block *is*
-present today (verified by direct read) and the execution-time criteria ran green
-(`06-04-SUMMARY.md:191-195`) — but its durability rests on prose, not a gate.
+**4. RESOLVED — T-06-16's limitations block is now regression-gated.**
+_Original finding (2026-08-05, at audit time):_ `tests/test_extension_guide.py` (added by the
+Nyquist gate, commit `b9059ba`) asserted **only** the SEAM-08 table row + *implemented* status,
+the architectural-inversion tokens, both recipes plus `"before any"`, the no-Protocol statement,
+and three self-proofs — **not** the `Known limitations.` block. A future edit deleting
+`EXTENSION-GUIDE.md:208-219` outright would have left the whole suite green; only **wiring order**
+of T-06-16's declared concepts had ongoing automated protection.
+_Resolution (same day, commit follows this audit):_ `test_extension_guide.py` was extended with
+`test_seam_08_section_carries_the_known_limitations_block` + its non-vacuity self-proof
+`test_selfproof_limitations_gate_catches_deleted_block`. The gate now asserts the labelled
+`Known limitations.` heading and all four documented limits (proxy nesting, the
+private-attribute/version coupling, the raw-buffer/file-descriptor blind spot, the name=value
+boundary under-redaction). **Mutation-verified against the live guide:** deleting the block turns
+the gate RED. T-06-16 is CLOSED **and now durably gated**, not resting on prose. (Changed-writes
+semantics and reconfigure discipline live outside the `Known limitations.` block and remain
+prose-only — a lesser residual, not the deletion-goes-green hole this finding named.)
 
 **5. WARNING — T-06-20's transfer flag did not propagate to the operative close-out
 list.** The declared mitigation surface (plan 06-04's own close-out record) exists with
