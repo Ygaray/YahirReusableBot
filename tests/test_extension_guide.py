@@ -319,3 +319,85 @@ def test_selfproof_inversion_gate_catches_missing_concept():
     finally:
         globals()["GUIDE_PATH"] = original_path
         tmp_path.unlink()
+
+
+def test_seam_08_section_carries_the_known_limitations_block():
+    """The SEAM-08 section must carry the labelled 'Known limitations.' block with its four limits.
+
+    T-06-16's mitigation is that the seam is documented WITH its limits, not as an
+    unqualified 'implemented' — the omission class that let the original leak path survive
+    undocumented. The four honest limitations are: proxy nesting, the private-attribute /
+    version coupling, the raw-buffer / file-descriptor blind spot, and the name=value
+    boundary under-redaction. Deleting the block turns this red. Verified non-vacuous by
+    test_selfproof_limitations_gate_catches_deleted_block below.
+    """
+    content = GUIDE_PATH.read_text(encoding="utf-8")
+    section = _extract_seam_08_section(content).lower()
+
+    # The labelled heading is unique to this block — its removal is the primary regression.
+    assert "known limitations" in section, (
+        "SEAM-08 section is missing its labelled 'Known limitations.' block (T-06-16)"
+    )
+
+    # Each limitation is anchored by a distinctive concept token; require all four to survive.
+    concepts = {
+        "proxy nesting": ("proxy",),
+        "private-attribute / version coupling": ("lower bound", "installed version"),
+        "raw-buffer / file-descriptor blind spot": ("buffer", "file-descriptor"),
+        "name=value boundary under-redaction": ("boundary", "literal-value mode"),
+    }
+    missing = [
+        name for name, anchors in concepts.items()
+        if not any(anchor in section for anchor in anchors)
+    ]
+    assert not missing, (
+        f"SEAM-08 'Known limitations.' block is missing documented limit(s): {missing}. "
+        "All four honest limitations must remain present (T-06-16)."
+    )
+
+
+def test_selfproof_limitations_gate_catches_deleted_block():
+    """Prove the limitations gate is not vacuous: deleting the block MUST fail the gate.
+
+    Writes a temp copy of the guide with the entire 'Known limitations.' block removed
+    (from its heading up to the 'Implemented:' line), re-runs
+    test_seam_08_section_carries_the_known_limitations_block against it, and asserts it fails.
+    """
+    content = GUIDE_PATH.read_text(encoding="utf-8")
+
+    # Excise the whole block: from its bold heading up to (not including) the Implemented line.
+    broken_content = re.sub(
+        r"\*\*Known limitations\.\*\*.*?(?=\*\*Implemented:\*\*)",
+        "",
+        content,
+        flags=re.DOTALL,
+    )
+
+    assert "Known limitations" not in broken_content, (
+        "Self-proof setup failed: the limitations block was not actually removed"
+    )
+
+    with tempfile.NamedTemporaryFile(
+        mode="w", suffix=".md", delete=False, encoding="utf-8"
+    ) as tmp:
+        tmp.write(broken_content)
+        tmp_path = Path(tmp.name)
+
+    try:
+        original_path = globals()["GUIDE_PATH"]
+        globals()["GUIDE_PATH"] = tmp_path
+
+        try:
+            test_seam_08_section_carries_the_known_limitations_block()
+            assert False, (
+                "Self-proof FAILED: test_seam_08_section_carries_the_known_limitations_block "
+                "did not catch a deleted limitations block (gate is vacuous)"
+            )
+        except AssertionError as e:
+            if "vacuous" in str(e):
+                raise
+            pass
+
+    finally:
+        globals()["GUIDE_PATH"] = original_path
+        tmp_path.unlink()
