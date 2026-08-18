@@ -263,7 +263,14 @@ RED-first regression test per GATE-02.
 
 - [x] **HYG-04** (v0.2.0 cleanup): A static type checker (mypy or pyright, chosen at plan time) is
   adopted as a dev-dependency and standing gate, enforcing SURF-02's narrowed `on_online` annotation
-  and the public surface's type contracts; adopting it supersedes the `get_type_hints` stopgap.
+  and the public surface's type contracts. **Correction (plan 08-05):** adopting the checker does
+  NOT supersede the `get_type_hints` stopgap — D-03's retire-vs-keep question is settled as **KEEP**:
+  the three narrowed-signature runtime assertions stay, belt-and-suspenders, on the strength of an
+  observed experiment rather than reasoning. pyright verifies that annotations stay internally
+  consistent with how the code uses them, while the assertions verify that three specific public
+  signatures carry one specific narrowed annotation, and a silent re-widening passes the former and
+  fails the latter (both assertions and the pyright gate were run live against a scratch-widened
+  annotation to confirm this, then reverted).
   Source: `.planning/backlog/ADOPT-STATIC-TYPE-CHECKER.md`. → Phase 8
 
 ### Milestone-level
