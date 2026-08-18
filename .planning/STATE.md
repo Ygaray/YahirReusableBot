@@ -1,31 +1,31 @@
 ---
 gsd_state_version: 1.0
 milestone: v0.2.0
-milestone_name: — Redaction promotion + hardening debt
+milestone_name: Redaction promotion + hardening debt
 current_phase: 08
-status: in_progress
+current_phase_name: redaction-hardening-cleanup
+status: executing
 stopped_at: Phase 8 added (Redaction-hardening cleanup) — not yet planned
-last_updated: "2026-08-17T21:10:00-0600"
+last_updated: "2026-08-18T04:49:53.685Z"
 last_activity: 2026-08-17
 last_activity_desc: Phase 8 added — milestone reopened for cleanup
 progress:
   total_phases: 4
   completed_phases: 3
-  total_plans: 14
+  total_plans: 19
   completed_plans: 14
-  percent: 75
-current_phase_name: Redaction-hardening cleanup
+  percent: 74
 ---
 
 # Project State
 
 ## Current Position
 
-Phase: 08 — Redaction-hardening cleanup
-Plan: Not started (run /gsd-plan-phase 8 — discuss-phase first to settle 3 decisions)
-Status: In progress — milestone reopened for Track C cleanup
+Phase: 08 (redaction-hardening-cleanup) — EXECUTING
+Plan: 1 of 5
+Status: Executing Phase 08
 Progress: [#######___] 75% (3/4 phases)
-Last activity: 2026-08-17 — Phase 8 added
+Last activity: 2026-08-17 — Phase 08 execution started
 
 ## Milestone Shape
 
@@ -173,6 +173,7 @@ Full v0.1.2 decision history is archived under `.planning/milestones/v0.1.2-phas
 - [Phase ?]: [Phase 7, 07-07] GATE-02 RED-first ancestry re-derived from git trees for MATCH-03/DISC-07/DISC-08/SURF-02/HYG-02/HYG-03/DOCS-02 (adjacency + genuine RED-ness via git worktree checkout + commit purity); LIFE-05's D-61a exemption confirmed docstring-only via git diff
 - [Phase ?]: [Phase 7, 07-07] Deferred static-type-checker idea filed to .planning/backlog/ADOPT-STATIC-TYPE-CHECKER.md (pickup-ready, cites SURF-02/D-62/D-63); no type checker added to the toolchain
 - [Phase ?]: [Phase 7, 07-07] Human-gated close-out surfaced (version bump 0.1.2->0.2.0, tag v0.2.0, WeatherBot repin, two separately-green checks, SURF-02 blast radius, Phase-6 parity-test carry-forward, permanent client.py scope boundary) — nothing performed, per ECOSYSTEM.md §3
+- [Phase ?]: [Phase 8, 08-01] REDACT-09 settled as ACCEPT under D-02 — zero source-behavior change. Evidence sites: the __repr__ docstring's Scope (WR-02) block (yahir_reusable_bot/redact/core.py), 05-SECURITY.md's UF-01 row, and the two Phase-5 pinning tests (tests/test_redact_core.py:236-273). Held in place by the new standing _missing_wr02_anchors rationale-retention gate plus its three-case synthetic self-proof (tests/test_redact_core.py). No new residual pinning test was written for the asdict/astuple leak itself — 08-RESEARCH.md Pitfall 1 documents that the two Phase-5 pins already cover it GREEN and a third would be a documented anti-pattern, not an oversight.
 
 ## Todos
 

@@ -452,7 +452,7 @@ discuss time whether they are corrected or annotated.
 prose or an unenforced stopgap — before the milestone completes and repins. Track C.
 **Requirements:** REDACT-09 (WR-02), REDACT-10 (WR-03), DOCS-05 (T-06-16 residual), HYG-04 (static type checker)
 **Depends on:** Phase 7
-**Plans:** 5 plans
+**Plans:** 1/5 plans executed
 
 Source of record: `.planning/v0.2.0-MILESTONE-AUDIT.md` (tech-debt review) plus the three phase
 `*-SECURITY.md` findings. Accepted-risks and the parked EXT points are deliberately **excluded** —
@@ -492,7 +492,7 @@ Success criteria:
 
 Plans:
 
-- [ ] 08-01-PLAN.md — REDACT-09: ratify the WR-02 reflection residual as ACCEPTED (D-02), gate the
+- [x] 08-01-PLAN.md — REDACT-09: ratify the WR-02 reflection residual as ACCEPTED (D-02), gate the
   close-vs-accept rationale on the live `__repr__` docstring, and date the settlement to Phase 8.
   No new residual pinning test — the Phase-5 pair is already green (08-RESEARCH.md Pitfall 1)
 
@@ -630,4 +630,3 @@ Landing it replaces WeatherBot's app-local copy with a hub import.
 
 - A real GitHub remote for this repo is a deploy prerequisite for pinning from a host
   (the local `file://` git URL is sufficient for development / Gate-1 verification only).
-
