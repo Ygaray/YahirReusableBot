@@ -452,7 +452,7 @@ discuss time whether they are corrected or annotated.
 prose or an unenforced stopgap — before the milestone completes and repins. Track C.
 **Requirements:** REDACT-09 (WR-02), REDACT-10 (WR-03), DOCS-05 (T-06-16 residual), HYG-04 (static type checker)
 **Depends on:** Phase 7
-**Plans:** 1/5 plans executed
+**Plans:** 5/5 plans executed
 
 Source of record: `.planning/v0.2.0-MILESTONE-AUDIT.md` (tech-debt review) plus the three phase
 `*-SECURITY.md` findings. Accepted-risks and the parked EXT points are deliberately **excluded** —
@@ -505,11 +505,11 @@ Plans:
   RED, then the paragraph, then D-04's two prose gates (changed-writes telemetry, reconfigure
   discipline) with non-vacuity self-proofs and a test enforcing the anchor-collision constraint
 
-- [ ] 08-04-PLAN.md — HYG-04: blocking human legitimacy checkpoint on `pyright` (SUS verdict), then
+- [x] 08-04-PLAN.md — HYG-04: blocking human legitimacy checkpoint on `pyright` (SUS verdict), then
   RED-first unit tests for the diff logic, then pyright `basic` with an explicit mode key, a
   source-only include scope, the hand-rolled baseline gate, and the committed baseline (D-03)
 
-- [ ] 08-05-PLAN.md — Phase gate: D-03's retire-vs-keep settled as KEEP on an observed experiment,
+- [x] 08-05-PLAN.md — Phase gate: D-03's retire-vs-keep settled as KEEP on an observed experiment,
   the stale HYG-04 stopgap wording corrected, GATE-02 RED-first ancestry derived from git trees,
   DOCS-05's no-RED-commit disposition recorded, the four checkboxes flipped, and the v0.2.0
   human-gated close-out re-surfaced
