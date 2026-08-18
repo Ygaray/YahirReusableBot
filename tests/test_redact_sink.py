@@ -495,3 +495,146 @@ def test_probe_redaction_path_raises_when_disabled_and_never_echoes_a_value():
     message = str(excinfo.value)
     assert SENTINEL not in message
     assert pattern.pattern.pattern not in message
+
+
+# ---------------------------------------------------------------------------
+# REDACT-10 / D-01: the optional `on_error` hook on the fail-closed
+# malformed-pattern branch (`sink.py`'s `except re.error` at :157-164).
+#
+# RED-first note: this whole group is genuinely RED pre-fix.
+# `RedactingWriter.__init__` accepts no `on_error` keyword today, so every
+# construction below raises `TypeError` on an unexpected keyword argument
+# before a single assertion in any of these four tests runs.
+#
+# The malformed pattern used throughout is deliberately BOTH secret-bearing
+# AND malformed: its compiled source IS the sentinel itself, and its
+# replacement template references a capture group that does not exist, so it
+# raises `re.error` on every write. `RedactionPattern.literal(SENTINEL)`
+# cannot be used here — its replacement defaults to a well-formed value, so
+# it never raises.
+# ---------------------------------------------------------------------------
+
+
+def _malformed_secret_bearing_pattern() -> RedactionPattern:
+    return RedactionPattern(pattern=re.compile(re.escape(SENTINEL)), replacement=r"\2")
+
+
+def test_on_error_hook_fires_with_the_error_when_a_malformed_pattern_raises():
+    """The hook fires exactly once with the real `re.error`, and the fail-closed
+    write behavior it observes is unperturbed: the placeholder still reaches the
+    target, and neither the sentinel nor the original payload text does."""
+    received: list[BaseException] = []
+    capture = _CaptureDouble()
+    writer = RedactingWriter(
+        capture,
+        (_malformed_secret_bearing_pattern(),),
+        on_error=received.append,
+    )
+
+    result = writer.write(f"a secret appid={SENTINEL} a")
+
+    assert isinstance(result, int)
+    assert len(received) == 1
+    assert isinstance(received[0], re.error)
+    assert capture.pieces
+    forwarded = capture.pieces[0]
+    assert SENTINEL not in forwarded
+    assert f"appid={SENTINEL}" not in forwarded
+
+
+def test_on_error_payload_never_carries_the_secret_pattern_source():
+    """Standing no-leak gate (T-08-02-01). Sweeps every string-valued attribute
+    reachable via `dir(exc)` — not a hardcoded attribute name — so an attribute a
+    future CPython release adds is covered too. A non-vacuity guard runs first so
+    a gate that silently received nothing cannot pass."""
+    received: list[BaseException] = []
+    capture = _CaptureDouble()
+    writer = RedactingWriter(
+        capture,
+        (_malformed_secret_bearing_pattern(),),
+        on_error=received.append,
+    )
+
+    writer.write(f"a secret appid={SENTINEL} a")
+
+    # Non-vacuity guard: the exception must have actually been delivered.
+    assert len(received) == 1
+    exc = received[0]
+    assert str(exc) != ""
+
+    assert SENTINEL not in str(exc), "the sentinel leaked via str(exc)"
+    assert SENTINEL not in repr(exc), "the sentinel leaked via repr(exc)"
+    for attr_name in dir(exc):
+        if attr_name.startswith("__"):
+            continue
+        try:
+            value = getattr(exc, attr_name)
+        except AttributeError:
+            continue
+        if not isinstance(value, str):
+            continue
+        assert SENTINEL not in value, (
+            f"the sentinel leaked via re.error attribute {attr_name!r}={value!r} — "
+            "if this fires, the hub must stop forwarding the raw exception object "
+            "to on_error and start forwarding an elided summary instead"
+        )
+
+
+def test_on_error_hook_that_raises_cannot_break_the_hot_write_path():
+    """D-52 guard, mirroring `on_redaction`'s `_boom` template: a raising
+    `on_error` callback is swallowed. `write()` still returns normally, the
+    placeholder still reaches the target, and the sentinel never does."""
+    capture = _CaptureDouble()
+
+    def _boom(exc: re.error) -> None:
+        raise RuntimeError("on_error hook exploded")
+
+    writer = RedactingWriter(
+        capture,
+        (_malformed_secret_bearing_pattern(),),
+        on_error=_boom,
+    )
+
+    result = writer.write(f"a secret appid={SENTINEL} a")  # must not raise
+
+    assert isinstance(result, int)
+    assert capture.pieces
+    assert SENTINEL not in capture.all_output
+
+
+def test_the_two_hooks_never_cross_fire_and_the_counter_ignores_the_malformed_path():
+    """`on_redaction` and `on_error` are mutually exclusive per write: a
+    successful redaction fires only `on_redaction` and advances the counter; a
+    malformed-pattern withholding fires only `on_error` and the counter stays at
+    0 (`write`'s docstring point 2a — no substitution actually happened)."""
+    redaction_seen: list[int] = []
+    error_seen: list[BaseException] = []
+    capture_success = _CaptureDouble()
+    writer_success = RedactingWriter(
+        capture_success,
+        (RedactionPattern.literal(SENTINEL),),
+        on_redaction=redaction_seen.append,
+        on_error=error_seen.append,
+    )
+
+    writer_success.write(f"{SENTINEL} one")
+
+    assert redaction_seen == [1]
+    assert error_seen == []
+    assert writer_success.redaction_count == 1
+
+    redaction_seen2: list[int] = []
+    error_seen2: list[BaseException] = []
+    capture_malformed = _CaptureDouble()
+    writer_malformed = RedactingWriter(
+        capture_malformed,
+        (_malformed_secret_bearing_pattern(),),
+        on_redaction=redaction_seen2.append,
+        on_error=error_seen2.append,
+    )
+
+    writer_malformed.write(f"{SENTINEL} two")
+
+    assert redaction_seen2 == []
+    assert len(error_seen2) == 1
+    assert writer_malformed.redaction_count == 0
