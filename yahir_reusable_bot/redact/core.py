@@ -117,6 +117,14 @@ class RedactionPattern:
           pattern in an opaque holder: a PUBLIC API shape change, deliberately out of
           scope here.
 
+        This residual is formally ACCEPTED, not deferred: REDACT-09 ratifies the
+        accept-vs-close choice in Phase 8, closing out the WR-02 finding as an
+        explicit decision rather than an open question. The alternative considered
+        and rejected was wrapping the compiled pattern in an opaque holder — rejected
+        because ``redact_secrets`` calls ``.sub()`` on this live object and the public
+        shape is about to be pinned by a consumer at the v0.2.0 repin. The companion
+        disposition lives in this project's Phase-5 security register as UF-01.
+
         So: ``repr(rp)``/``str(rp)``/``f"{rp!r}"`` are safe, and the accidental
         dict-shaped paths now fail loudly. Do not hand ``asdict``/``astuple`` output —
         or ``rp.pattern`` itself — to a serializer or logger.
