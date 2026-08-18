@@ -496,7 +496,7 @@ Plans:
   close-vs-accept rationale on the live `__repr__` docstring, and date the settlement to Phase 8.
   No new residual pinning test — the Phase-5 pair is already green (08-RESEARCH.md Pitfall 1)
 
-- [ ] 08-02-PLAN.md — REDACT-10 (code half): the optional `on_error` hook RED-first, then wired into
+- [x] 08-02-PLAN.md — REDACT-10 (code half): the optional `on_error` hook RED-first, then wired into
   the existing `except re.error` branch behind `on_redaction`'s swallow-and-continue guard. Payload
   decided at plan time as the raised error only, never the withheld payload, with a standing no-leak
   gate on it. Fail-closed behavior itself unchanged (D-01)
