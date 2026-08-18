@@ -5,16 +5,16 @@ milestone_name: Redaction promotion + hardening debt
 current_phase: 08
 current_phase_name: redaction-hardening-cleanup
 status: executing
-stopped_at: Phase 8 wave 2 complete (08-02) — resuming wave 3
-last_updated: "2026-08-18T05:10:00.000Z"
+stopped_at: Phase 8 wave 3 complete (08-03) — resuming wave 4
+last_updated: "2026-08-18T05:30:00.000Z"
 last_activity: 2026-08-17
-last_activity_desc: Phase 8 wave 2 (08-02, REDACT-10 code half) executed and merged
+last_activity_desc: Phase 8 wave 3 (08-03, REDACT-10 doc half + DOCS-05) executed and merged
 progress:
   total_phases: 4
   completed_phases: 3
   total_plans: 19
-  completed_plans: 15
-  percent: 74
+  completed_plans: 16
+  percent: 75
 ---
 
 # Project State
@@ -22,10 +22,10 @@ progress:
 ## Current Position
 
 Phase: 08 (redaction-hardening-cleanup) — EXECUTING
-Plan: 2 of 5
+Plan: 3 of 5
 Status: Executing Phase 08
 Progress: [#######___] 75% (3/4 phases)
-Last activity: 2026-08-17 — Phase 08 wave 2 (08-02) complete
+Last activity: 2026-08-17 — Phase 08 wave 3 (08-03) complete
 
 ## Milestone Shape
 
@@ -175,6 +175,7 @@ Full v0.1.2 decision history is archived under `.planning/milestones/v0.1.2-phas
 - [Phase ?]: [Phase 7, 07-07] Human-gated close-out surfaced (version bump 0.1.2->0.2.0, tag v0.2.0, WeatherBot repin, two separately-green checks, SURF-02 blast radius, Phase-6 parity-test carry-forward, permanent client.py scope boundary) — nothing performed, per ECOSYSTEM.md §3
 - [Phase ?]: [Phase 8, 08-01] REDACT-09 settled as ACCEPT under D-02 — zero source-behavior change. Evidence sites: the __repr__ docstring's Scope (WR-02) block (yahir_reusable_bot/redact/core.py), 05-SECURITY.md's UF-01 row, and the two Phase-5 pinning tests (tests/test_redact_core.py:236-273). Held in place by the new standing _missing_wr02_anchors rationale-retention gate plus its three-case synthetic self-proof (tests/test_redact_core.py). No new residual pinning test was written for the asdict/astuple leak itself — 08-RESEARCH.md Pitfall 1 documents that the two Phase-5 pins already cover it GREEN and a third would be a documented anti-pattern, not an oversight.
 - [Phase ?]: [Phase 8, 08-02] REDACT-10 code half closed under D-01: added an optional keyword-only `on_error: Callable[[re.error], None] | None = None` hook to `RedactingWriter` (yahir_reusable_bot/redact/sink.py), mirroring `on_redaction`'s registration shape. Fires only inside the existing `except re.error` branch, after the fail-closed placeholder already reached the wrapped target; receives only the caught exception, never the withheld payload; wrapped in the same swallow-and-continue guard as `on_redaction` so a raising/slow hook cannot break the hot logging path. Fixed placeholder, D-52 triage order, and counter block left byte-unchanged. RED-first four-test regression group added to tests/test_redact_sink.py (hook delivery, no-leak payload gate sweeping dir(exc), raising-hook survival, no-cross-firing). Full suite 199 passed, import-hygiene 10 passed, ruff clean.
+- [Phase ?]: [Phase 8, 08-03] REDACT-10 doc half + all of DOCS-05 closed: `EXTENSION-GUIDE.md` §7 gained a "When a pattern is malformed." paragraph stating the fail-closed contract (withhold + fixed placeholder, never forward, never raise) plus the `on_error` hook contract. `tests/test_extension_guide.py` gained three gate/self-proof pairs (malformed contract, telemetry semantics, reconfigure discipline) plus a standing anchor-collision guard. REQUIREMENTS.md marks REDACT-10 and DOCS-05 complete. Full suite 206 passed, import-hygiene 10 passed, ruff clean. Deviation: an in-flight `git checkout --` momentarily reverted uncommitted Task 3 test additions before they were redone and re-verified — final committed content unaffected (full detail in 08-03-SUMMARY.md Deviations).
 
 ## Todos
 

@@ -501,7 +501,7 @@ Plans:
   decided at plan time as the raised error only, never the withheld payload, with a standing no-leak
   gate on it. Fail-closed behavior itself unchanged (D-01)
 
-- [ ] 08-03-PLAN.md — REDACT-10 (doc half) + DOCS-05: the section 7 malformed-pattern contract gate
+- [x] 08-03-PLAN.md — REDACT-10 (doc half) + DOCS-05: the section 7 malformed-pattern contract gate
   RED, then the paragraph, then D-04's two prose gates (changed-writes telemetry, reconfigure
   discipline) with non-vacuity self-proofs and a test enforcing the anchor-collision constraint
 
