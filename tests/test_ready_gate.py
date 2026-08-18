@@ -15,6 +15,10 @@ repo's standing convention, ``tests/conftest.py``). Stop doubles implement BOTH
 from __future__ import annotations
 
 import threading
+import typing
+from typing import Callable
+
+from structlog.testing import capture_logs
 
 from yahir_reusable_bot.lifecycle import ReadyGate, ReadyOutcome
 from yahir_reusable_bot.lifecycle.health import HealthResult
@@ -190,3 +194,111 @@ def test_health_result_fatal_defaults_false():
     result = HealthResult(ok=False, reason="x")
 
     assert result.fatal is False
+
+
+# -- SURF-02 (D-62): on_online annotation narrowing, get_type_hints enforcement ----- #
+
+
+def test_on_online_annotation_is_narrowed_to_health_result():
+    """``ReadyGate.__init__``'s ``on_online`` hint must equal ``on_fail``'s already-correct
+    shape. RED pre-fix (verified live, RESEARCH.md § Pattern 4): the loose
+    ``Callable[..., None] | None`` resolves to
+    ``typing.Optional[typing.Callable[..., NoneType]]``, which does not equal the narrowed
+    form below. WHY the narrowing is accurate, not merely stylistic: the hub always invokes
+    the hook with exactly one argument — ``self._best_effort_hook(self._on_online, result,
+    label="on_online")`` at ``ready_gate.py:135`` — so there is no variadic call shape in
+    reality; the loose annotation was drift, and this assertion is the enforcement
+    mechanism a static type checker would otherwise provide.
+
+    POST-HYG-04 (D-03) POSITION: a pyright ``basic``-mode gate now runs
+    (``scripts/pyright_baseline.py``); this assertion is deliberately KEPT
+    alongside it, not retired. The two mechanisms enforce genuinely different
+    properties: pyright checks that annotations are internally CONSISTENT with
+    how the code USES them, while this assertion checks that ``on_online``
+    carries ONE SPECIFIC narrowed annotation, catching a silent re-widening back
+    to the loose variadic form that pyright itself would never flag. Settled by
+    a run experiment, not by reasoning (08-05-SUMMARY.md § D-03 retire-vs-keep
+    experiment): with ``on_online`` scratch-widened back to
+    ``Callable[..., None] | None``, ``uv run python scripts/pyright_baseline.py``
+    stayed green (widening is not a type error) while this exact assertion went
+    red — proving pyright does not subsume this stopgap. See also
+    ``tests/test_panelkit.py``'s render-arity assertion, which carries the same
+    KEEP rationale for a signature pyright's include scope never reaches."""
+    hints = typing.get_type_hints(ReadyGate.__init__)
+
+    assert hints["on_online"] == Callable[[HealthResult], None] | None
+
+
+def test_on_fail_annotation_is_unchanged():
+    """Regression guard on the sibling: ``on_fail`` was ALREADY
+    ``Callable[[HealthResult], None] | None`` before this plan touched anything, and this
+    plan's edit narrows ``on_online`` TO match this shape rather than perturbing the
+    sibling. GREEN both before and after Task 2's fix — proving the fix is additive to
+    ``on_online`` alone.
+
+    Same post-HYG-04 KEEP rationale as
+    ``test_on_online_annotation_is_narrowed_to_health_result`` above — see that
+    docstring for the pyright-vs-``get_type_hints`` property split and the
+    observed experiment that settled it."""
+    hints = typing.get_type_hints(ReadyGate.__init__)
+
+    assert hints["on_fail"] == Callable[[HealthResult], None] | None
+
+
+# -- HYG-02 (D-09): _best_effort_hook logs the label as a structured kwarg --------- #
+
+
+def test_best_effort_hook_logs_the_label_as_a_structured_kwarg():
+    """RED pre-fix: ``_best_effort_hook`` bakes ``label`` into the message via an
+    f-string (``f"{label} hook failed; engine result unaffected"``), so the captured
+    event reads ``"on_online hook failed; engine result unaffected"`` and there is no
+    separate ``label`` key at all. Post-fix the event string is the fixed sentence and
+    the hook name travels as its own structured ``label`` field."""
+
+    def _raising_hook(_arg):
+        raise RuntimeError("boom")
+
+    with capture_logs() as cap:
+        ReadyGate._best_effort_hook(_raising_hook, object(), label="on_online")
+
+    assert len(cap) == 1
+    assert cap[0]["event"] == "hook failed; engine result unaffected"
+    assert cap[0]["label"] == "on_online"
+
+
+def test_best_effort_hook_event_string_is_identical_across_labels():
+    """Proves the label is carried as DATA, never interpolated into the message: two
+    calls with different labels — one plain, one containing formatting characters
+    (``{}`` / ``%``) plus a non-ASCII character — must produce the SAME ``event``
+    string and their own distinct ``label`` values. RED pre-fix: the f-string bakes
+    each label into its own event string, so the two ``event`` values differ
+    (HYG-02/encoding probe)."""
+
+    def _raising_hook(_arg):
+        raise RuntimeError("boom")
+
+    with capture_logs() as cap:
+        ReadyGate._best_effort_hook(_raising_hook, object(), label="on_online")
+        ReadyGate._best_effort_hook(_raising_hook, object(), label="{weird}%café")
+
+    assert len(cap) == 2
+    assert cap[0]["event"] == cap[1]["event"]
+    assert cap[0]["label"] == "on_online"
+    assert cap[1]["label"] == "{weird}%café"
+
+
+def test_best_effort_hook_none_and_clean_hooks_emit_no_log():
+    """A ``None`` hook is a no-op, and a hook that returns normally never logs either.
+    GREEN both before and after the fix — a boundary guard pinning the existing no-op
+    contract, not a gap (HYG-02/empty probe)."""
+
+    def _clean_hook(_arg):
+        return None
+
+    with capture_logs() as cap:
+        ReadyGate._best_effort_hook(None, object(), label="on_online")
+    assert cap == []
+
+    with capture_logs() as cap:
+        ReadyGate._best_effort_hook(_clean_hook, object(), label="on_online")
+    assert cap == []

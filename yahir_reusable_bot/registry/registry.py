@@ -49,12 +49,28 @@ class CommandRegistry:
         # and pays a per-match cost on the hot path. Reject loudly here instead, once,
         # at construction — raise (not assert), since this is genuine untrusted-input
         # validation that must survive `-O`.
+        # MATCH-03 (v0.1.2 WR-02): the D-34 loop above validates each spec.name in
+        # isolation but never checks for a duplicate across specs — a duplicate silently
+        # overwrites in by_name below while by_keyword_len_desc and render_help still
+        # carry both entries, so match_command can resolve a different CommandSpec than
+        # by_name holds. Same posture as D-34's rejected tolerant-fallback: the check
+        # lands here, in the construction loop, rather than at match time, and runs
+        # before any derived view is computed. raise (not assert) — this is genuine
+        # consumer-input validation that must survive `-O`.
+        seen: set[str] = set()
         for spec in self.commands:
             if not spec.name or spec.name != spec.name.casefold():
                 raise ValueError(
                     f"CommandSpec.name must be non-empty and already casefolded "
                     f"(match_command folds input, never spec.name); got {spec.name!r}"
                 )
+            if spec.name in seen:
+                raise ValueError(
+                    f"CommandSpec.name must be unique per registry (a duplicate "
+                    f"silently overwrites in by_name while by_keyword_len_desc and "
+                    f"render_help still carry both entries); got duplicate {spec.name!r}"
+                )
+            seen.add(spec.name)
         # name -> spec (every name is unique; one entry per spec).
         self.by_name: dict[str, CommandSpec] = {c.name: c for c in self.commands}
         # Longest-keyword-first ordering so a longer command (e.g. "next-cloudy") is

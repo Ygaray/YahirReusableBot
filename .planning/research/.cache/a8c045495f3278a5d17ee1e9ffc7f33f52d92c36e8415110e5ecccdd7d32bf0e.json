@@ -1,0 +1,1 @@
+{"content":"pyright PyPI package (v1.1.411, 206 releases, github.com/RobertCraigie/pyright-python) is a wrapper that downloads/runs the Node-based pyright via nodeenv or the nodejs extra; add via uv add --dev pyright.","source":"web","provider":"webfetch","confidence":"MEDIUM","fetched_at":"2026-08-18T04:05:39.796Z","ttl":86400000,"kind":"web"}

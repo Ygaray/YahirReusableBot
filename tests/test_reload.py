@@ -13,10 +13,16 @@ invoked on the PHASE-2 path, so ``fired`` stays empty and the assertion fails.
 
 from __future__ import annotations
 
+import ast
+import inspect
+import textwrap
+
 import pytest
+from structlog.testing import capture_logs
 
 from yahir_reusable_bot.config.holder import ConfigHolder
 from yahir_reusable_bot.config.reload import ReloadEngine
+from yahir_reusable_bot.lifecycle import ReadyGate
 
 
 class _FakeSchedulerEngine:
@@ -89,3 +95,61 @@ def test_reconcile_failure_fires_on_rejected_once_and_rolls_back():
     assert fired[0] is reconcile_exc
     assert holder.current() == old_cfg, "the holder must be rolled back to old_cfg"
     assert restored == [old_cfg], "the injected restore must be called with old_cfg"
+
+
+# -- HYG-02 (D-09): the ReloadEngine clone must move with ready_gate.py's fix ------ #
+
+
+def _code_body_without_docstring(func) -> str:
+    """AST-normalized source of ``func``'s body with any leading docstring stripped.
+
+    The two ``_best_effort_hook`` sites carry deliberately different docstrings (each
+    names its own engine's outcome vocabulary), so a literal ``inspect.getsource``
+    string comparison would never match even when the clone is perfectly in sync.
+    Comparing the parsed body only (docstring dropped, source re-serialized via
+    ``ast.unparse``) isolates the executable logic HYG-02 actually cares about staying
+    identical, while remaining immune to incidental formatting/indentation drift.
+    """
+    tree = ast.parse(textwrap.dedent(inspect.getsource(func)))
+    body = tree.body[0].body
+    if (
+        body
+        and isinstance(body[0], ast.Expr)
+        and isinstance(body[0].value, ast.Constant)
+        and isinstance(body[0].value.value, str)
+    ):
+        body = body[1:]
+    return ast.unparse(ast.Module(body=body, type_ignores=[]))
+
+
+def test_reload_best_effort_hook_logs_the_label_as_a_structured_kwarg():
+    """The D-09 clone of ``_best_effort_hook`` in ``config/reload.py`` gets its own
+    dedicated assertion rather than a shared parametrization: the two implementations
+    are an intentional clone living in two independent subpackages, and the whole point
+    of HYG-02 is that the clone must not be left drifted — asserting against
+    ``ReloadEngine`` directly proves THIS site moved too, not merely that
+    ``ReadyGate``'s did. RED pre-fix, same shape as ``tests/test_ready_gate.py``'s
+    sibling test."""
+
+    def _raising_hook(_arg):
+        raise RuntimeError("boom")
+
+    with capture_logs() as cap:
+        ReloadEngine._best_effort_hook(_raising_hook, object(), label="reload-applied")
+
+    assert len(cap) == 1
+    assert cap[0]["event"] == "hook failed; engine result unaffected"
+    assert cap[0]["label"] == "reload-applied"
+
+
+def test_reload_best_effort_hook_clone_matches_ready_gate_byte_for_byte():
+    """Anti-drift guard (HYG-02): with docstrings excluded (see
+    ``_code_body_without_docstring``), the two ``_best_effort_hook`` bodies must be
+    identical — this is what makes 'one fix, two sites' mechanically enforced from here
+    on, not just asserted in prose. Verified live before writing this test: the two
+    bodies are ALREADY identical pre-fix, so this assertion is GREEN both before and
+    after Task 2 lands — a standing drift guard, not a RED row."""
+    ready_gate_body = _code_body_without_docstring(ReadyGate._best_effort_hook)
+    reload_body = _code_body_without_docstring(ReloadEngine._best_effort_hook)
+
+    assert reload_body == ready_gate_body

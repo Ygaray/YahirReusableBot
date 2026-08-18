@@ -163,7 +163,13 @@ class PanelKit(discord.ui.View):
         operator_id: int,
         selection: "SelectedContext",
         contributors: list[ItemContributor],
-        render: Callable[..., discord.Embed],
+        # SURF-02 (D-62): arity-narrowed from the loose `Callable[..., discord.Embed]` —
+        # `panelkit` always calls `render(reply, render_arg)` with exactly two positional
+        # args (see `on_command` below), so this is arity-accurate and deliberately
+        # type-vacuous: `render_arg` is an opaque per-tap context the module forwards but
+        # never inspects, consistent with `DispatchOutcome.render_arg: Any` above. Pinned
+        # by `tests/test_panelkit.py::test_render_annotation_is_arity_narrowed_to_two_positional_args`.
+        render: Callable[[Any, Any], discord.Embed],
         dispatch: DispatchCallable,
         labels: dict[str, str],
         emoji: dict[str, str] | None = None,

@@ -1,6 +1,6 @@
 [project]
 name = "yahir-reusable-bot"
-version = "0.1.2"
+version = "0.2.0"
 description = "Reusable, app-agnostic bot core (channels, reliability, scheduler, registry, Discord adapter) — the clean module future bots import."
 requires-python = ">=3.12"
 dependencies = [
@@ -32,9 +32,42 @@ dev = [
     "syrupy>=5.3.4",
     "time-machine>=2.16",
     "grimp>=3.14",                  # import-hygiene gate (dev-only)
+    "pyright>=1.1.411",             # static type-check gate (dev-only, HYG-04/D-03)
 ]
+
+# HYG-04 (D-03): typeCheckingMode is set EXPLICITLY to "basic" because pyright's own
+# default is "standard" — a stricter mode than D-03 locked. Omitting this key would
+# silently ship a different gate than the one decided, inflating the first-run
+# baseline the bounded pre-repin cleanup phase deliberately avoids flooding.
+# include is scoped to the library package ONLY (source-only, D-03/plan-time
+# decision). Test files use dynamic-eval patterns (get_type_hints with localns=
+# overrides) and hand-written doubles a checker reasonably objects to, and
+# scripts/ holds a standalone stdlib scaffolder predating any checker. Widening to
+# tests/ and scripts/ is a clean follow-up once the source baseline is burned down.
+#
+# D-03 retire-vs-keep (settled 08-05): this checker does NOT retire the
+# get_type_hints runtime assertions pinning on_online/on_fail
+# (tests/test_ready_gate.py) and render (tests/test_panelkit.py). Both are KEPT
+# belt-and-suspenders — pyright checks that annotations are internally consistent
+# with how the code uses them; those assertions check that three specific public
+# signatures carry one specific narrowed annotation. Observed live: scratch-widen
+# an assertion's annotation back to its loose pre-narrowing form and this gate
+# stays green (widening is not a type error) while the paired get_type_hints
+# assertion goes red — proving this gate does not subsume that stopgap.
+[tool.pyright]
+typeCheckingMode = "basic"
+pythonVersion = "3.12"
+include = ["yahir_reusable_bot"]
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]
 pythonpath = ["."]
 addopts = "-ra"
+# HYG-03 (D-65): the requirement's wording is "the full suite emits zero warnings",
+# which was previously true only by accident with nothing enforcing it. This makes
+# any future warning fail the suite, matching the posture GATE-02 takes everywhere
+# else. Remedy policy: if a dependency deprecation ever forces an exception, add a
+# targeted per-warning-class suppression entry naming the dependency and the reason
+# (pytest's standard "ignore" filter-action syntax, scoped to that one class) —
+# never remove or broaden this filter wholesale.
+filterwarnings = ["error"]

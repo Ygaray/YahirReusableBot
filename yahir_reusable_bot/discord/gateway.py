@@ -173,9 +173,12 @@ async def summon_panel(
     **Pin-cap headroom-reserve (D-26):** if the fresh panel's ``pin()`` fails with
     ``discord.HTTPException`` (the channel is at its pin cap — never hardcode the exact cap
     number, A1/A2 in RESEARCH.md are unresolved between discord.py's docstring and Discord's
-    documented error code) AND >=2 owned panels exist, ONE owned stray is evicted first
-    (freeing a slot; >=1 owned panel is still live throughout — D-06's no-zero-window holds)
-    and the pin is retried.
+    documented error code) AND >=1 owned panel exists, ONE owned stray is evicted first
+    (freeing a slot) and the pin is retried. The no-zero-window invariant (D-24/D-06) is
+    carried by the fresh panel itself — create-before-delete already sent it live above — so
+    it holds even when the LAST owned stray is evicted. (The original >=2 threshold was too
+    conservative: it left the common single-owned-panel re-summon fresh-but-unpinned at the
+    cap. See the inline comment at the eviction site.)
 
     **Residual limitation (D-27):** if the channel is saturated with FOREIGN (non-owned) pins
     — no owned stray to evict — or the retried pin still fails, the fresh panel is left sent
@@ -205,7 +208,11 @@ async def summon_panel(
             # threshold was too conservative — it left the common single-owned-panel
             # re-summon fresh-but-unpinned at the cap, violating the success criterion (WR-01).
             if len(matches) >= 1:
-                stray = matches.pop(0)
+                # DISC-08: peek, don't pop — the stray leaves `matches` only on a
+                # SUCCESSFUL delete (the `else:` below). A failed delete leaves it
+                # in `matches`, so the `for old in matches:` cleanup loop below
+                # retries it on this same call instead of silently dropping it.
+                stray = matches[0]
                 try:
                     await stray.delete()
                 except (discord.NotFound, discord.HTTPException, discord.Forbidden):
@@ -213,8 +220,23 @@ async def summon_panel(
                         "stray panel delete failed; continuing",
                         channel_id=getattr(channel, "id", None),
                     )
+                else:
+                    matches.pop(0)
                 try:
                     await msg.pin()
+                except discord.Forbidden:
+                    # DISC-07: Forbidden is a subclass of HTTPException and Python's
+                    # except is first-match, so this branch MUST precede the
+                    # HTTPException one below or it is unreachable dead code. Log
+                    # and SWALLOW (do not re-raise): re-raising would return from
+                    # summon_panel before the `for old in matches:` cleanup loop
+                    # runs below, leaving every stray undeleted. This stays a
+                    # classification fix, not a control-flow change.
+                    _log.critical(
+                        "panel pin forbidden on retry (permission revoked "
+                        "mid-summon); fresh panel left unpinned",
+                        channel_id=getattr(channel, "id", None),
+                    )
                 except discord.HTTPException:
                     _log.critical(
                         "panel pin failed at cap even after evicting a stray",
@@ -340,21 +362,43 @@ class BotThread:
         """Stop the bot: schedule ``client.close()`` cross-thread, then join.
 
         **Degrade-not-raise (D-28):** ``loop.is_running()`` is a fast path only, NOT a
-        guarantee — the loop can close in the gap between that check and the
-        ``run_coroutine_threadsafe`` schedule (the TOCTOU this guards against), so the
-        schedule call is made INSIDE the same ``try`` as ``future.result()``. A
-        ``RuntimeError`` ("Event loop is closed") from either is logged as "loop already
-        stopped" and swallowed. ``stop()`` must NEVER raise, and the thread join below is
-        ALWAYS reached — never early-return inside the except.
+        guarantee — the loop can close in the gap between that check and the schedule call
+        below (the TOCTOU this guards against). ``stop()`` must NEVER raise, and the thread
+        join below is ALWAYS reached — never early-return inside either except branch below.
+
+        **Bind-before-schedule and cause-specific reclaim (HYG-03 / D-64):** ``coro`` is
+        bound to a name BEFORE any scheduling attempt, so the coroutine object returned by
+        ``self._client.close()`` is reachable on every failure path. The schedule and the
+        await (``future.result()``) are split into two separate ``try`` blocks:
+
+        - If scheduling itself fails (the TOCTOU race above — the loop closed before the
+          schedule call ran), the coroutine was never scheduled, so it is explicitly
+          reclaimed before logging. This reclaim is safe ONLY on this branch: a coroutine
+          already live on the loop raises ``RuntimeError: cannot close a running
+          coroutine`` if closed, so the await branch below must never do this.
+        - If scheduling succeeds but ``future.result()`` raises or times out, ``coro`` is
+          live on the loop and is left alone — the existing message is logged unchanged.
+
+        The two branches log deliberately DISTINCT messages so an operator can tell "the
+        loop died early" from "the client hung" — the same don't-conflate-two-causes
+        posture DISC-07 takes in ``summon_panel``.
         """
         loop = self._loop
         if loop is not None and loop.is_running():
+            coro = self._client.close()
             try:
-                future = asyncio.run_coroutine_threadsafe(self._client.close(), loop)
-                future.result(timeout=timeout)
-            except Exception:  # noqa: BLE001 — close best-effort (incl. "loop already
-                # stopped" RuntimeError on the TOCTOU race); still join below
-                _log.warning("bot client.close() did not complete cleanly")
+                future = asyncio.run_coroutine_threadsafe(coro, loop)
+            except Exception:  # noqa: BLE001 — never scheduled; reclaim best-effort
+                coro.close()
+                _log.warning(
+                    "bot client.close() could not be scheduled (bot loop already closed)"
+                )
+            else:
+                try:
+                    future.result(timeout=timeout)
+                except Exception:  # noqa: BLE001 — scheduled but await failed;
+                    # coro is live on the loop, do NOT close it here
+                    _log.warning("bot client.close() did not complete cleanly")
         self._thread.join(timeout=timeout)
         if self._thread.is_alive():
             _log.warning("bot thread did not stop within timeout")

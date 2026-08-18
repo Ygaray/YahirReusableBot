@@ -191,6 +191,11 @@ def _argv_matches_marker(cmdline: bytes, *, proc_marker: bytes) -> bool:
     but a real ``-m`` module switch begins with ``-m``) while closing the
     ordinary attached form WR-01 reported.
 
+    Phase 7 (D-61, LIFE-05) ratified this boundary rather than closing it —
+    the decision record lives in ``.planning/phases/07-v0-1-2-debt-paydown/
+    07-CONTEXT.md``. The constraint above is now ALSO stated consumer-facing
+    in ``EXTENSION-GUIDE.md`` section 4, not only here.
+
     Like the rest of this guard, this branch degrades to False and never
     raises: the bounds check on the token after a standalone ``-m`` (there may
     be none) is what keeps a truncated/malformed argv safe rather than an

@@ -60,6 +60,18 @@ class SchedulerEngine:
         The ``trigger`` and ``callback`` (plus its opaque ``args``/``kwargs``)
         pass through untouched; ``misfire_grace_time=None``, ``coalesce=True``,
         and ``max_instances=1`` are forced here so no call site can drift.
+
+        SURF-02 (D-62) — ``callback``'s annotation stays ``Callable[..., Any]``,
+        DELIBERATELY, not as an unexamined gap: ``register`` forwards ``callback``
+        together with its opaque ``args``/``kwargs`` straight through to
+        ``add_job`` and never names or inspects its parameters (see the module
+        docstring's D-05), so the variadic form IS the accurate contract — this
+        engine is host-agnostic and a different host binds its own arbitrary
+        callable through this identical hole. This is injection-by-``Any`` at a
+        seam, matching the deliberate ``Any`` architecture at ``panelkit.render``
+        and ``DispatchOutcome.render_arg``, not sloppiness. Reviewed and left
+        as-is; no test pins this row (a recorded non-issue with no behavior
+        delta is manual-only by design, see ``07-VALIDATION.md``).
         """
         self._scheduler.add_job(
             callback,
