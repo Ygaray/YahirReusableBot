@@ -251,12 +251,12 @@ RED-first regression test per GATE-02.
   accepted-risk (core docstring + `05-SECURITY.md`) with a test pinning the current behavior. The
   close-vs-accept choice is settled in this phase. → Phase 8
 
-- [ ] **REDACT-10** (v0.2.0 cleanup, Phase 6 WR-03): `RedactingWriter.write`'s behavior on a
+- [x] **REDACT-10** (v0.2.0 cleanup, Phase 6 WR-03): `RedactingWriter.write`'s behavior on a
   malformed (`re.error`) pattern is a deliberate, tested, documented decision — fixed fail-closed
   placeholder vs. raise vs. forward is settled explicitly (with the owner's Gate-2 judgment), not
   incidental, and stated in both the docstring and `EXTENSION-GUIDE.md` §7. → Phase 8
 
-- [ ] **DOCS-05** (v0.2.0 cleanup, Phase 6 T-06-16 residual): The `EXTENSION-GUIDE.md` §7
+- [x] **DOCS-05** (v0.2.0 cleanup, Phase 6 T-06-16 residual): The `EXTENSION-GUIDE.md` §7
   changed-writes semantics and reconfigure-discipline claims are regression-gated (each with a
   non-vacuity self-proof) so a future edit that drops or regresses either turns the suite red —
   completing the T-06-16 gating begun 2026-08-05. → Phase 8
@@ -322,8 +322,8 @@ Phase numbering **continues from v0.1.2** (which ended at Phase 4). See `.planni
 | DOCS-02 | B (debt) | Phase 7 | Complete (2026-08-04) |
 | DOCS-03 | B (debt) | Phase 7 | Complete (2026-08-04) |
 | REDACT-09 | C (cleanup) | Phase 8 | Planned |
-| REDACT-10 | C (cleanup) | Phase 8 | Planned |
-| DOCS-05 | C (cleanup) | Phase 8 | Planned |
+| REDACT-10 | C (cleanup) | Phase 8 | Complete (2026-08-17) |
+| DOCS-05 | C (cleanup) | Phase 8 | Complete (2026-08-17) |
 | HYG-04 | C (cleanup) | Phase 8 | Planned |
 | GATE-02 | milestone | all phases (standing) | Pending |
 
