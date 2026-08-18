@@ -161,6 +161,15 @@ None - no external service configuration required.
 - `git log --oneline -2` shows the RED gate commit (`a12b838`) immediately followed by the ratification commit (`916d4cd`), no other commit between them — satisfies GATE-02 RED-first adjacency, ready for 08-05's ancestry audit.
 - No blockers for the remaining Phase 8 plans (REDACT-10, DOCS-05, HYG-04).
 
+## Self-Check: PASSED
+
+- FOUND: `tests/test_redact_core.py`
+- FOUND: `yahir_reusable_bot/redact/core.py`
+- FOUND: `.planning/phases/08-redaction-hardening-cleanup/08-01-SUMMARY.md`
+- FOUND commit: `a12b838` (Task 1)
+- FOUND commit: `916d4cd` (Task 2)
+- FOUND commit: `248c13b` (SUMMARY)
+
 ---
 *Phase: 08-redaction-hardening-cleanup*
 *Completed: 2026-08-17*
