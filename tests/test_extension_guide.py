@@ -321,6 +321,123 @@ def test_selfproof_inversion_gate_catches_missing_concept():
         tmp_path.unlink()
 
 
+# ---------------------------------------------------------------------------
+# Phase 8 plan 03 (REDACT-10, DOCS-05, D-01/D-04): three new content gates for
+# section 7's load-bearing behavioral claims — the malformed-pattern
+# fail-closed contract (new text), the changed-writes telemetry semantics
+# (existing text), and the reconfigure-recheck discipline (existing text) —
+# each paired with a non-vacuity self-proof, plus a standing guard that no new
+# anchor token collides with the recipe-2 "before any" assertion above (:123).
+# ---------------------------------------------------------------------------
+
+_SEAM_08_NEW_ANCHORS: dict[str, dict[str, tuple[str, ...]]] = {
+    "malformed_contract": {
+        "the trigger": ("malformed",),
+        "the disposition": ("fail closed", "fails closed", "fail-closed"),
+        "the withheld payload": ("withheld", "withholds"),
+        "the observability hook": ("on_error",),
+    },
+    "telemetry_semantics": {
+        "changed-writes semantics": ("changed writes",),
+        "not-a-substitution-total": ("not individual substitutions",),
+        "monotonicity": ("monotonic",),
+        "how to get a rate": ("diffing two point-in-time reads",),
+    },
+    "reconfigure_discipline": {
+        "the re-assert rule": ("after any reconfiguration",),
+        "the reason": ("configuration is global mutable state",),
+        "the callable named": ("assert_redaction_active",),
+    },
+}
+
+
+def test_seam_08_section_states_the_malformed_pattern_failclosed_contract():
+    """The SEAM-08 section must state the malformed-pattern fail-closed contract.
+
+    REDACT-10 (D-01): a hand-built, unregistered pattern that raises re.error must
+    never leak the original payload and never raise on the hot path — the writer
+    fails closed, withholding the payload behind a fixed placeholder, and the
+    optional on_error hook makes that withholding observable. This paragraph is
+    entirely new prose (section 7 says nothing about it today); a future deletion
+    or rewording that drops any of these concepts turns this test red. Verified
+    non-vacuous by test_selfproof_malformed_contract_gate_catches_a_deleted_paragraph
+    below.
+    """
+    content = GUIDE_PATH.read_text(encoding="utf-8")
+    section_text = _extract_seam_08_section(content)
+    assert len(section_text) > 300, (
+        "SEAM-08 section extraction returned too little text — the extractor may "
+        "be broken rather than the malformed-pattern paragraph being absent"
+    )
+    section_lower = section_text.lower()
+
+    concepts = _SEAM_08_NEW_ANCHORS["malformed_contract"]
+    missing = [
+        name
+        for name, anchors in concepts.items()
+        if not any(anchor in section_lower for anchor in anchors)
+    ]
+    assert not missing, (
+        f"SEAM-08 section is missing malformed-pattern fail-closed contract "
+        f"concept(s): {missing} (REDACT-10)"
+    )
+
+
+def test_selfproof_malformed_contract_gate_catches_a_deleted_paragraph():
+    """Prove the malformed-contract gate is not vacuous: deleting the paragraph MUST fail it.
+
+    Excises the new malformed-pattern paragraph (bolded lead-in through the next
+    blank-line-plus-bold-marker boundary) from a temp copy of the guide, re-runs
+    the gate against it, and asserts it fails. Also proves the excision itself is
+    real: the paragraph must be present in the live guide BEFORE excision (this
+    assertion is the one that fails RED, before Task 2 lands the paragraph) and
+    absent AFTER excision.
+    """
+    content = GUIDE_PATH.read_text(encoding="utf-8")
+
+    assert "**When a pattern is malformed.**" in content, (
+        "Self-proof setup failed: the malformed-pattern paragraph is not present "
+        "in the live guide to excise"
+    )
+
+    broken_content = re.sub(
+        r"\*\*When a pattern is malformed\.\*\*.*?(?=\n\n\*\*)",
+        "",
+        content,
+        flags=re.DOTALL,
+    )
+
+    assert "When a pattern is malformed" not in broken_content, (
+        "Self-proof setup failed: the malformed-pattern paragraph was not "
+        "actually removed"
+    )
+
+    with tempfile.NamedTemporaryFile(
+        mode="w", suffix=".md", delete=False, encoding="utf-8"
+    ) as tmp:
+        tmp.write(broken_content)
+        tmp_path = Path(tmp.name)
+
+    try:
+        original_path = globals()["GUIDE_PATH"]
+        globals()["GUIDE_PATH"] = tmp_path
+
+        try:
+            test_seam_08_section_states_the_malformed_pattern_failclosed_contract()
+            assert False, (
+                "Self-proof FAILED: test_seam_08_section_states_the_malformed_pattern_"
+                "failclosed_contract did not catch a deleted paragraph (gate is vacuous)"
+            )
+        except AssertionError as e:
+            if "vacuous" in str(e):
+                raise
+            pass
+
+    finally:
+        globals()["GUIDE_PATH"] = original_path
+        tmp_path.unlink()
+
+
 def test_seam_08_section_carries_the_known_limitations_block():
     """The SEAM-08 section must carry the labelled 'Known limitations.' block with its four limits.
 
