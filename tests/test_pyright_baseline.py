@@ -23,6 +23,7 @@ from scripts.pyright_baseline import (
     _assert_run_was_not_vacuous,
     _diagnostic_key,
     _new_diagnostics,
+    _relativize_diagnostics,
 )
 
 _ROOT = Path("/repo")
@@ -112,6 +113,24 @@ def test_diagnostic_keys_are_repo_relative_not_absolute():
     key_current = _diagnostic_key(current, Path("/repo"))
     key_baseline = _diagnostic_key(baseline, Path("/some/other/checkout"))
     assert key_current == key_baseline
+
+
+def test_a_written_baseline_is_read_back_identically_from_a_different_checkout():
+    """Closes the gap the other portability test (above) does not reach: that test
+    proves ``_diagnostic_key`` relativizes correctly GIVEN each diagnostic's own
+    true root — it does not exercise what ``--write-baseline`` actually persists.
+    Before ``_relativize_diagnostics`` existed, the baseline file stored the
+    WRITING checkout's raw absolute path verbatim; every OTHER checkout's
+    comparison (via ``_new_diagnostics``, which relativizes both sides against the
+    SAME current-run root) would then fail to match it and flag the entire
+    baseline as new. This test reproduces that two-checkout scenario end to end:
+    write from one root, read back and compare from a different one.
+    """
+    written_from = _diag(file="/checkout-a/yahir_reusable_bot/redact/sink.py")
+    persisted = _relativize_diagnostics([written_from], Path("/checkout-a"))
+
+    read_from = _diag(file="/checkout-b/yahir_reusable_bot/redact/sink.py")
+    assert _new_diagnostics([read_from], persisted, Path("/checkout-b")) == []
 
 
 def test_a_baseline_entry_that_no_longer_reproduces_is_not_an_error():

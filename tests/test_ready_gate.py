@@ -208,7 +208,22 @@ def test_on_online_annotation_is_narrowed_to_health_result():
     the hook with exactly one argument — ``self._best_effort_hook(self._on_online, result,
     label="on_online")`` at ``ready_gate.py:135`` — so there is no variadic call shape in
     reality; the loose annotation was drift, and this assertion is the enforcement
-    mechanism a static type checker would otherwise provide (this repo runs none, D-63)."""
+    mechanism a static type checker would otherwise provide.
+
+    POST-HYG-04 (D-03) POSITION: a pyright ``basic``-mode gate now runs
+    (``scripts/pyright_baseline.py``); this assertion is deliberately KEPT
+    alongside it, not retired. The two mechanisms enforce genuinely different
+    properties: pyright checks that annotations are internally CONSISTENT with
+    how the code USES them, while this assertion checks that ``on_online``
+    carries ONE SPECIFIC narrowed annotation, catching a silent re-widening back
+    to the loose variadic form that pyright itself would never flag. Settled by
+    a run experiment, not by reasoning (08-05-SUMMARY.md § D-03 retire-vs-keep
+    experiment): with ``on_online`` scratch-widened back to
+    ``Callable[..., None] | None``, ``uv run python scripts/pyright_baseline.py``
+    stayed green (widening is not a type error) while this exact assertion went
+    red — proving pyright does not subsume this stopgap. See also
+    ``tests/test_panelkit.py``'s render-arity assertion, which carries the same
+    KEEP rationale for a signature pyright's include scope never reaches."""
     hints = typing.get_type_hints(ReadyGate.__init__)
 
     assert hints["on_online"] == Callable[[HealthResult], None] | None
@@ -219,7 +234,12 @@ def test_on_fail_annotation_is_unchanged():
     ``Callable[[HealthResult], None] | None`` before this plan touched anything, and this
     plan's edit narrows ``on_online`` TO match this shape rather than perturbing the
     sibling. GREEN both before and after Task 2's fix — proving the fix is additive to
-    ``on_online`` alone."""
+    ``on_online`` alone.
+
+    Same post-HYG-04 KEEP rationale as
+    ``test_on_online_annotation_is_narrowed_to_health_result`` above — see that
+    docstring for the pyright-vs-``get_type_hints`` property split and the
+    observed experiment that settled it."""
     hints = typing.get_type_hints(ReadyGate.__init__)
 
     assert hints["on_fail"] == Callable[[HealthResult], None] | None

@@ -1,7 +1,7 @@
 {
   "generalDiagnostics": [
     {
-      "file": "/home/yahir/Projects/Reusable/YahirReusableBot/.claude/worktrees/agent-afa9e3f8c092818ca/yahir_reusable_bot/config/reload.py",
+      "file": "yahir_reusable_bot/config/reload.py",
       "message": "Import \"watchfiles\" could not be resolved",
       "range": {
         "end": {
@@ -17,7 +17,7 @@
       "severity": "error"
     },
     {
-      "file": "/home/yahir/Projects/Reusable/YahirReusableBot/.claude/worktrees/agent-afa9e3f8c092818ca/yahir_reusable_bot/discord/gateway.py",
+      "file": "yahir_reusable_bot/discord/gateway.py",
       "message": "Parameter declaration \"on_message\" is obscured by a declaration of the same name",
       "range": {
         "end": {
@@ -33,7 +33,7 @@
       "severity": "error"
     },
     {
-      "file": "/home/yahir/Projects/Reusable/YahirReusableBot/.claude/worktrees/agent-afa9e3f8c092818ca/yahir_reusable_bot/discord/panelkit.py",
+      "file": "yahir_reusable_bot/discord/panelkit.py",
       "message": "Cannot assign to attribute \"disabled\" for class \"Item[Unknown]\"\n\u00a0\u00a0Attribute \"disabled\" is unknown",
       "range": {
         "end": {
@@ -49,7 +49,7 @@
       "severity": "error"
     },
     {
-      "file": "/home/yahir/Projects/Reusable/YahirReusableBot/.claude/worktrees/agent-afa9e3f8c092818ca/yahir_reusable_bot/lifecycle/identity.py",
+      "file": "yahir_reusable_bot/lifecycle/identity.py",
       "message": "Parameter declaration \"cmdline_reader\" is obscured by a declaration of the same name",
       "range": {
         "end": {
@@ -65,7 +65,7 @@
       "severity": "error"
     },
     {
-      "file": "/home/yahir/Projects/Reusable/YahirReusableBot/.claude/worktrees/agent-afa9e3f8c092818ca/yahir_reusable_bot/redact/sink.py",
+      "file": "yahir_reusable_bot/redact/sink.py",
       "message": "Cannot access attribute \"write\" for class \"object\"\n\u00a0\u00a0Attribute \"write\" is unknown",
       "range": {
         "end": {
@@ -81,7 +81,7 @@
       "severity": "error"
     },
     {
-      "file": "/home/yahir/Projects/Reusable/YahirReusableBot/.claude/worktrees/agent-afa9e3f8c092818ca/yahir_reusable_bot/redact/sink.py",
+      "file": "yahir_reusable_bot/redact/sink.py",
       "message": "Cannot access attribute \"write\" for class \"object\"\n\u00a0\u00a0Attribute \"write\" is unknown",
       "range": {
         "end": {
@@ -97,7 +97,7 @@
       "severity": "error"
     },
     {
-      "file": "/home/yahir/Projects/Reusable/YahirReusableBot/.claude/worktrees/agent-afa9e3f8c092818ca/yahir_reusable_bot/redact/sink.py",
+      "file": "yahir_reusable_bot/redact/sink.py",
       "message": "Cannot access attribute \"write\" for class \"object\"\n\u00a0\u00a0Attribute \"write\" is unknown",
       "range": {
         "end": {
@@ -113,7 +113,7 @@
       "severity": "error"
     },
     {
-      "file": "/home/yahir/Projects/Reusable/YahirReusableBot/.claude/worktrees/agent-afa9e3f8c092818ca/yahir_reusable_bot/redact/sink.py",
+      "file": "yahir_reusable_bot/redact/sink.py",
       "message": "Cannot access attribute \"write\" for class \"object\"\n\u00a0\u00a0Attribute \"write\" is unknown",
       "range": {
         "end": {
@@ -129,7 +129,7 @@
       "severity": "error"
     },
     {
-      "file": "/home/yahir/Projects/Reusable/YahirReusableBot/.claude/worktrees/agent-afa9e3f8c092818ca/yahir_reusable_bot/redact/sink.py",
+      "file": "yahir_reusable_bot/redact/sink.py",
       "message": "Cannot access attribute \"flush\" for class \"object\"\n\u00a0\u00a0Attribute \"flush\" is unknown",
       "range": {
         "end": {
@@ -145,7 +145,7 @@
       "severity": "error"
     },
     {
-      "file": "/home/yahir/Projects/Reusable/YahirReusableBot/.claude/worktrees/agent-afa9e3f8c092818ca/yahir_reusable_bot/redact/verify.py",
+      "file": "yahir_reusable_bot/redact/verify.py",
       "message": "Argument of type \"object\" cannot be assigned to parameter \"iterable\" of type \"Iterable[_T@enumerate]\" in function \"__new__\"\n\u00a0\u00a0\"object\" is incompatible with protocol \"Iterable[_T@enumerate]\"\n\u00a0\u00a0\u00a0\u00a0\"__iter__\" is not present",
       "range": {
         "end": {
@@ -161,7 +161,7 @@
       "severity": "error"
     },
     {
-      "file": "/home/yahir/Projects/Reusable/YahirReusableBot/.claude/worktrees/agent-afa9e3f8c092818ca/yahir_reusable_bot/redact/verify.py",
+      "file": "yahir_reusable_bot/redact/verify.py",
       "message": "Argument of type \"object\" cannot be assigned to parameter \"iterable\" of type \"Iterable[_T@enumerate]\" in function \"__new__\"\n\u00a0\u00a0\"object\" is incompatible with protocol \"Iterable[_T@enumerate]\"\n\u00a0\u00a0\u00a0\u00a0\"__iter__\" is not present",
       "range": {
         "end": {
@@ -177,7 +177,7 @@
       "severity": "error"
     },
     {
-      "file": "/home/yahir/Projects/Reusable/YahirReusableBot/.claude/worktrees/agent-afa9e3f8c092818ca/yahir_reusable_bot/reliability/retry.py",
+      "file": "yahir_reusable_bot/reliability/retry.py",
       "message": "\"result\" is not a known attribute of \"None\"",
       "range": {
         "end": {
@@ -197,9 +197,9 @@
     "errorCount": 12,
     "filesAnalyzed": 34,
     "informationCount": 0,
-    "timeInSec": 2.147,
+    "timeInSec": 2.113,
     "warningCount": 0
   },
-  "time": "1787058479448",
+  "time": "1787059412319",
   "version": "1.1.411"
 }

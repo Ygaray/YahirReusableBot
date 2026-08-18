@@ -44,6 +44,16 @@ dev = [
 # overrides) and hand-written doubles a checker reasonably objects to, and
 # scripts/ holds a standalone stdlib scaffolder predating any checker. Widening to
 # tests/ and scripts/ is a clean follow-up once the source baseline is burned down.
+#
+# D-03 retire-vs-keep (settled 08-05): this checker does NOT retire the
+# get_type_hints runtime assertions pinning on_online/on_fail
+# (tests/test_ready_gate.py) and render (tests/test_panelkit.py). Both are KEPT
+# belt-and-suspenders — pyright checks that annotations are internally consistent
+# with how the code uses them; those assertions check that three specific public
+# signatures carry one specific narrowed annotation. Observed live: scratch-widen
+# an assertion's annotation back to its loose pre-narrowing form and this gate
+# stays green (widening is not a type error) while the paired get_type_hints
+# assertion goes red — proving this gate does not subsume that stopgap.
 [tool.pyright]
 typeCheckingMode = "basic"
 pythonVersion = "3.12"

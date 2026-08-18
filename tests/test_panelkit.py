@@ -208,7 +208,22 @@ def test_render_annotation_is_arity_narrowed_to_two_positional_args():
     args (`panelkit.py`'s ``on_command``), so the narrowing is arity-accurate; both
     ``reply`` and ``render_arg`` are legitimately ``Any`` by design — injection-by-``Any``
     at these seams is deliberate architecture (``DispatchOutcome.render_arg: Any``), not an
-    unexamined gap."""
+    unexamined gap.
+
+    POST-HYG-04 (D-03) POSITION: KEPT, same rationale as
+    ``tests/test_ready_gate.py``'s SURF-02 assertions — see that file's
+    ``test_on_online_annotation_is_narrowed_to_health_result`` docstring for the
+    pyright-vs-``get_type_hints`` property split and the observed experiment
+    that settled retire-vs-keep: ``yahir_reusable_bot/discord/panelkit.py`` (the
+    ``render`` parameter's actual home) IS inside pyright's
+    ``[tool.pyright].include`` scope, but the same experiment result applies —
+    a silent re-widening back to ``Callable[..., discord.Embed]`` is not a type
+    error and pyright would stay green against it, so this assertion remains
+    the ONLY thing that would catch it. THIS test file, however, sits outside
+    pyright's include scope by decision (``tests/`` is excluded — see the
+    ``localns`` note above for exactly the dynamic-eval pattern that exclusion
+    exists to avoid), so pyright never even reads this assertion's own
+    ``get_type_hints`` call."""
     hints = typing.get_type_hints(
         PanelKit.__init__, localns={"SelectedContext": SelectedContext}
     )
