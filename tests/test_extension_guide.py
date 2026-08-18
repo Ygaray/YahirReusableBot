@@ -438,6 +438,232 @@ def test_selfproof_malformed_contract_gate_catches_a_deleted_paragraph():
         tmp_path.unlink()
 
 
+def test_seam_08_section_pins_the_changed_writes_telemetry_semantics():
+    """The SEAM-08 section must pin the changed-writes telemetry semantics.
+
+    DOCS-05 (D-04): `redaction_count` counts changed writes, not individual
+    substitutions, and is monotonic for process lifetime. A future edit that
+    quietly drops "monotonic", or reframes the counter as a per-substitution
+    total, would leave every other test green while a consumer built on the
+    dropped guarantee gets a silently wrong rate calculation. Verified
+    non-vacuous by
+    test_selfproof_telemetry_semantics_gate_catches_a_deleted_paragraph below.
+    """
+    content = GUIDE_PATH.read_text(encoding="utf-8")
+    section_text = _extract_seam_08_section(content)
+    assert len(section_text) > 300, (
+        "SEAM-08 section extraction returned too little text — the extractor may "
+        "be broken rather than the telemetry paragraph being absent"
+    )
+    # Collapse whitespace (including the guide's own hard-wrap line breaks) so a
+    # multi-word anchor phrase that happens to straddle a wrap boundary in the
+    # raw markdown still matches as contiguous text.
+    section_lower = re.sub(r"\s+", " ", section_text.lower())
+
+    concepts = _SEAM_08_NEW_ANCHORS["telemetry_semantics"]
+    missing = [
+        name
+        for name, anchors in concepts.items()
+        if not any(anchor in section_lower for anchor in anchors)
+    ]
+    assert not missing, (
+        f"SEAM-08 section is missing telemetry semantics concept(s): {missing} "
+        f"(DOCS-05)"
+    )
+
+
+def test_selfproof_telemetry_semantics_gate_catches_a_deleted_paragraph():
+    """Prove the telemetry gate is not vacuous: deleting the paragraph MUST fail it.
+
+    Excises the "Telemetry, described accurately." paragraph (bolded lead-in
+    through the next blank-line-plus-bold-marker boundary — whichever paragraph
+    that happens to be) from a temp copy of the guide, re-runs the gate against
+    it, and asserts it fails.
+    """
+    content = GUIDE_PATH.read_text(encoding="utf-8")
+
+    assert "**Telemetry, described accurately.**" in content, (
+        "Self-proof setup failed: the telemetry paragraph is not present in the "
+        "live guide to excise"
+    )
+
+    broken_content = re.sub(
+        r"\*\*Telemetry, described accurately\.\*\*.*?(?=\n\n\*\*)",
+        "",
+        content,
+        flags=re.DOTALL,
+    )
+
+    assert "Telemetry, described accurately" not in broken_content, (
+        "Self-proof setup failed: the telemetry paragraph was not actually removed"
+    )
+
+    with tempfile.NamedTemporaryFile(
+        mode="w", suffix=".md", delete=False, encoding="utf-8"
+    ) as tmp:
+        tmp.write(broken_content)
+        tmp_path = Path(tmp.name)
+
+    try:
+        original_path = globals()["GUIDE_PATH"]
+        globals()["GUIDE_PATH"] = tmp_path
+
+        try:
+            test_seam_08_section_pins_the_changed_writes_telemetry_semantics()
+            assert False, (
+                "Self-proof FAILED: test_seam_08_section_pins_the_changed_writes_"
+                "telemetry_semantics did not catch a deleted paragraph (gate is "
+                "vacuous)"
+            )
+        except AssertionError as e:
+            if "vacuous" in str(e):
+                raise
+            pass
+
+    finally:
+        globals()["GUIDE_PATH"] = original_path
+        tmp_path.unlink()
+
+
+def test_seam_08_section_pins_the_reconfiguration_recheck_discipline():
+    """The SEAM-08 section must pin the reconfigure-recheck discipline.
+
+    DOCS-05 (D-04): `assert_redaction_active` must be called again after any
+    reconfiguration, because structlog's configuration is global mutable state
+    and a second `structlog.configure()` call can silently drop the wiring with
+    no error of its own. Dropping this instruction leaves a consumer's second
+    configure() call unguarded — a live secret-leak path created by a
+    documentation regression. Verified non-vacuous by
+    test_selfproof_reconfigure_discipline_gate_catches_a_deleted_paragraph below.
+    """
+    content = GUIDE_PATH.read_text(encoding="utf-8")
+    section_text = _extract_seam_08_section(content)
+    assert len(section_text) > 300, (
+        "SEAM-08 section extraction returned too little text — the extractor may "
+        "be broken rather than the reconfigure-discipline paragraph being absent"
+    )
+    # Collapse whitespace (including the guide's own hard-wrap line breaks) so a
+    # multi-word anchor phrase that happens to straddle a wrap boundary in the
+    # raw markdown still matches as contiguous text. The reconfigure "reason"
+    # anchor is confirmed to straddle exactly such a wrap boundary in the live
+    # guide (:186-187), so this normalization is load-bearing, not defensive.
+    section_lower = re.sub(r"\s+", " ", section_text.lower())
+
+    concepts = _SEAM_08_NEW_ANCHORS["reconfigure_discipline"]
+    missing = [
+        name
+        for name, anchors in concepts.items()
+        if not any(anchor in section_lower for anchor in anchors)
+    ]
+    assert not missing, (
+        f"SEAM-08 section is missing reconfigure-discipline concept(s): {missing} "
+        f"(DOCS-05)"
+    )
+
+
+def test_selfproof_reconfigure_discipline_gate_catches_a_deleted_paragraph():
+    """Prove the reconfigure-discipline gate is not vacuous: deleting the paragraph MUST fail it.
+
+    One of this gate's anchors — `assert_redaction_active` (the callable name) —
+    also appears in the section's "Implemented:" enumeration, so excising only
+    the "Proving it is on." paragraph does not remove every occurrence of that
+    anchor from the section. The gate still requires ALL concepts, and the
+    other two anchors (the re-assert rule and the reason) genuinely DO vanish
+    with the paragraph, so this self-proof confirms the gate goes red for the
+    right reason rather than assuming it.
+    """
+    content = GUIDE_PATH.read_text(encoding="utf-8")
+
+    assert "**Proving it is on.**" in content, (
+        "Self-proof setup failed: the reconfigure-discipline paragraph is not "
+        "present in the live guide to excise"
+    )
+
+    broken_content = re.sub(
+        r"\*\*Proving it is on\.\*\*.*?(?=\n\n\*\*)",
+        "",
+        content,
+        flags=re.DOTALL,
+    )
+
+    assert "Proving it is on" not in broken_content, (
+        "Self-proof setup failed: the reconfigure-discipline paragraph was not "
+        "actually removed"
+    )
+
+    with tempfile.NamedTemporaryFile(
+        mode="w", suffix=".md", delete=False, encoding="utf-8"
+    ) as tmp:
+        tmp.write(broken_content)
+        tmp_path = Path(tmp.name)
+
+    try:
+        original_path = globals()["GUIDE_PATH"]
+        globals()["GUIDE_PATH"] = tmp_path
+
+        try:
+            test_seam_08_section_pins_the_reconfiguration_recheck_discipline()
+            assert False, (
+                "Self-proof FAILED: test_seam_08_section_pins_the_reconfiguration_"
+                "recheck_discipline did not catch a deleted paragraph (gate is "
+                "vacuous)"
+            )
+        except AssertionError as e:
+            if "vacuous" in str(e):
+                raise
+            pass
+
+    finally:
+        globals()["GUIDE_PATH"] = original_path
+        tmp_path.unlink()
+
+
+def test_new_anchor_tokens_do_not_collide_with_the_recipe_2_ordering_assertion():
+    """No new anchor token may contain the recipe-2 ordering assertion's substring.
+
+    tests/test_extension_guide.py:123 already asserts "before any" in
+    section_lower for a different claim (Recipe 2's "before any" stdlib
+    logging-handler ordering constraint). CONTEXT.md states this collision
+    constraint explicitly as an instruction to the planner; this test converts
+    it into a standing mechanical guard instead of trusting review. The
+    incumbent substring is read from this module's own source (not retyped) so
+    the guard tracks a future rewording of that assertion instead of drifting
+    from it.
+    """
+    module_source = Path(__file__).read_text(encoding="utf-8")
+    match = re.search(
+        r'assert "([^"]+)" in section_lower,[\s\S]{0,200}?'
+        r"missing the hard ordering constraint on Recipe 2",
+        module_source,
+    )
+    assert match, (
+        "Could not locate the recipe-2 ordering assertion in this module's own "
+        "source — the collision guard cannot verify anything against a "
+        "substring it could not extract"
+    )
+    ordering_substring = match.group(1)
+    assert ordering_substring, (
+        "Self-proof setup failed: extracted ordering substring is empty"
+    )
+
+    all_anchors = [
+        anchor
+        for gate_anchors in _SEAM_08_NEW_ANCHORS.values()
+        for anchor_tuple in gate_anchors.values()
+        for anchor in anchor_tuple
+    ]
+    assert all_anchors, (
+        "Self-proof setup failed: no anchors collected from _SEAM_08_NEW_ANCHORS"
+    )
+
+    colliding = [anchor for anchor in all_anchors if ordering_substring in anchor]
+    assert not colliding, (
+        f"New anchor token(s) collide with the existing recipe-2 ordering "
+        f"assertion ({ordering_substring!r}) at "
+        f"tests/test_extension_guide.py:123: {colliding}"
+    )
+
+
 def test_seam_08_section_carries_the_known_limitations_block():
     """The SEAM-08 section must carry the labelled 'Known limitations.' block with its four limits.
 
