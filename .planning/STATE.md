@@ -2,30 +2,30 @@
 gsd_state_version: 1.0
 milestone: v0.2.0
 milestone_name: — Redaction promotion + hardening debt
-current_phase: 07
-status: completed
-stopped_at: Completed 07-07-PLAN.md — Phase 7 complete
-last_updated: "2026-08-04T05:57:28.847Z"
-last_activity: 2026-08-04
-last_activity_desc: Phase 07 complete
+current_phase: 08
+status: in_progress
+stopped_at: Phase 8 added (Redaction-hardening cleanup) — not yet planned
+last_updated: "2026-08-17T21:10:00-0600"
+last_activity: 2026-08-17
+last_activity_desc: Phase 8 added — milestone reopened for cleanup
 progress:
-  total_phases: 3
+  total_phases: 4
   completed_phases: 3
   total_plans: 14
   completed_plans: 14
-  percent: 100
-current_phase_name: v0.1.2 debt paydown
+  percent: 75
+current_phase_name: Redaction-hardening cleanup
 ---
 
 # Project State
 
 ## Current Position
 
-Phase: 07
-Plan: Not started
-Status: Milestone complete
-Progress: [###_______] 33% (1/3 phases)
-Last activity: 2026-08-04 — Phase 07 complete
+Phase: 08 — Redaction-hardening cleanup
+Plan: Not started (run /gsd-plan-phase 8 — discuss-phase first to settle 3 decisions)
+Status: In progress — milestone reopened for Track C cleanup
+Progress: [#######___] 75% (3/4 phases)
+Last activity: 2026-08-17 — Phase 8 added
 
 ## Milestone Shape
 
@@ -34,15 +34,24 @@ Last activity: 2026-08-04 — Phase 07 complete
 | 5 | A (PC-01) | Generic scrubbing primitive + safe-by-construction pattern API | REDACT-01, 02, 03, 06 |
 | 6 | A (PC-01) | Load-bearing sink seam, additive processor, provable backstop, SEAM-08 | REDACT-04, 05, 07, 08, DOCS-04 |
 | 7 | B (debt) | Every v0.1.2 audit item closed or explicitly decided | MATCH-03, LIFE-05, SURF-02, DISC-07, DISC-08, HYG-02, HYG-03, DOCS-02, DOCS-03 |
+| 8 | C (cleanup) | Close the 4 actionable v0.2.0 audit residuals before repin | REDACT-09, REDACT-10, DOCS-05, HYG-04 |
+
+### Roadmap Evolution
+
+- Phase 8 added 2026-08-17: Redaction-hardening cleanup (Track C) — folds the four actionable
+  tech-debt residuals from `.planning/v0.2.0-MILESTONE-AUDIT.md` (WR-02 source exposure, WR-03
+  malformed-pattern design, T-06-16 doc gate, static type checker) into a planned phase. Milestone
+  reopened from `completed` → `in_progress`; the human-gated repin now waits on Phase 8.
 
 **GATE-02** is milestone-standing (spans all phases), not a phase: full suite + import-hygiene /
 litmus / grimp green, and every requirement ships a RED-first regression test.
 
 ## Session
 
-**Last session:** 2026-08-04T05:40:22.569Z
-**Stopped at:** Completed 07-07-PLAN.md — Phase 7 complete
+**Last session:** 2026-08-17T21:10:00-0600
+**Stopped at:** Phase 8 added (Redaction-hardening cleanup) — not yet planned
 **Resume file:** None
+**Next:** `/gsd-plan-phase 8` (discuss-phase first to settle WR-03 design, mypy-vs-pyright, WR-02 close-vs-accept)
 
 ## Performance Metrics
 

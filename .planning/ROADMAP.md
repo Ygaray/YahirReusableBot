@@ -215,12 +215,14 @@ collection) at a distinct dotted path — do not merge the two by analogy-confus
 - [x] **Phase 5: Redaction core + pattern registration** - The generic scrubbing primitive and a safe-by-construction pattern API (completed 2026-07-29)
 - [x] **Phase 6: Insertion seams + provable backstop** - The load-bearing sink, the additive processor, and proof the backstop is live (completed 2026-08-04)
 - [x] **Phase 7: v0.1.2 debt paydown** - Every open audit item closed; no known footgun, no stale doc (completed 2026-08-04)
+- [ ] **Phase 8: Redaction-hardening cleanup** - Close the four actionable audit residuals (WR-02, WR-03, T-06-16 doc gate, static type checker) before repin (Track C, added 2026-08-17)
 
 | Phase | Plans Complete | Status | Completed |
 |-------|----------------|--------|-----------|
 | 5. Redaction core + pattern registration | 3/3 | Complete    | 2026-07-29 |
 | 6. Insertion seams + provable backstop | 4/4 | Complete    | 2026-08-04 |
 | 7. v0.1.2 debt paydown | 7/7 | Complete    | 2026-08-04 |
+| 8. Redaction-hardening cleanup | 0/? | Planned     | —          |
 
 ### v0.2.0 Phase Details
 
@@ -444,6 +446,54 @@ that some string matches another string. `ECOSYSTEM.md` is already clean (it cor
 Historical phase records under `.planning/milestones/v0.1.2-phases/` are an archive — decide at
 discuss time whether they are corrected or annotated.
 
+### Phase 8: Redaction-hardening cleanup
+
+**Goal:** Close the v0.2.0 audit's four *actionable* residuals so nothing load-bearing rests on
+prose or an unenforced stopgap — before the milestone completes and repins. Track C.
+**Requirements:** REDACT-09 (WR-02), REDACT-10 (WR-03), DOCS-05 (T-06-16 residual), HYG-04 (static type checker)
+**Depends on:** Phase 7
+**Plans:** 0 plans — run `/gsd-plan-phase 8` to break down
+
+Source of record: `.planning/v0.2.0-MILESTONE-AUDIT.md` (tech-debt review) plus the three phase
+`*-SECURITY.md` findings. Accepted-risks and the parked EXT points are deliberately **excluded** —
+this phase is only the residuals worth code/test work. **GATE-02 still applies:** every fix ships a
+RED-first regression test; full suite + import-hygiene / litmus / grimp stay green.
+
+**⚠ Three items require an explicit decision at discuss time — do not default:**
+
+- **REDACT-10 (WR-03):** `RedactingWriter.write`'s behavior on a malformed (`re.error`) pattern —
+  the current fixed fail-closed placeholder vs. raising vs. forwarding. This is the design call the
+  06 self-UAT flagged for the owner's Gate-2 judgment; discuss must surface it, not pick one.
+
+- **REDACT-09 (WR-02):** whether to *close* the raw-pattern-source reflection paths
+  (`dataclasses.asdict` / `astuple`, `.pattern.pattern`) or *formally accept* the residual with a
+  documented rationale and a pinning test. A niche path — the choice is a real trade-off.
+
+- **HYG-04:** mypy vs. pyright, and whether it gates the whole surface or starts scoped. Settle at
+  plan time per `.planning/backlog/ADOPT-STATIC-TYPE-CHECKER.md`.
+
+Success criteria:
+
+- **REDACT-09** — either no public reflection path (`asdict` / `astuple` / `.pattern.pattern`)
+  returns a literal secret from a `RedactionPattern.literal(...)`, proven by a RED-first test; **or**
+  the residual is a documented accepted-risk (core docstring + `05-SECURITY.md`) with a test pinning
+  the current behavior. The close-vs-accept decision is recorded.
+
+- **REDACT-10** — `RedactingWriter.write`'s malformed-pattern behavior is pinned to the chosen
+  contract by a RED-first test, and both the docstring and `EXTENSION-GUIDE.md` §7 state it.
+
+- **DOCS-05** — `tests/test_extension_guide.py` regression-gates the §7 changed-writes semantics and
+  the reconfigure-discipline claim, each with a non-vacuity self-proof; mutating either line turns
+  the suite red (completing the T-06-16 gating begun 2026-08-05).
+
+- **HYG-04** — a static type checker (mypy or pyright) runs clean as a standing gate and enforces
+  SURF-02's narrowed `on_online` annotation; the `get_type_hints` stopgap is retired or kept as
+  belt-and-suspenders, decided explicitly.
+
+Plans (not yet broken down):
+
+- [ ] TBD — run `/gsd-plan-phase 8` to break down (discuss-phase first to settle the three decisions above).
+
 ### Human-gated close-out — surfaced, never performed autonomously (`ECOSYSTEM.md` §3)
 
 1. Bump `pyproject.toml` `0.1.2 → 0.2.0` · cut tag `v0.2.0`.
@@ -553,3 +603,4 @@ Landing it replaces WeatherBot's app-local copy with a hub import.
 
 - A real GitHub remote for this repo is a deploy prerequisite for pinning from a host
   (the local `file://` git URL is sufficient for development / Gate-1 verification only).
+

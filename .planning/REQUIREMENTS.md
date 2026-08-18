@@ -239,6 +239,33 @@ surface — `redact_secrets(text, patterns)`, never `redact_appid` or an `appid`
   `structlog.configure()`, rather than a Protocol the hub calls. (Note: `SEAM-02` is absent from
   the guide with no recorded explanation; 08 is the next free number.) → Phase 6
 
+### Hardening cleanup — Track C (Phase 8)
+
+Added 2026-08-17 from the `.planning/v0.2.0-MILESTONE-AUDIT.md` tech-debt review — the four
+*actionable* residuals (accepted-risks and deferred-by-design EXT points excluded). Each ships a
+RED-first regression test per GATE-02.
+
+- [ ] **REDACT-09** (v0.2.0 cleanup, Phase 5 WR-02): A `RedactionPattern` built via `literal(...)`
+  does not leak its raw pattern source through the public reflection paths (`dataclasses.asdict` /
+  `astuple`, `.pattern.pattern`). Either those paths are closed, **or** the residual is a documented
+  accepted-risk (core docstring + `05-SECURITY.md`) with a test pinning the current behavior. The
+  close-vs-accept choice is settled in this phase. → Phase 8
+
+- [ ] **REDACT-10** (v0.2.0 cleanup, Phase 6 WR-03): `RedactingWriter.write`'s behavior on a
+  malformed (`re.error`) pattern is a deliberate, tested, documented decision — fixed fail-closed
+  placeholder vs. raise vs. forward is settled explicitly (with the owner's Gate-2 judgment), not
+  incidental, and stated in both the docstring and `EXTENSION-GUIDE.md` §7. → Phase 8
+
+- [ ] **DOCS-05** (v0.2.0 cleanup, Phase 6 T-06-16 residual): The `EXTENSION-GUIDE.md` §7
+  changed-writes semantics and reconfigure-discipline claims are regression-gated (each with a
+  non-vacuity self-proof) so a future edit that drops or regresses either turns the suite red —
+  completing the T-06-16 gating begun 2026-08-05. → Phase 8
+
+- [ ] **HYG-04** (v0.2.0 cleanup): A static type checker (mypy or pyright, chosen at plan time) is
+  adopted as a dev-dependency and standing gate, enforcing SURF-02's narrowed `on_online` annotation
+  and the public surface's type contracts; adopting it supersedes the `get_type_hints` stopgap.
+  Source: `.planning/backlog/ADOPT-STATIC-TYPE-CHECKER.md`. → Phase 8
+
 ### Milestone-level
 
 - [ ] **GATE-02**: The full suite plus the standing import-hygiene gates (grimp graph +
@@ -294,9 +321,13 @@ Phase numbering **continues from v0.1.2** (which ended at Phase 4). See `.planni
 | HYG-03 | B (debt) | Phase 7 | Complete (2026-08-04) |
 | DOCS-02 | B (debt) | Phase 7 | Complete (2026-08-04) |
 | DOCS-03 | B (debt) | Phase 7 | Complete (2026-08-04) |
+| REDACT-09 | C (cleanup) | Phase 8 | Planned |
+| REDACT-10 | C (cleanup) | Phase 8 | Planned |
+| DOCS-05 | C (cleanup) | Phase 8 | Planned |
+| HYG-04 | C (cleanup) | Phase 8 | Planned |
 | GATE-02 | milestone | all phases (standing) | Pending |
 
-**Coverage: 19/19 mapped — 18 phase-assigned + 1 milestone-standing. No orphans, no duplicates.**
+**Coverage: 23/23 mapped — 22 phase-assigned + 1 milestone-standing. No orphans, no duplicates.**
 
 GATE-02 is deliberately *not* a phase — same treatment GATE-01 received in v0.1.2. It stays
 unchecked until green across all three phases.
