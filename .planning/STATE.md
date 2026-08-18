@@ -176,6 +176,44 @@ Full v0.1.2 decision history is archived under `.planning/milestones/v0.1.2-phas
 - [Phase ?]: [Phase 8, 08-01] REDACT-09 settled as ACCEPT under D-02 — zero source-behavior change. Evidence sites: the __repr__ docstring's Scope (WR-02) block (yahir_reusable_bot/redact/core.py), 05-SECURITY.md's UF-01 row, and the two Phase-5 pinning tests (tests/test_redact_core.py:236-273). Held in place by the new standing _missing_wr02_anchors rationale-retention gate plus its three-case synthetic self-proof (tests/test_redact_core.py). No new residual pinning test was written for the asdict/astuple leak itself — 08-RESEARCH.md Pitfall 1 documents that the two Phase-5 pins already cover it GREEN and a third would be a documented anti-pattern, not an oversight.
 - [Phase ?]: [Phase 8, 08-02] REDACT-10 code half closed under D-01: added an optional keyword-only `on_error: Callable[[re.error], None] | None = None` hook to `RedactingWriter` (yahir_reusable_bot/redact/sink.py), mirroring `on_redaction`'s registration shape. Fires only inside the existing `except re.error` branch, after the fail-closed placeholder already reached the wrapped target; receives only the caught exception, never the withheld payload; wrapped in the same swallow-and-continue guard as `on_redaction` so a raising/slow hook cannot break the hot logging path. Fixed placeholder, D-52 triage order, and counter block left byte-unchanged. RED-first four-test regression group added to tests/test_redact_sink.py (hook delivery, no-leak payload gate sweeping dir(exc), raising-hook survival, no-cross-firing). Full suite 199 passed, import-hygiene 10 passed, ruff clean.
 - [Phase ?]: [Phase 8, 08-03] REDACT-10 doc half + all of DOCS-05 closed: `EXTENSION-GUIDE.md` §7 gained a "When a pattern is malformed." paragraph stating the fail-closed contract (withhold + fixed placeholder, never forward, never raise) plus the `on_error` hook contract. `tests/test_extension_guide.py` gained three gate/self-proof pairs (malformed contract, telemetry semantics, reconfigure discipline) plus a standing anchor-collision guard. REQUIREMENTS.md marks REDACT-10 and DOCS-05 complete. Full suite 206 passed, import-hygiene 10 passed, ruff clean. Deviation: an in-flight `git checkout --` momentarily reverted uncommitted Task 3 test additions before they were redone and re-verified — final committed content unaffected (full detail in 08-03-SUMMARY.md Deviations).
+- [Phase ?]: [Phase 8, 08-05] D-03/HYG-04 retire-vs-keep settled as **KEEP**, decided on two observed run experiments (not reasoning): `on_online` and `render` were each scratch-widened back to their pre-SURF-02 loose form and, both times, `uv run python scripts/pyright_baseline.py` stayed green while the paired `get_type_hints` assertion went red — proving pyright checks annotation-internal-consistency while the runtime assertions check that three specific public signatures carry one specific narrowed type, and a silent re-widening satisfies the former while failing the latter. Rationale recorded in `tests/test_ready_gate.py`, `tests/test_panelkit.py`, and a `[tool.pyright]` comment in `pyproject.toml`. `REQUIREMENTS.md`'s HYG-04 bullet corrected to state KEEP instead of the stale supersede claim. GATE-02 RED-first ancestry independently re-derived from git trees for all four Phase-8 pairs (REDACT-09/REDACT-10 hook/REDACT-10 guide/HYG-04 diff gate — adjacency, genuine RED-ness via scratch `git worktree add --detach`, and commit purity); DOCS-05's two D-04 gates legitimately have no RED commit (they pin already-true prose) — their non-vacuity self-proofs stand in, per the Phase-6 Known-limitations precedent. REDACT-09 closed (checkbox + status row), the last of the four Phase-8 requirements. Also fixed a pre-existing Rule-1 bug in `scripts/pyright_baseline.py` (shipped by 08-04): the committed baseline stored the writing checkout's raw absolute paths and broke the gate on every other checkout; `_relativize_diagnostics` now persists repo-relative paths, baseline regenerated (same 12 diagnostics/34 files, now portable). Full suite 215 passed, import-hygiene 10 passed, doc-drift 5 passed, pyright gate exit 0, ruff clean.
+
+## Human-Gated Close-Out — v0.2.0
+
+Per `ECOSYSTEM.md` §3, the following is handed to the human for confirmation. **Nothing below has
+been executed by any phase of this milestone.** Supersedes the Phase-7 close-out decision-log line
+above with Phase 8's additions folded in.
+
+1. **Version bump and tag cut** — `pyproject.toml` `0.1.2 → 0.2.0`, tag `v0.2.0`. Not done. Verified
+   2026-08-18: `git tag --list 'v0.2.0'` is empty; `pyproject.toml` still reads `version = "0.1.2"`.
+2. **The WeatherBot repin** — `[tool.uv.sources]` bump `v0.1.2 → v0.2.0`, `uv lock --upgrade`,
+   `uv sync`. Not done.
+3. **Two separately-green checks, never bundled:**
+   - **(a) The PC-01 parity gate** — WeatherBot's existing, unmodified `tests/test_redact_hygiene.py`
+     (6 tests) against the hub-backed replacement; all 6 must pass before `weatherbot/_redact.py` is
+     deleted. Two of the six need a **signature-level test update**, not merely an import swap,
+     because `RedactingWriter`'s constructor differs from the app-local `_LiveStderr` it replaces
+     (Phase-6 carry-forward, unchanged).
+   - **(b) The MATCH-03 duplicate-`spec.name` sweep** — WeatherBot's command specs must be swept for
+     duplicate names before the repin lands.
+4. **The SURF-02 blast-radius note** — narrowing `on_online` is a public hub-surface change; the only
+   live consumer's handler already conforms.
+5. **The permanent scope boundary** — `weatherbot/weather/client.py`'s domain-specific redacted
+   re-raise stays app-local forever.
+6. **NEW from Phase 8 — REDACT-10's `on_error` hook.** `RedactingWriter`'s constructor has gained an
+   optional, keyword-only `on_error: Callable[[re.error], None] | None = None` parameter (mirrors
+   `on_redaction`'s shape, fires only inside the existing fail-closed `except re.error` branch,
+   receives only the caught exception — never the withheld payload). Changes no existing call site
+   (default `None`, purely additive) — the repin **may** wire it, but nothing requires it to.
+7. **NEW from Phase 8 — the hub now carries a pyright gate the consumer does not inherit.**
+   `scripts/pyright_baseline.py` + `pyright-baseline.json` are dev-only,
+   `[dependency-groups].dev`-scoped tooling; a consumer pinning the hub via `[tool.uv.sources]` does
+   not install `pyright` and is not gated by this baseline — hub-internal hygiene, not a repin
+   contract.
+
+No version bump, tag, repin, `uv sync`, or deploy has been performed by any plan in Phase 8 or
+earlier. `git status --porcelain` at the end of plan 08-05 showed no file outside `.planning/`
+modified by that plan.
 
 ## Todos
 
@@ -209,6 +247,10 @@ Full v0.1.2 decision history is archived under `.planning/milestones/v0.1.2-phas
   Revisit only if a consumer actually needs a safe serialization form. Pinned both ways by
   `tests/test_redact_core.py` (`..._has_no_instance_dict_so_generic_serializers_cannot_leak` and
   `..._asdict_still_exposes_raw_pattern_source`).
+  **SETTLED (Phase 8, 2026-08-18).** REDACT-09 (plan 08-01) ratified this residual ACCEPT under
+  D-02 — zero source-behavior change, held in place by a standing rationale-retention gate. Ancestry
+  independently proven from git in plan 08-05. This todo stays annotated, not deleted, per the
+  established record-what-was-believed-and-when convention.
 
 ## Blockers
 
