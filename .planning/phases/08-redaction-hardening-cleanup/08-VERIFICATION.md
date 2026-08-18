@@ -13,7 +13,7 @@ overrides_applied: 0
 REDACT-09, REDACT-10, DOCS-05, HYG-04.
 **Verified:** 2026-08-18
 **Status:** passed
-**Re-verification:** No — initial verification
+**Re-verification:** Yes — gates-only re-drive (`--gates-only`) after code-review gap-closure commits `5eea410`/`492cf7f` (WR-01/WR-02/WR-03). See "Re-verification Addendum" below.
 
 ## Goal Achievement
 
@@ -97,7 +97,37 @@ None. All must-haves, key links, and the two SUMMARY-flagged `human_judgment: tr
 
 None. All four Track C requirements (REDACT-09, REDACT-10, DOCS-05, HYG-04) are substantively implemented, wired, tested, and documented. The phase's own GATE-02 contribution (RED-first ancestry for all four requirement pairs) was independently re-derived from git rather than trusted from SUMMARY prose. The human-gated v0.2.0 close-out (version bump, tag, repin) was correctly left unperformed, as required.
 
+## Re-verification Addendum (2026-08-18, gates-only re-drive)
+
+The original verification above (HEAD `7ffa23d9`) predates two gap-closure commits that fixed
+three code-review warnings (`08-REVIEW.md`/`08-REVIEW-FIX.md`, WR-01/WR-02/WR-03):
+
+- `5eea410` fix(08): close code-review warnings WR-01/WR-02/WR-03 (redaction hardening)
+- `492cf7f` docs(08): resolve code review — WR-01/02/03 fixed, info documented-skip
+
+None of the four goal-verify truths above regressed — the changes are additive hardening within
+the same requirements they already cover (REDACT-10 for WR-01/WR-03's `sink.py` changes, HYG-04
+for WR-02's `pyright_baseline.py` change), not new requirements:
+
+| Fix | Touches | Truth affected | Regression? |
+|-----|---------|-----------------|-------------|
+| WR-01 | `sink.py` docstring, `EXTENSION-GUIDE.md` §7 (doc-only, no runtime change) | Truth 2 (REDACT-10) | None — `write()` logic byte-for-byte unchanged; new pinning test `test_sink_binary_only_target_raises_when_redaction_active_documented_limitation` confirms the documented contract is accurate |
+| WR-02 | `scripts/pyright_baseline.py::_run_pyright` (actionable `RuntimeError` instead of bare `JSONDecodeError`) | Truth 4 (HYG-04) | None — gate still exits 0 with the same 12/12 baseline; new pinning test `test_run_pyright_raises_actionable_error_on_non_json_stdout` |
+| WR-03 | `sink.py.__init__` (`self._patterns = tuple(patterns)` snapshot, was a bare reference) | Truth 2 (REDACT-10) | None — closes a latent mutation-during-iteration crash path, strengthening the "never raises" invariant Truth 2 already required; new pinning test `test_sink_snapshots_patterns_against_caller_side_mutation` |
+
+**Re-confirmed independently at current HEAD (`492cf7f339a653ceb69adbfe0c6c912d670147df`):**
+
+| Check | Command | Result |
+|-------|---------|--------|
+| Full suite green | `uv run pytest -q` | 218 passed (was 215 at initial verification — 3 new WR pinning tests) |
+| Security re-audit | `gsd-security-auditor`, stale-audit re-verification per INC-2026-08-12-03 | `## SECURED`, 34/34 threats closed (31 carried-forward re-verified live + 3 new for the WR delta), `threats_open: 0` — see `08-SECURITY.md` audit trail entry dated 2026-08-18, `audited_head: 492cf7f` |
+| Nyquist validation | `08-VALIDATION.md` | Unaffected — `nyquist_compliant: true`, all 4 Per-Task Verification Map rows still ✅ green; the WR fixes landed as additions to already-covered test files (`tests/test_redact_sink.py`, `tests/test_pyright_baseline.py`), not new requirement rows |
+| Code review gate | `08-REVIEW.md` / `08-REVIEW-FIX.md` | `status: resolved` / `status: all_fixed` — left as-is, not re-run |
+
+No new gaps found. Goal achievement score remains 4/4.
+
 ---
 
 _Verified: 2026-08-18_
 _Verifier: Claude (gsd-verifier)_
+_Re-verified: 2026-08-18 (gates-only re-drive, audited_head 492cf7f)_
