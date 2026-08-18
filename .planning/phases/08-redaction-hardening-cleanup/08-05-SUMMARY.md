@@ -318,3 +318,18 @@ Full suite: `uv run pytest -q` → 215 passed, zero warnings. `uv run pytest tes
 ---
 *Phase: 08-redaction-hardening-cleanup*
 *Completed: 2026-08-18*
+
+## Self-Check: PASSED
+
+- FOUND: tests/test_ready_gate.py
+- FOUND: tests/test_panelkit.py
+- FOUND: pyproject.toml
+- FOUND: .planning/REQUIREMENTS.md
+- FOUND: scripts/pyright_baseline.py
+- FOUND: pyright-baseline.json
+- FOUND: tests/test_pyright_baseline.py
+- FOUND: .planning/phases/08-redaction-hardening-cleanup/08-05-SUMMARY.md
+- FOUND commit: 93b2c62 (fix(08-05): make the pyright baseline gate portable across checkouts)
+- FOUND commit: 96b2168 (docs(08-05): settle D-03 retire-vs-keep as KEEP on observed evidence and record the rationale)
+- FOUND commit: 7eec05f (docs(08-05): correct the stale HYG-04 stopgap wording)
+- FOUND commit: d0b5698 (docs(08-05): derive GATE-02 ancestry from git and close REDACT-09)
