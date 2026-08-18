@@ -28,8 +28,9 @@ jurisdiction, and where code goes. The essentials:
 
 - Python 3.12+, `uv` (0.11.x), `hatchling` build backend. Deps: `discord.py==2.7.1` (exact —
   the persistent-view `custom_id` wire contract), `httpx`, `structlog`, `tenacity`. Dev: `pytest`,
-  `ruff`, `grimp`.
+  `ruff`, `grimp`, `pyright` (static type-check gate, dev-only, HYG-04).
 - Run tests: `uv run pytest`. Lint: `uv run ruff check`. Import-hygiene gate:
-  `uv run pytest tests/test_import_hygiene.py`.
+  `uv run pytest tests/test_import_hygiene.py`. Type-check gate (baseline-and-burn-down,
+  `basic` mode over `yahir_reusable_bot/` only): `uv run python scripts/pyright_baseline.py`.
 - Ships **no console script** — it is a library, imported and wired by the consumer's composition
   root, never run on its own.

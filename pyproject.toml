@@ -32,7 +32,22 @@ dev = [
     "syrupy>=5.3.4",
     "time-machine>=2.16",
     "grimp>=3.14",                  # import-hygiene gate (dev-only)
+    "pyright>=1.1.411",             # static type-check gate (dev-only, HYG-04/D-03)
 ]
+
+# HYG-04 (D-03): typeCheckingMode is set EXPLICITLY to "basic" because pyright's own
+# default is "standard" — a stricter mode than D-03 locked. Omitting this key would
+# silently ship a different gate than the one decided, inflating the first-run
+# baseline the bounded pre-repin cleanup phase deliberately avoids flooding.
+# include is scoped to the library package ONLY (source-only, D-03/plan-time
+# decision). Test files use dynamic-eval patterns (get_type_hints with localns=
+# overrides) and hand-written doubles a checker reasonably objects to, and
+# scripts/ holds a standalone stdlib scaffolder predating any checker. Widening to
+# tests/ and scripts/ is a clean follow-up once the source baseline is burned down.
+[tool.pyright]
+typeCheckingMode = "basic"
+pythonVersion = "3.12"
+include = ["yahir_reusable_bot"]
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]

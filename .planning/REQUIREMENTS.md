@@ -261,7 +261,7 @@ RED-first regression test per GATE-02.
   non-vacuity self-proof) so a future edit that drops or regresses either turns the suite red —
   completing the T-06-16 gating begun 2026-08-05. → Phase 8
 
-- [ ] **HYG-04** (v0.2.0 cleanup): A static type checker (mypy or pyright, chosen at plan time) is
+- [x] **HYG-04** (v0.2.0 cleanup): A static type checker (mypy or pyright, chosen at plan time) is
   adopted as a dev-dependency and standing gate, enforcing SURF-02's narrowed `on_online` annotation
   and the public surface's type contracts; adopting it supersedes the `get_type_hints` stopgap.
   Source: `.planning/backlog/ADOPT-STATIC-TYPE-CHECKER.md`. → Phase 8
@@ -324,7 +324,7 @@ Phase numbering **continues from v0.1.2** (which ended at Phase 4). See `.planni
 | REDACT-09 | C (cleanup) | Phase 8 | Planned |
 | REDACT-10 | C (cleanup) | Phase 8 | Complete (2026-08-17) |
 | DOCS-05 | C (cleanup) | Phase 8 | Complete (2026-08-17) |
-| HYG-04 | C (cleanup) | Phase 8 | Planned |
+| HYG-04 | C (cleanup) | Phase 8 | Complete (2026-08-18) |
 | GATE-02 | milestone | all phases (standing) | Pending |
 
 **Coverage: 23/23 mapped — 22 phase-assigned + 1 milestone-standing. No orphans, no duplicates.**
