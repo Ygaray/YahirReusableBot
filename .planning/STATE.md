@@ -3,29 +3,29 @@ gsd_state_version: 1.0
 milestone: v0.2.0
 milestone_name: Redaction promotion + hardening debt
 current_phase: 08
-current_phase_name: redaction-hardening-cleanup
-status: executing
-stopped_at: Phase 8 wave 3 complete (08-03) — resuming wave 4
-last_updated: "2026-08-18T05:30:00.000Z"
-last_activity: 2026-08-17
-last_activity_desc: Phase 8 wave 3 (08-03, REDACT-10 doc half + DOCS-05) executed and merged
+status: completed
+stopped_at: Phase 8 added (Redaction-hardening cleanup) — not yet planned
+last_updated: "2026-08-18T13:53:23.784Z"
+last_activity: 2026-08-18
+last_activity_desc: Phase 08 complete
 progress:
   total_phases: 4
-  completed_phases: 3
+  completed_phases: 4
   total_plans: 19
-  completed_plans: 16
-  percent: 75
+  completed_plans: 19
+  percent: 100
+current_phase_name: redaction-hardening-cleanup
 ---
 
 # Project State
 
 ## Current Position
 
-Phase: 08 (redaction-hardening-cleanup) — EXECUTING
-Plan: 3 of 5
-Status: Executing Phase 08
+Phase: 08
+Plan: Not started
+Status: All phases complete
 Progress: [#######___] 75% (3/4 phases)
-Last activity: 2026-08-17 — Phase 08 wave 3 (08-03) complete
+Last activity: 2026-08-18 — Phase 08 complete
 
 ## Milestone Shape
 
@@ -186,25 +186,32 @@ above with Phase 8's additions folded in.
 
 1. **Version bump and tag cut** — `pyproject.toml` `0.1.2 → 0.2.0`, tag `v0.2.0`. Not done. Verified
    2026-08-18: `git tag --list 'v0.2.0'` is empty; `pyproject.toml` still reads `version = "0.1.2"`.
+
 2. **The WeatherBot repin** — `[tool.uv.sources]` bump `v0.1.2 → v0.2.0`, `uv lock --upgrade`,
    `uv sync`. Not done.
+
 3. **Two separately-green checks, never bundled:**
    - **(a) The PC-01 parity gate** — WeatherBot's existing, unmodified `tests/test_redact_hygiene.py`
      (6 tests) against the hub-backed replacement; all 6 must pass before `weatherbot/_redact.py` is
      deleted. Two of the six need a **signature-level test update**, not merely an import swap,
      because `RedactingWriter`'s constructor differs from the app-local `_LiveStderr` it replaces
      (Phase-6 carry-forward, unchanged).
+
    - **(b) The MATCH-03 duplicate-`spec.name` sweep** — WeatherBot's command specs must be swept for
      duplicate names before the repin lands.
+
 4. **The SURF-02 blast-radius note** — narrowing `on_online` is a public hub-surface change; the only
    live consumer's handler already conforms.
+
 5. **The permanent scope boundary** — `weatherbot/weather/client.py`'s domain-specific redacted
    re-raise stays app-local forever.
+
 6. **NEW from Phase 8 — REDACT-10's `on_error` hook.** `RedactingWriter`'s constructor has gained an
    optional, keyword-only `on_error: Callable[[re.error], None] | None = None` parameter (mirrors
    `on_redaction`'s shape, fires only inside the existing fail-closed `except re.error` branch,
    receives only the caught exception — never the withheld payload). Changes no existing call site
    (default `None`, purely additive) — the repin **may** wire it, but nothing requires it to.
+
 7. **NEW from Phase 8 — the hub now carries a pyright gate the consumer does not inherit.**
    `scripts/pyright_baseline.py` + `pyright-baseline.json` are dev-only,
    `[dependency-groups].dev`-scoped tooling; a consumer pinning the hub via `[tool.uv.sources]` does

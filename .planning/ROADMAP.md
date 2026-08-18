@@ -215,14 +215,14 @@ collection) at a distinct dotted path — do not merge the two by analogy-confus
 - [x] **Phase 5: Redaction core + pattern registration** - The generic scrubbing primitive and a safe-by-construction pattern API (completed 2026-07-29)
 - [x] **Phase 6: Insertion seams + provable backstop** - The load-bearing sink, the additive processor, and proof the backstop is live (completed 2026-08-04)
 - [x] **Phase 7: v0.1.2 debt paydown** - Every open audit item closed; no known footgun, no stale doc (completed 2026-08-04)
-- [ ] **Phase 8: Redaction-hardening cleanup** - Close the four actionable audit residuals (WR-02, WR-03, T-06-16 doc gate, static type checker) before repin (Track C, added 2026-08-17)
+- [x] **Phase 8: Redaction-hardening cleanup** - Close the four actionable audit residuals (WR-02, WR-03, T-06-16 doc gate, static type checker) before repin (Track C, added 2026-08-17) (completed 2026-08-18)
 
 | Phase | Plans Complete | Status | Completed |
 |-------|----------------|--------|-----------|
 | 5. Redaction core + pattern registration | 3/3 | Complete    | 2026-07-29 |
 | 6. Insertion seams + provable backstop | 4/4 | Complete    | 2026-08-04 |
 | 7. v0.1.2 debt paydown | 7/7 | Complete    | 2026-08-04 |
-| 8. Redaction-hardening cleanup | 0/? | Planned     | —          |
+| 8. Redaction-hardening cleanup | 5/5 | Complete    | 2026-08-18 |
 
 ### v0.2.0 Phase Details
 
@@ -452,7 +452,7 @@ discuss time whether they are corrected or annotated.
 prose or an unenforced stopgap — before the milestone completes and repins. Track C.
 **Requirements:** REDACT-09 (WR-02), REDACT-10 (WR-03), DOCS-05 (T-06-16 residual), HYG-04 (static type checker)
 **Depends on:** Phase 7
-**Plans:** 5/5 plans executed
+**Plans:** 5/5 plans complete
 
 Source of record: `.planning/v0.2.0-MILESTONE-AUDIT.md` (tech-debt review) plus the three phase
 `*-SECURITY.md` findings. Accepted-risks and the parked EXT points are deliberately **excluded** —
