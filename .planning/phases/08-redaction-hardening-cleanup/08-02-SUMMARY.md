@@ -145,3 +145,10 @@ None - no external service configuration required.
 ---
 *Phase: 08-redaction-hardening-cleanup*
 *Completed: 2026-08-17*
+
+## Self-Check: PASSED
+
+- FOUND: `.planning/phases/08-redaction-hardening-cleanup/08-02-SUMMARY.md`
+- FOUND: `724ae55` (Task 1 RED commit)
+- FOUND: `db59297` (Task 2 GREEN commit)
+- FOUND: `4da50d3` (SUMMARY.md commit)
