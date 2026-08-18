@@ -199,3 +199,13 @@ None beyond the package-legitimacy approval already recorded and honored (`08-CO
 ---
 *Phase: 08-redaction-hardening-cleanup*
 *Completed: 2026-08-18*
+
+## Self-Check: PASSED
+
+- FOUND: tests/test_pyright_baseline.py
+- FOUND: scripts/pyright_baseline.py
+- FOUND: pyright-baseline.json
+- FOUND: .planning/phases/08-redaction-hardening-cleanup/08-04-SUMMARY.md
+- FOUND commit: b71a2a4 (test(08-04): add RED-first unit tests for the pyright baseline diff logic)
+- FOUND commit: cc7e34b (feat(08-04): adopt pyright basic with a hand-rolled baseline gate)
+- FOUND commit: 093896b (docs(08-04): complete pyright baseline gate plan)
