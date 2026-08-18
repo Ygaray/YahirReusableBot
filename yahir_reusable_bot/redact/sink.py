@@ -61,6 +61,19 @@ class RedactingWriter:
     only ever sees the text a renderer (or a stdlib ``logging`` handler, or a bare
     ``print()``) has already produced. That single property is what lets one class
     satisfy both of D-54's wirings.
+
+    **TEXT-MODE contract when redaction is active (WR-01).** When redaction actually runs
+    (enabled AND a non-empty pattern set), a ``bytes``-like payload is decoded to ``str``
+    and the scrubbed ``str`` — never a re-encoded ``bytes`` — is what reaches the wrapped
+    target. The target must therefore accept ``str`` while redaction is active: a text
+    stream (``sys.stderr``, a ``"w"`` file, structlog's ``PrintLoggerFactory`` file), not
+    a raw binary stream. A binary-only target (``"wb"`` file, ``sys.stdout.buffer``, a
+    socket) works only while redaction is disabled/unpatterned — where the original
+    ``bytes`` is forwarded by identity (point 3 of :meth:`write`) — and raises
+    ``TypeError`` once redaction turns on. This bytes->str asymmetry is a deliberate,
+    documented limitation (see EXTENSION-GUIDE.md "Known limitations"), not a re-encode
+    the class attempts: re-encoding a scrubbed line back to ``bytes`` would only paper
+    over the fact that regex-scrubbing an arbitrary binary stream is not meaningful.
     """
 
     def __init__(
@@ -100,7 +113,16 @@ class RedactingWriter:
         fire on this path, because no substitution actually happened.
         """
         self._target = target
-        self._patterns = patterns
+        # WR-03 (code review): snapshot the sequence rather than binding the caller's
+        # object. `redact_secrets` iterates this with a plain `for rp in patterns`; if a
+        # caller passed a mutable `list` (the `Sequence` hint permits it) and later
+        # mutated it from another thread mid-`write`, that iteration could raise
+        # `RuntimeError: list changed size during iteration` — uncaught by `write`'s
+        # `except re.error` guard and so a breach of this class's "never raises"
+        # invariant. A `tuple` is immutable, so the writer's view can never be mutated
+        # out from under an in-flight redaction. (`tuple(x)` returns `x` itself when `x`
+        # is already a tuple, so the common tuple-literal call keeps object identity.)
+        self._patterns = tuple(patterns)
         self._enabled = enabled
         self._on_redaction = on_redaction
         self._on_error = on_error

@@ -319,6 +319,70 @@ def test_sink_disabled_or_unpatterned_forwards_bytes_by_identity():
     assert capture_unpatterned.pieces[0] is payload
 
 
+def test_sink_binary_only_target_raises_when_redaction_active_documented_limitation():
+    """WR-01 (code review, option b): the writer's forwarding contract is TEXT-MODE
+    when redaction is ACTIVE. A wrapped target whose ``write()`` genuinely rejects
+    ``str`` (a real binary-mode stream — a ``"wb"`` file, a socket, ``sys.stdout.buffer``)
+    works while redaction is off: point-1/point-3 forward the payload as the original
+    ``bytes`` object BY IDENTITY. But once redaction is active the payload is decoded to
+    ``str`` and the scrubbed ``str`` is what reaches the target, so a binary-only target
+    raises ``TypeError``. This bytes->str asymmetry is a DOCUMENTED Known limitation
+    (EXTENSION-GUIDE.md), not a silent surprise; this test pins the boundary the code
+    review found untested."""
+
+    class _BinaryOnlyTarget:
+        """Models a real binary-mode stream: rejects ``str`` exactly like
+        ``io.BytesIO().write("x")`` / ``sys.stdout.buffer.write("x")`` do."""
+
+        def __init__(self) -> None:
+            self.pieces: list[bytes] = []
+
+        def write(self, data: object) -> int:
+            if not isinstance(data, (bytes, bytearray, memoryview)):
+                raise TypeError("a bytes-like object is required, not 'str'")
+            self.pieces.append(bytes(data))
+            return len(bytes(data))
+
+        def flush(self) -> None:  # pragma: no cover - unused
+            pass
+
+    payload = f"appid={SENTINEL}".encode()
+    pattern = RedactionPattern.literal(SENTINEL)
+
+    # Redaction OFF: forwarded as the original bytes by identity — binary target is happy.
+    off_target = _BinaryOnlyTarget()
+    RedactingWriter(off_target, (pattern,), enabled=False).write(payload)
+    assert off_target.pieces == [payload]
+
+    # Redaction ACTIVE: payload is decoded to str and the scrubbed str is forwarded — the
+    # documented text-mode contract means a binary-only target raises.
+    on_target = _BinaryOnlyTarget()
+    with pytest.raises(TypeError):
+        RedactingWriter(on_target, (pattern,)).write(payload)
+
+
+def test_sink_snapshots_patterns_against_caller_side_mutation():
+    """WR-03 (code review): the constructor SNAPSHOTS the pattern sequence, so a caller
+    that later mutates the same list object cannot change what the writer redacts — and,
+    for a shared list mutated on another thread mid-``write``, cannot make
+    ``redact_secrets``'s ``for rp in patterns`` iteration raise ``RuntimeError: list
+    changed size during iteration``, which would break the class's own "never raises"
+    invariant (``write``'s ``except re.error`` guard does not catch ``RuntimeError``).
+
+    Deterministic proof of the snapshot: pass a mutable ``list``, then ``clear()`` it
+    AFTER construction. Without ``tuple(patterns)`` the writer's own pattern set would be
+    emptied by the caller's ``clear()`` and the sentinel would leak; with the snapshot it
+    is still redacted."""
+    capture = _CaptureDouble()
+    patterns = [RedactionPattern.literal(SENTINEL)]
+    writer = RedactingWriter(capture, patterns)
+
+    patterns.clear()  # caller mutates their own list AFTER handing it to the writer
+    writer.write(f"appid={SENTINEL}")
+
+    assert SENTINEL not in capture.all_output  # snapshot held — still redacted
+
+
 def test_sink_delegates_unknown_stream_attributes_to_target():
     """``__getattr__`` delegates attributes this class does not define to the wrapped
     target, proving the writer is a usable ``sys.stderr`` stand-in for callers that

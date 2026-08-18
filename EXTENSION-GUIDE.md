@@ -230,6 +230,12 @@ this branch unreachable in the first place.
 - A `name=value`-shaped pattern whose value boundary excludes a quote or backslash can under-redact
   a secret whose own value contains one of those characters inside already-escaped text —
   literal-value mode (`RedactionPattern.literal`) matches verbatim and sidesteps it.
+- `RedactingWriter` is a TEXT-MODE sink when redaction is active: a `bytes`-like payload is decoded
+  to `str` and the scrubbed `str` (not a re-encoded `bytes`) is forwarded, so the wrapped target must
+  accept `str` (`sys.stderr`, a `"w"` file, structlog's render file). A binary-only target (`"wb"`
+  file, `sys.stdout.buffer`, a socket) works only while redaction is disabled/unpatterned — where the
+  original `bytes` is forwarded by identity — and raises `TypeError` once redaction turns on. Wrap the
+  target's text layer, not its raw byte buffer.
 
 **Implemented:** `RedactingWriter` (rendered-text sink, both recipes, redaction counter,
 `probe_redaction_path`), `assert_redaction_active` (wiring proof, opt-in deep check, ordering

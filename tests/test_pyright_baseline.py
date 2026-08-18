@@ -19,11 +19,16 @@ from __future__ import annotations
 
 from pathlib import Path
 
+import subprocess
+
+import pytest
+
 from scripts.pyright_baseline import (
     _assert_run_was_not_vacuous,
     _diagnostic_key,
     _new_diagnostics,
     _relativize_diagnostics,
+    _run_pyright,
 )
 
 _ROOT = Path("/repo")
@@ -165,3 +170,34 @@ def test_a_run_that_analyzed_zero_files_is_rejected_as_vacuous():
         "summary": {"filesAnalyzed": 12, "errorCount": 0, "warningCount": 0},
     }
     _assert_run_was_not_vacuous(clean_report)  # must not raise — clean, not vacuous
+
+
+def test_run_pyright_raises_actionable_error_on_non_json_stdout(monkeypatch):
+    """WR-02 (code review): when the ``uv run pyright --outputjson`` invocation fails to
+    emit valid JSON (an unrecognized flag, a Node runtime that failed to download, a
+    broken executable), ``result.stdout`` is empty and ``json.loads("")`` would raise a
+    bare ``json.JSONDecodeError`` — an opaque traceback that hides the real cause. The
+    gate must instead surface an ACTIONABLE ``RuntimeError`` naming the exit code and
+    carrying pyright's own stderr.
+
+    Monkeypatches ``subprocess.run`` so no Node runtime is needed — consistent with this
+    suite's synthetic, dependency-free design (also closing the IN-02 coverage gap for
+    ``_run_pyright`` itself)."""
+
+    def _fake_run(*_args, **_kwargs):
+        return subprocess.CompletedProcess(
+            args=["uv", "run", "pyright", "--outputjson"],
+            returncode=2,
+            stdout="",
+            stderr="Unexpected option --nonexistent-flag.\npyright --help for usage\n",
+        )
+
+    monkeypatch.setattr(subprocess, "run", _fake_run)
+
+    with pytest.raises(RuntimeError) as excinfo:
+        _run_pyright()
+
+    message = str(excinfo.value)
+    assert "pyright" in message.lower()  # names the tool that didn't run
+    assert "2" in message  # surfaces the exit code
+    assert "Unexpected option" in message  # carries pyright's own stderr for the operator

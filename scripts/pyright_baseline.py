@@ -55,7 +55,20 @@ def _run_pyright() -> dict:
         text=True,
         check=False,
     )
-    return json.loads(result.stdout)
+    try:
+        return json.loads(result.stdout)
+    except json.JSONDecodeError as exc:
+        # WR-02 (code review): `check=False` (above) means an invocation that never
+        # produced JSON — an unrecognized flag, a Node runtime that failed to
+        # download/initialize, a broken executable — reaches here with empty/garbage
+        # stdout, and a bare `json.loads` would surface an opaque `JSONDecodeError`
+        # traceback that hides the real cause. Re-raise with an actionable message
+        # naming the exit code and carrying pyright's own stderr, so the operator sees
+        # that pyright ITSELF did not run rather than a cryptic parse error.
+        raise RuntimeError(
+            f"pyright did not produce valid JSON output (exit code "
+            f"{result.returncode}); stderr:\n{result.stderr}"
+        ) from exc
 
 
 def _diagnostic_key(diag: dict, root: Path) -> tuple[str, str, str]:
