@@ -70,6 +70,7 @@ class RedactingWriter:
         *,
         enabled: bool = True,
         on_redaction: Callable[[int], None] | None = None,
+        on_error: Callable[[re.error], None] | None = None,
     ) -> None:
         """Store the wiring; read no ambient process state.
 
@@ -82,11 +83,27 @@ class RedactingWriter:
         ``on_redaction`` (D-57) is an optional push hook, off by default. When
         supplied, it fires from inside :meth:`write`'s guarded increment (see there for
         the swallow-and-continue contract, D-52).
+
+        ``on_error`` (REDACT-10, D-01) is an optional push hook, off by default and
+        stored verbatim as ``self._on_error``, mirroring ``on_redaction``'s
+        registration shape. It fires ONLY from inside
+        :meth:`write`'s ``except re.error`` branch — the fail-closed malformed-pattern
+        withholding — and NEVER on a successful redaction. It receives the caught
+        ``re.error`` and nothing else: never the withheld payload, which is unproven
+        and may itself carry the very secret that branch exists to withhold, so handing
+        it to a consumer callback would be a fail-open through the observability door.
+        It fires only after the fixed placeholder has already reached the wrapped
+        target, so a slow hook can never delay the fail-closed write itself, and it is
+        wrapped in the identical swallow-and-continue guard ``on_redaction`` uses — a
+        raising or slow ``on_error`` callback can never break the caller's hot logging
+        call (D-52). The redaction counter does not move and ``on_redaction`` does not
+        fire on this path, because no substitution actually happened.
         """
         self._target = target
         self._patterns = patterns
         self._enabled = enabled
         self._on_redaction = on_redaction
+        self._on_error = on_error
         self._lock = threading.Lock()  # D-59: a real lock, not GIL-era int += atomicity
         self._count = 0
 
@@ -124,7 +141,13 @@ class RedactingWriter:
                non-secret placeholder is written in its place: this method fails
                CLOSED, not open. The redaction counter is not incremented and
                ``on_redaction`` does not fire for this path — no substitution
-               actually happened, only a withholding.
+               actually happened, only a withholding. REDACT-10 (D-01): once the
+               placeholder has reached the target, the optional ``on_error`` hook
+               fires with the caught ``re.error`` — and ONLY the error, never the
+               withheld payload — so the withholding becomes observable instead of
+               silently swallowed. Guarded with the identical swallow-and-continue
+               wrapper ``on_redaction`` uses, so a raising or slow ``on_error``
+               callback can never break the caller's hot logging call either.
         3. Every other path — not text, redaction off, or an empty pattern set —
            forwards the payload to the target UNTOUCHED and BY IDENTITY. This holds
            for a ``bytes``/``bytearray``/``memoryview`` payload too: point 1's decode
@@ -154,14 +177,24 @@ class RedactingWriter:
         if isinstance(data, str) and self._enabled and self._patterns:
             try:
                 scrubbed = redact_secrets(data, self._patterns)
-            except re.error:
+            except re.error as exc:
                 # WR-03 (see this method's own docstring, point 2a): a hand-built,
                 # unregistered pattern is out of `redact_secrets`'s documented
                 # contract and can raise here. Fail CLOSED — withhold the original
                 # (possibly secret-bearing) payload rather than forward it
                 # unredacted, and never let the exception itself reach the caller's
                 # hot logging call.
-                return self._target.write(_MALFORMED_PATTERN_PLACEHOLDER)
+                result = self._target.write(_MALFORMED_PATTERN_PLACEHOLDER)
+                # REDACT-10 (D-01): the placeholder has already reached the target
+                # above, so a slow hook can never delay the fail-closed write. Only
+                # the caught error is passed — never the withheld payload.
+                on_error = self._on_error
+                if on_error is not None:
+                    try:
+                        on_error(exc)
+                    except Exception:  # noqa: BLE001 — never break the hot write path
+                        pass
+                return result
             if scrubbed != data:
                 with self._lock:
                     self._count += 1
