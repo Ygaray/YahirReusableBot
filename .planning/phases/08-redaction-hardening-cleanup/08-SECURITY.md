@@ -4,7 +4,7 @@ slug: redaction-hardening-cleanup
 status: verified
 threats_open: 0
 asvs_level: 1
-audited_head: 7ffa23d9e7a8f235ce1692dd5db31fd97ed8d2e8
+audited_head: 492cf7f339a653ceb69adbfe0c6c912d670147df
 created: 2026-08-18
 ---
 
@@ -67,6 +67,9 @@ created: 2026-08-18
 | T-08-05-05 | Tampering | the scratch experiment edit | medium | mitigate | `96b2168`'s `pyproject.toml` diff is comment-only; library-source diff empty | closed |
 | T-08-05-06 | Repudiation | premature checkbox flips | medium | mitigate | Flips isolated to Task 3 (`d0b5698`); deviation disclosed and retroactively confirmed correct | closed |
 | T-08-05-SC | Tampering (supply chain) | npm/pip/cargo installs | low | accept | Plan 08-05's only `pyproject.toml` touch is comment-only | closed |
+| T-08-06-01 | Tampering / Denial of Service | `RedactingWriter._patterns` (mutation-during-iteration) | high | mitigate | `sink.py:125` snapshots `self._patterns = tuple(patterns)` at construction (was a bare reference pre-fix); all iteration sites (`write()`, `probe_redaction_path()`, `redact_secrets()`) read only the tuple, so no caller-side mutation — same-thread or cross-thread — can reach the iteration and raise `RuntimeError`, which would otherwise breach the "never raises" invariant. Pinned `tests/test_redact_sink.py:364-383`, RED-first per commit `5eea410`, confirmed GREEN at audited_head. | closed |
+| T-08-06-02 | Information Disclosure / Repudiation | `scripts/pyright_baseline.py::_run_pyright` error path | low | mitigate | `_run_pyright` re-raises `RuntimeError(...) from exc` naming the exit code and carrying pyright's stderr instead of a bare `JSONDecodeError`; `from exc` preserves the original cause. Stderr originates from the dev-only `uv run pyright --outputjson` CLI invocation (bad flag/broken executable/Node failure) — consistent with the existing T-08-04-06 low/accept precedent for this gate's non-credential output. Pinned `tests/test_pyright_baseline.py:175-203`, confirmed GREEN. | closed |
+| T-08-06-03 | Information Disclosure (documentation-only) | `sink.py` class docstring + `EXTENSION-GUIDE.md` §7 (WR-01 text-mode contract paragraph) | low | accept | Verified no runtime change: `git show 5eea410 -- yahir_reusable_bot/redact/sink.py` shows the only hunks are a new docstring paragraph plus the unrelated WR-03 tuple line; `write()`'s logic is byte-for-byte unchanged. Documentation accuracy independently verified by `tests/test_redact_sink.py:322-361` `test_sink_binary_only_target_raises_when_redaction_active_documented_limitation`, confirmed GREEN. | closed |
 
 *Status: open · closed · open — below high threshold (non-blocking)*
 *Severity: critical > high > medium > low — only open threats at or above `high` (workflow.security_block_on) count toward threats_open*
@@ -82,6 +85,7 @@ created: 2026-08-18
 | AR-08-03 | T-08-03-05 | The new §7 guide paragraph describes a fail-closed control using a self-describing, non-secret placeholder constant — consistent with the section's existing public disclosure posture. | gsd-security-auditor (Phase 8 audit) | 2026-08-18 |
 | AR-08-SC-01 | T-08-01-SC / T-08-02-SC / T-08-03-SC / T-08-05-SC | Zero package-manager installs across plans 08-01/02/03/05. | gsd-security-auditor (Phase 8 audit) | 2026-08-18 |
 | AR-08-04 | T-08-04-06 | `pyright-baseline.json` records file paths, rule names, and diagnostic messages from the library's own already-public source; the `_relativize_diagnostics` fix additionally strips any local filesystem prefix. No credentials or environment values are involved. | gsd-security-auditor (Phase 8 audit) | 2026-08-18 |
+| AR-08-06 | T-08-06-03 | The new WR-01 docstring/`EXTENSION-GUIDE.md` paragraph documents a pre-existing, unchanged bytes→str behavior; introduces no new runtime code path and no secret-bearing content. | gsd-security-auditor (Phase 8 stale-audit re-verification) | 2026-08-18 |
 
 *Accepted risks do not resurface in future audit runs.*
 
@@ -92,6 +96,7 @@ created: 2026-08-18
 | Audit Date | Threats Total | Closed | Open | Run By |
 |------------|---------------|--------|------|--------|
 | 2026-08-18 | 31 | 31 | 0 | gsd-security-auditor (opus, ASVS L1, block_on=high) |
+| 2026-08-18 | 34 | 34 | 0 | gsd-security-auditor (stale-audit re-verification, INC-2026-08-12-03 — audited_head advanced from `7ffa23d9` to `492cf7f3` after code-review gap-closure commits `5eea410`/`492cf7f`; all 31 prior threats re-verified live, not re-copied blind; 3 new threats constructed for the WR-01/02/03 delta) |
 
 ---
 
@@ -102,4 +107,4 @@ created: 2026-08-18
 - [x] `threats_open: 0` confirmed
 - [x] `status: verified` set in frontmatter
 
-**Approval:** verified 2026-08-18
+**Approval:** verified 2026-08-18 (re-audited 2026-08-18 against `audited_head: 492cf7f`)
