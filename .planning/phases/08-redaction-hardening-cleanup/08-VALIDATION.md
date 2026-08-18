@@ -1,9 +1,9 @@
 ---
 phase: 8
 slug: redaction-hardening-cleanup
-status: draft
-nyquist_compliant: false
-wave_0_complete: false
+status: validated
+nyquist_compliant: true
+wave_0_complete: true
 created: 2026-08-17
 ---
 
@@ -40,10 +40,10 @@ created: 2026-08-17
 
 | Requirement | Behavior | Test Type | Automated Command | File Exists | Status |
 |-------------|----------|-----------|---------------------|-------------|--------|
-| REDACT-09 | `RedactionPattern.literal(...)`'s raw source stays inaccessible via accidental paths; `asdict`/`astuple` residual is documented + pinned | unit | `uv run pytest tests/test_redact_core.py -k "leak or asdict" -x` | ✅ (`tests/test_redact_core.py:236-273`) | ✅ green — already shipped; plan task is verify/cross-reference, not new code |
-| REDACT-10 | `RedactingWriter.write` fails closed on `re.error`; new `on_error` hook fires observably without raising, mirroring `on_redaction`'s swallow-and-continue guard | unit | `uv run pytest tests/test_redact_sink.py -k "malformed or on_error" -x` | Placeholder test exists (`:435-458`); `on_error` test does NOT exist yet | ⬜ Wave 0 gap |
-| DOCS-05 | Telemetry semantics ("changed writes, not substitutions / monotonic") and reconfigure-discipline ("call `assert_redaction_active` again after any reconfiguration") claims are regression-gated, each with a non-vacuity self-proof | unit (doc-content) | `uv run pytest tests/test_extension_guide.py -x` | Both new tests do NOT exist yet; template pattern (`:324-403`) confirmed present | ⬜ Wave 0 gap |
-| HYG-04 | `pyright basic` mode gate lands green (baseline-and-burn-down); SURF-02's `get_type_hints` assertions retire-vs-keep decided explicitly | static-analysis (not pytest) | `uv run pyright` | Tool not installed, config not written | ⬜ Wave 0 gap |
+| REDACT-09 | `RedactionPattern.literal(...)`'s raw source stays inaccessible via accidental paths; `asdict`/`astuple` residual is documented + pinned | unit | `uv run pytest tests/test_redact_core.py -k "leak or asdict or wr02" -x` | ✅ (`tests/test_redact_core.py:236-363`) | ✅ green |
+| REDACT-10 | `RedactingWriter.write` fails closed on `re.error`; new `on_error` hook fires observably without raising, mirroring `on_redaction`'s swallow-and-continue guard | unit | `uv run pytest tests/test_redact_sink.py -k "malformed or on_error" -x` | ✅ (`tests/test_redact_sink.py:522-602` — hook delivery, no-leak payload gate, raising-hook survival) | ✅ green |
+| DOCS-05 | Telemetry semantics ("changed writes, not substitutions / monotonic") and reconfigure-discipline ("call `assert_redaction_active` again after any reconfiguration") claims are regression-gated, each with a non-vacuity self-proof | unit (doc-content) | `uv run pytest tests/test_extension_guide.py -x` | ✅ (`tests/test_extension_guide.py:441-618` — both gates + non-vacuity self-proofs) | ✅ green |
+| HYG-04 | `pyright basic` mode gate lands green (baseline-and-burn-down); SURF-02's `get_type_hints` assertions retire-vs-keep decided explicitly | static-analysis (not pytest) | `uv run python scripts/pyright_baseline.py` | ✅ (`scripts/pyright_baseline.py`, `pyright-baseline.json`, `tests/test_pyright_baseline.py`); KEEP decided on observed evidence, `get_type_hints` assertions kept (`tests/test_ready_gate.py`, `tests/test_panelkit.py`) | ✅ green |
 
 *Status: ⬜ pending · ✅ green · ❌ red · ⚠️ flaky*
 
@@ -51,12 +51,12 @@ created: 2026-08-17
 
 ## Wave 0 Requirements
 
-- [ ] New `on_error` hook in `yahir_reusable_bot/redact/sink.py` — does not exist today; needs a RED-first test in `tests/test_redact_sink.py` before implementation (REDACT-10).
-- [ ] `EXTENSION-GUIDE.md` §7 malformed-pattern paragraph — does not exist yet (REDACT-10).
-- [ ] Two new tests in `tests/test_extension_guide.py` (telemetry-semantics gate, reconfigure-discipline gate) mirroring the Known-limitations gate pattern at `:324-403`, each with its own non-vacuity self-proof — do not exist yet (DOCS-05).
-- [ ] `pyright` dev-dependency (`uv add --dev pyright`) + `[tool.pyright]` config table (`typeCheckingMode = "basic"` explicit, not default) + first-run baseline mechanism (hand-rolled diff script — no `pyright-baseline` package exists on PyPI/npm) — none of this exists in the repo today (HYG-04).
+- [x] New `on_error` hook in `yahir_reusable_bot/redact/sink.py` — shipped in plan 08-02, RED-first (REDACT-10).
+- [x] `EXTENSION-GUIDE.md` §7 malformed-pattern paragraph — shipped in plan 08-03, RED-first (REDACT-10).
+- [x] Two new tests in `tests/test_extension_guide.py` (telemetry-semantics gate, reconfigure-discipline gate), each with its own non-vacuity self-proof — shipped in plan 08-03; both pin already-true prose so GATE-02-satisfying evidence is each self-proof, not a RED commit (DOCS-05).
+- [x] `pyright` dev-dependency + `[tool.pyright]` config table (`typeCheckingMode = "basic"` explicit) + hand-rolled baseline-and-burn-down gate — shipped in plan 08-04 behind its own human legitimacy checkpoint (approved); portability bug found and fixed in plan 08-05 (HYG-04).
 
-*(REDACT-09 has no Wave 0 gap — its test coverage already exists and is green.)*
+*(REDACT-09 had no Wave 0 gap — its test coverage already existed and was green; plan 08-01 added the rationale-retention gate and plan 08-05 derived its GATE-02 ancestry from git.)*
 
 ---
 
@@ -69,16 +69,26 @@ created: 2026-08-17
 
 ---
 
+## Validation Audit 2026-08-18
+
+| Metric | Count |
+|--------|-------|
+| Gaps found | 0 |
+| Resolved | 0 (all four requirements shipped automated coverage during execution — no post-hoc gap-filling needed) |
+| Escalated | 0 |
+
+All four Per-Task Verification Map rows are ✅ green. Zero MISSING/PARTIAL rows remain.
+
 ## Validation Sign-Off
 
 > **FINALIZED post-execution** by the Nyquist finalizer (`verify:post` → `validate-phase`,
-> invoked by execute-phase `finalize_nyquist_validation`). This is a plan-time DRAFT only.
+> invoked by execute-phase `finalize_nyquist_gate`).
 
-- [ ] All tasks have `<automated>` verify or Wave 0 dependencies
-- [ ] Sampling continuity: no 3 consecutive tasks without automated verify
-- [ ] Wave 0 covers all MISSING references
-- [ ] No watch-mode flags
-- [ ] Feedback latency < 5s
-- [ ] _(finalizer-only)_ `nyquist_compliant: true` — gap analysis finds zero MISSING/PARTIAL rows
+- [x] All tasks have `<automated>` verify or Wave 0 dependencies
+- [x] Sampling continuity: no 3 consecutive tasks without automated verify
+- [x] Wave 0 covers all MISSING references
+- [x] No watch-mode flags
+- [x] Feedback latency < 5s
+- [x] _(finalizer-only)_ `nyquist_compliant: true` — gap analysis finds zero MISSING/PARTIAL rows
 
-**Approval:** pending — finalizer-owned, not set at plan time.
+**Approval:** verified 2026-08-18.
