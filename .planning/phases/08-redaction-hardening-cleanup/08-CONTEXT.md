@@ -90,5 +90,18 @@ None — discussion stayed within phase scope. The v0.2.0 repin/deploy itself re
 
 ---
 
+## Runtime Decisions
+
+- **2026-08-18 — HYG-04 pyright install APPROVED (operator).** The execute stage held on
+  `uv add --dev pyright` because the automated package-legitimacy check returned SUS — caused
+  solely by a `pypistats.org` rate-limit (HTTP 429) that emptied the download-count signal, not by
+  any real red flag. Operator reviewed and approved the install: `pyright` (the
+  `RobertCraigie/pyright-python` wrapper — the de-facto PyPI channel for Microsoft's pyright, 206
+  releases over ~6 years, active repo) lands in `[dependency-groups].dev` ONLY, never
+  `[project].dependencies`, so it can never reach a hub consumer. This confirms locked decision
+  **D-03** (pyright basic-mode static type check). Proceed with the install and complete HYG-04.
+
+---
+
 *Phase: 8-redaction-hardening-cleanup*
 *Context gathered: 2026-08-17*
