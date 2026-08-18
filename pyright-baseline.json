@@ -1,0 +1,205 @@
+{
+  "generalDiagnostics": [
+    {
+      "file": "/home/yahir/Projects/Reusable/YahirReusableBot/.claude/worktrees/agent-afa9e3f8c092818ca/yahir_reusable_bot/config/reload.py",
+      "message": "Import \"watchfiles\" could not be resolved",
+      "range": {
+        "end": {
+          "character": 23,
+          "line": 284
+        },
+        "start": {
+          "character": 13,
+          "line": 284
+        }
+      },
+      "rule": "reportMissingImports",
+      "severity": "error"
+    },
+    {
+      "file": "/home/yahir/Projects/Reusable/YahirReusableBot/.claude/worktrees/agent-afa9e3f8c092818ca/yahir_reusable_bot/discord/gateway.py",
+      "message": "Parameter declaration \"on_message\" is obscured by a declaration of the same name",
+      "range": {
+        "end": {
+          "character": 14,
+          "line": 76
+        },
+        "start": {
+          "character": 4,
+          "line": 76
+        }
+      },
+      "rule": "reportRedeclaration",
+      "severity": "error"
+    },
+    {
+      "file": "/home/yahir/Projects/Reusable/YahirReusableBot/.claude/worktrees/agent-afa9e3f8c092818ca/yahir_reusable_bot/discord/panelkit.py",
+      "message": "Cannot assign to attribute \"disabled\" for class \"Item[Unknown]\"\n\u00a0\u00a0Attribute \"disabled\" is unknown",
+      "range": {
+        "end": {
+          "character": 26,
+          "line": 456
+        },
+        "start": {
+          "character": 18,
+          "line": 456
+        }
+      },
+      "rule": "reportAttributeAccessIssue",
+      "severity": "error"
+    },
+    {
+      "file": "/home/yahir/Projects/Reusable/YahirReusableBot/.claude/worktrees/agent-afa9e3f8c092818ca/yahir_reusable_bot/lifecycle/identity.py",
+      "message": "Parameter declaration \"cmdline_reader\" is obscured by a declaration of the same name",
+      "range": {
+        "end": {
+          "character": 18,
+          "line": 115
+        },
+        "start": {
+          "character": 4,
+          "line": 115
+        }
+      },
+      "rule": "reportRedeclaration",
+      "severity": "error"
+    },
+    {
+      "file": "/home/yahir/Projects/Reusable/YahirReusableBot/.claude/worktrees/agent-afa9e3f8c092818ca/yahir_reusable_bot/redact/sink.py",
+      "message": "Cannot access attribute \"write\" for class \"object\"\n\u00a0\u00a0Attribute \"write\" is unknown",
+      "range": {
+        "end": {
+          "character": 41,
+          "line": 174
+        },
+        "start": {
+          "character": 36,
+          "line": 174
+        }
+      },
+      "rule": "reportAttributeAccessIssue",
+      "severity": "error"
+    },
+    {
+      "file": "/home/yahir/Projects/Reusable/YahirReusableBot/.claude/worktrees/agent-afa9e3f8c092818ca/yahir_reusable_bot/redact/sink.py",
+      "message": "Cannot access attribute \"write\" for class \"object\"\n\u00a0\u00a0Attribute \"write\" is unknown",
+      "range": {
+        "end": {
+          "character": 43,
+          "line": 186
+        },
+        "start": {
+          "character": 38,
+          "line": 186
+        }
+      },
+      "rule": "reportAttributeAccessIssue",
+      "severity": "error"
+    },
+    {
+      "file": "/home/yahir/Projects/Reusable/YahirReusableBot/.claude/worktrees/agent-afa9e3f8c092818ca/yahir_reusable_bot/redact/sink.py",
+      "message": "Cannot access attribute \"write\" for class \"object\"\n\u00a0\u00a0Attribute \"write\" is unknown",
+      "range": {
+        "end": {
+          "character": 37,
+          "line": 207
+        },
+        "start": {
+          "character": 32,
+          "line": 207
+        }
+      },
+      "rule": "reportAttributeAccessIssue",
+      "severity": "error"
+    },
+    {
+      "file": "/home/yahir/Projects/Reusable/YahirReusableBot/.claude/worktrees/agent-afa9e3f8c092818ca/yahir_reusable_bot/redact/sink.py",
+      "message": "Cannot access attribute \"write\" for class \"object\"\n\u00a0\u00a0Attribute \"write\" is unknown",
+      "range": {
+        "end": {
+          "character": 33,
+          "line": 208
+        },
+        "start": {
+          "character": 28,
+          "line": 208
+        }
+      },
+      "rule": "reportAttributeAccessIssue",
+      "severity": "error"
+    },
+    {
+      "file": "/home/yahir/Projects/Reusable/YahirReusableBot/.claude/worktrees/agent-afa9e3f8c092818ca/yahir_reusable_bot/redact/sink.py",
+      "message": "Cannot access attribute \"flush\" for class \"object\"\n\u00a0\u00a0Attribute \"flush\" is unknown",
+      "range": {
+        "end": {
+          "character": 26,
+          "line": 224
+        },
+        "start": {
+          "character": 21,
+          "line": 224
+        }
+      },
+      "rule": "reportAttributeAccessIssue",
+      "severity": "error"
+    },
+    {
+      "file": "/home/yahir/Projects/Reusable/YahirReusableBot/.claude/worktrees/agent-afa9e3f8c092818ca/yahir_reusable_bot/redact/verify.py",
+      "message": "Argument of type \"object\" cannot be assigned to parameter \"iterable\" of type \"Iterable[_T@enumerate]\" in function \"__new__\"\n\u00a0\u00a0\"object\" is incompatible with protocol \"Iterable[_T@enumerate]\"\n\u00a0\u00a0\u00a0\u00a0\"__iter__\" is not present",
+      "range": {
+        "end": {
+          "character": 52,
+          "line": 135
+        },
+        "start": {
+          "character": 42,
+          "line": 135
+        }
+      },
+      "rule": "reportArgumentType",
+      "severity": "error"
+    },
+    {
+      "file": "/home/yahir/Projects/Reusable/YahirReusableBot/.claude/worktrees/agent-afa9e3f8c092818ca/yahir_reusable_bot/redact/verify.py",
+      "message": "Argument of type \"object\" cannot be assigned to parameter \"iterable\" of type \"Iterable[_T@enumerate]\" in function \"__new__\"\n\u00a0\u00a0\"object\" is incompatible with protocol \"Iterable[_T@enumerate]\"\n\u00a0\u00a0\u00a0\u00a0\"__iter__\" is not present",
+      "range": {
+        "end": {
+          "character": 56,
+          "line": 146
+        },
+        "start": {
+          "character": 46,
+          "line": 146
+        }
+      },
+      "rule": "reportArgumentType",
+      "severity": "error"
+    },
+    {
+      "file": "/home/yahir/Projects/Reusable/YahirReusableBot/.claude/worktrees/agent-afa9e3f8c092818ca/yahir_reusable_bot/reliability/retry.py",
+      "message": "\"result\" is not a known attribute of \"None\"",
+      "range": {
+        "end": {
+          "character": 57,
+          "line": 300
+        },
+        "start": {
+          "character": 51,
+          "line": 300
+        }
+      },
+      "rule": "reportOptionalMemberAccess",
+      "severity": "error"
+    }
+  ],
+  "summary": {
+    "errorCount": 12,
+    "filesAnalyzed": 34,
+    "informationCount": 0,
+    "timeInSec": 2.147,
+    "warningCount": 0
+  },
+  "time": "1787058479448",
+  "version": "1.1.411"
+}
