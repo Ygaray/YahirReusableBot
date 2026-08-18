@@ -205,6 +205,19 @@ counts **changed writes**, not individual substitutions, and is monotonic for pr
 rate is obtained by diffing two point-in-time reads, never by treating it as a per-substitution
 total.
 
+**When a pattern is malformed.** `register_patterns` vets every pattern at registration; a
+hand-built, unregistered `RedactionPattern` sits outside that contract, and its substitution can
+raise. When it does, the writer fails closed: it withholds the original payload and forwards a
+fixed, non-secret, self-describing placeholder in its place. It does NOT forward the original — an
+unproven payload might carry the very secret redaction exists to catch — and it does NOT raise,
+because an exception inside a logging call would break the caller and can mask the very error being
+logged. The optional `on_error` hook, supplied at construction alongside `on_redaction`, fires once
+the placeholder has already reached the target, receiving only the caught error: it deliberately
+does not receive the withheld payload, and `redaction_count` does not move on this path, because no
+substitution occurred — only a withholding. Wire the hook if a silently-withheld log line would
+matter, and prefer `register_patterns` over hand-building a `RedactionPattern`, which is what keeps
+this branch unreachable in the first place.
+
 **Known limitations.**
 
 - The self-check cannot see a writer nested inside the host's own proxy and will raise — wrap the
