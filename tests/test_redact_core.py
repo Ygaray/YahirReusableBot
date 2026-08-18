@@ -274,3 +274,90 @@ def test_redaction_pattern_asdict_still_exposes_raw_pattern_source():
 
     # The equally-public, equally-explicit path this is no worse than:
     assert SENTINEL in rp.pattern.pattern
+
+
+# ---------------------------------------------------------------------------
+# REDACT-09 / D-02 — the WR-02 accept-rationale retention gate + its self-proof.
+# ---------------------------------------------------------------------------
+
+# Concept name -> anchor substrings (lowercase, contiguous plain text only — an anchor
+# must never span an em dash or a double-asterisk emphasis marker, both of which sit
+# inside the live docstring's prose; see _missing_wr02_anchors's docstring for why).
+_WR02_ANCHORS: dict[str, tuple[str, ...]] = {
+    "accidental_path_closure": ("accidental paths", "slots=true"),
+    "explicit_path_residual": ("explicit paths", "still open"),
+    "reflection_surfaces": ("asdict", "astuple"),
+    "stays_open_reason": ("opaque holder", "public api shape change"),
+    "phase8_ratification": ("redact-09",),
+}
+
+
+def _missing_wr02_anchors(doc: str | None) -> list[str]:
+    """Return the sorted list of WR-02 rationale concepts entirely absent from ``doc``.
+
+    Pure: takes the docstring text (or ``None``) and returns a sorted list of concept
+    names from ``_WR02_ANCHORS`` whose anchors are ALL absent. Treats ``None`` and the
+    empty string as "everything missing" rather than raising — the caller decides how
+    to report a stripped docstring (see the real gate below). Lowercases the input once
+    so every anchor is matched case-insensitively. A concept counts as PRESENT if AT
+    LEAST ONE of its anchor substrings survives in the lowercased text — this mirrors
+    ``tests/test_import_hygiene.py``'s ``_scan_app_leaks``/self-proof shape: one pure
+    helper, driven by both real data and synthetic data below.
+    """
+    lowered = (doc or "").lower()
+    return sorted(
+        concept
+        for concept, anchors in _WR02_ANCHORS.items()
+        if not any(anchor in lowered for anchor in anchors)
+    )
+
+
+def test_wr02_accept_rationale_survives_on_the_live_repr_docstring():
+    """REDACT-09 / D-02 standing gate: the WR-02 close-vs-accept rationale must stay
+    attached to the LIVE ``RedactionPattern.__repr__`` docstring — read off the
+    IMPORTED class, never grepped from the source file, so a pass here proves the
+    rationale is attached to the method it explains, which grepping core.py cannot
+    prove.
+
+    Companion record: ``05-SECURITY.md``'s UF-01 row carries the same disposition;
+    this gate proves only that the source-side half of that record survives.
+    """
+    doc = RedactionPattern.__repr__.__doc__
+    if doc is None or len(doc) < 200:
+        pytest.fail(
+            "RedactionPattern.__repr__'s docstring was stripped or gutted (this "
+            "happens under a -OO interpreter run, which drops docstrings entirely, "
+            "or a future edit that deletes the Scope (WR-02) block) — this gate "
+            "cannot run under a docstring-stripping interpreter, and a live rationale "
+            "vanishing under -OO is exactly the failure mode it exists to catch."
+        )
+    missing = _missing_wr02_anchors(doc)
+    assert missing == [], (
+        f"WR-02 accept rationale is missing concept(s) {missing} from the live "
+        "RedactionPattern.__repr__ docstring — see 05-SECURITY.md's UF-01 row for "
+        "the companion record this source text must keep agreeing with."
+    )
+
+
+def test_selfproof_wr02_rationale_gate_catches_a_gutted_docstring():
+    """Self-proof: drives the SAME ``_missing_wr02_anchors`` helper against three
+    synthetic strings, never reading any real file, proving the gate is non-vacuous
+    in BOTH directions. Case (a) is what stops the helper from being loosened into a
+    permanent-failure no-op; cases (b)/(c) are what stop it from being loosened into a
+    permanent-pass no-op."""
+    all_anchors_present = (
+        "accidental paths are closed by slots=true. explicit paths are still open "
+        "by design. asdict and astuple still expose the raw pattern source. closing "
+        "it would need an opaque holder, a public api shape change. redact-09 "
+        "ratifies this acceptance."
+    )
+    assert _missing_wr02_anchors(all_anchors_present) == []
+
+    ratification_half_removed = (
+        "accidental paths are closed by slots=true. explicit paths are still open "
+        "by design. asdict and astuple still expose the raw pattern source. closing "
+        "it would need an opaque holder, a public api shape change."
+    )
+    assert _missing_wr02_anchors(ratification_half_removed) == ["phase8_ratification"]
+
+    assert _missing_wr02_anchors("") == sorted(_WR02_ANCHORS)
