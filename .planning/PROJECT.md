@@ -15,11 +15,14 @@ script** (library only). Build backend: hatchling. `requires-python >=3.12`.
 
 ## Current Milestone: v0.2.0 Redaction promotion + hardening debt
 
-**Status (2026-08-04): all three phases executed and verified — awaiting human-gated close-out.**
+**Status (2026-08-18): all four phases executed and verified — awaiting human-gated close-out.**
 Phase 5 (redaction core) ✓ · Phase 6 (insertion seams + provable backstop) ✓ · Phase 7 (v0.1.2 debt
-paydown) ✓. All 19 requirements are Complete except **GATE-02**, which is milestone-standing and is
-checked at milestone close, not by any phase. Remaining work is the close-out sequence below, which
-is deliberately **not** autonomous.
+paydown) ✓ · Phase 8 (redaction-hardening cleanup — REDACT-09, REDACT-10, DOCS-05, HYG-04) ✓. All 23
+requirements are Complete except **GATE-02**, which is milestone-standing and is checked at
+milestone close, not by any phase. Phase 8 additionally adopted a pyright `basic`-mode static gate
+(dev-only, hand-rolled baseline) and gave `RedactingWriter` an optional `on_error` observability
+hook (purely additive, no existing call site changes). Remaining work is the close-out sequence
+below, which is deliberately **not** autonomous.
 
 **Goal:** Promote the secret-redaction backstop into the hub as a generic mechanism, and clear
 every open item the v0.1.2 audit surfaced — so the hub owns log scrubbing and carries forward no
@@ -120,6 +123,16 @@ This document evolves at phase transitions and milestone boundaries.
 
 ---
 
-_Last updated: 2026-07-29 — Milestone v0.2.0 (Redaction promotion + hardening debt) started. v0.1.2 "Hub hardening" shipped: all 4 phases complete, 19/19 requirements satisfied, tagged `v0.1.2` (`60698b1`), repinned into WeatherBot and deployed live on `yahir-mint`. Retrospective audit (`.planning/v0.1.2-MILESTONE-AUDIT.md`) returned `tech_debt` — no blockers, 9 open items, which (minus the parked EXT points) are this milestone's scope alongside the PC-01 promotion. GATE-01 green at handoff: 80 passed, 8 import-hygiene, ruff clean._
+_Last updated: 2026-08-18 — Phase 8 (redaction-hardening cleanup, Track C) complete: all 4 v0.2.0
+phases now executed and verified (215 tests passed, import-hygiene 10 passed, doc-drift 5 passed,
+ruff clean, pyright gate green). REDACT-09 (WR-02 accept ratified with a rationale-retention gate),
+REDACT-10 (`on_error` hook + guide contract), DOCS-05 (two prose gates), and HYG-04 (pyright `basic`
+adopted, `get_type_hints` assertions kept as belt-and-suspenders — settled by observed experiment,
+not reasoning) all closed on proven GATE-02 RED-first ancestry. Security audit: 31/31 threats
+closed, 0 open. Nyquist-compliant. GATE-02 stays unchecked (milestone-standing). The human-gated
+v0.2.0 close-out (version bump, tag, WeatherBot repin) is surfaced in `STATE.md` and awaits the
+human — nothing in it has been performed._
+
+_Prior: 2026-07-29 — Milestone v0.2.0 (Redaction promotion + hardening debt) started. v0.1.2 "Hub hardening" shipped: all 4 phases complete, 19/19 requirements satisfied, tagged `v0.1.2` (`60698b1`), repinned into WeatherBot and deployed live on `yahir-mint`. Retrospective audit (`.planning/v0.1.2-MILESTONE-AUDIT.md`) returned `tech_debt` — no blockers, 9 open items, which (minus the parked EXT points) are this milestone's scope alongside the PC-01 promotion. GATE-01 green at handoff: 80 passed, 8 import-hygiene, ruff clean._
 
 _Prior: 2026-07-27 — Phase 3 (Reusable public-surface footguns) complete: 9 findings closed RED-first (H06 MATCH-01, H13 MATCH-02, H09 RELY-02, H10 RELY-03, H11 DISC-05, H12 DISC-06, H14 LIFE-02, H15 LIFE-03, H16 SCHED-01); full suite 71 passed + GATE-01 (import-hygiene/litmus/grimp) green; Nyquist-compliant. Two research corrections held (SCHED-01 `except KeyError` not apscheduler; DISC-05 falsy `not interaction.user` for the MISSING sentinel). One in-scope code-review regression fixed (WR-01 `write_pid_atomic` except-path close-safety); a duplicate-`spec.name` footgun (WR-02) logged for a scope decision. Phases 1–3 done; next: Phase 4 (cleanup + `ReadyGate` fatal outcome, H17/H18). Close-out (bump `0.1.1→0.1.2` / `v0.1.2` tag / WeatherBot repin) still human-gated._
