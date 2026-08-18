@@ -71,17 +71,61 @@ def _diagnostic_key(diag: dict, root: Path) -> tuple[str, str, str]:
     If a path falls outside ``root`` (unexpected but not impossible), it is kept
     as-is rather than raising, so the entry stays comparable instead of crashing
     the gate.
+
+    A diagnostic whose ``file`` is ALREADY relative (as persisted by
+    ``--write-baseline``, see ``_relativize_diagnostics``) is passed through
+    unchanged. This is load-bearing across git worktrees: a live pyright run's
+    ``file`` is always absolute under whichever checkout invoked it (``cwd=_ROOT``),
+    but the COMMITTED baseline is generated once, in one checkout's absolute path,
+    and then read back from every other checkout — a different worktree, a fresh
+    clone, or the checkout the branch merges into. Without this branch, comparing
+    two absolute paths rooted in different checkouts via ``relative_to`` on the
+    CURRENT run's root would raise ``ValueError`` for every baseline entry, and the
+    ``except`` fallback would keep the baseline's now-foreign absolute path verbatim
+    — silently flagging the entire baseline as "new" diagnostics on every checkout
+    but the one that wrote it.
     """
     raw_file = diag.get("file", "")
     file_path = Path(raw_file)
-    try:
-        rel = file_path.relative_to(root)
-        file_key = rel.as_posix()
-    except ValueError:
-        file_key = Path(raw_file).as_posix()
+    if not file_path.is_absolute():
+        file_key = file_path.as_posix()
+    else:
+        try:
+            rel = file_path.relative_to(root)
+            file_key = rel.as_posix()
+        except ValueError:
+            file_key = file_path.as_posix()
     rule = diag.get("rule") or ""
     message = diag.get("message", "")
     return (file_key, rule, message)
+
+
+def _relativize_diagnostics(diagnostics: list[dict], root: Path) -> list[dict]:
+    """Return ``diagnostics`` with each entry's ``file`` rewritten repo-relative.
+
+    Applied only when WRITING the baseline (``--write-baseline``), never when
+    reading a live gate run — a live run's diagnostics are compared in-memory via
+    ``_diagnostic_key`` and never need their raw ``file`` field rewritten. Without
+    this step the persisted JSON carries the writing checkout's absolute path
+    verbatim, defeating the entire purpose of relativization (see
+    ``_diagnostic_key``'s docstring): the baseline would silently stop matching the
+    moment it is read from any other checkout, including the one this branch
+    eventually merges into.
+    """
+    relativized = []
+    for diag in diagnostics:
+        new_diag = dict(diag)
+        raw_file = diag.get("file", "")
+        file_path = Path(raw_file)
+        if file_path.is_absolute():
+            try:
+                new_diag["file"] = file_path.relative_to(root).as_posix()
+            except ValueError:
+                new_diag["file"] = file_path.as_posix()
+        else:
+            new_diag["file"] = file_path.as_posix()
+        relativized.append(new_diag)
+    return relativized
 
 
 def _new_diagnostics(current: list[dict], baseline: list[dict], root: Path) -> list[tuple[str, str, str]]:
@@ -129,7 +173,15 @@ def main() -> int:
 
     if args.write_baseline:
         _assert_run_was_not_vacuous(report)
-        _BASELINE_PATH.write_text(json.dumps(report, indent=2, sort_keys=True) + "\n", encoding="utf-8")
+        # Persist repo-relative `file` fields, not the raw absolute paths pyright
+        # reports. A committed baseline is read back from checkouts other than the
+        # one that wrote it (a different git worktree, a fresh clone, or the
+        # checkout this branch merges into) — see `_relativize_diagnostics`.
+        portable_report = dict(report)
+        portable_report["generalDiagnostics"] = _relativize_diagnostics(diagnostics, _ROOT)
+        _BASELINE_PATH.write_text(
+            json.dumps(portable_report, indent=2, sort_keys=True) + "\n", encoding="utf-8"
+        )
         print(
             f"Wrote baseline: {len(diagnostics)} diagnostic(s) "
             f"across {report.get('summary', {}).get('filesAnalyzed', 0)} file(s) analyzed."
