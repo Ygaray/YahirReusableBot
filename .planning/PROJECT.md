@@ -13,9 +13,22 @@ specifics at one composition root, instead of re-deriving the plumbing each time
 **Import root:** `yahir_reusable_bot` · **PyPI name:** `yahir-reusable-bot` · **No console
 script** (library only). Build backend: hatchling. `requires-python >=3.12`.
 
-## Current Milestone: v0.2.0 Redaction promotion + hardening debt
+## Shipped: v0.2.0 Redaction promotion + hardening debt
 
-**Status (2026-08-18): all four phases executed and verified — awaiting human-gated close-out.**
+**Status (2026-08-18): SHIPPED — milestone certified, Gate-2 signed off, tagged `v0.2.0`.**
+All four phases executed and verified; Gate-1 agentic self-UAT all_pass on all four; human Gate-2
+signed off (all four `signed-off-with-gap` — documented, accepted residuals, no blockers). Milestone
+audit `tech_debt` (22/22 requirements satisfied, integration clean, Nyquist compliant). GATE-02
+(milestone-standing) checked green at close. The granular history is frozen on keeper branch
+`milestone/v0.2.0`; `main` carries one `feat: v0.2.0` squash. **Still human-gated (`ECOSYSTEM.md`
+§3):** `git push` (main fast-forward + keeper + tag), the WeatherBot repin, and the deletion of
+WeatherBot's app-local `_redact.py` in favor of the hub import — none performed.
+
+**Next:** plan the next milestone via `/gsd-new-milestone`.
+
+<details>
+<summary>v0.2.0 goal + target features (archived detail)</summary>
+
 Phase 5 (redaction core) ✓ · Phase 6 (insertion seams + provable backstop) ✓ · Phase 7 (v0.1.2 debt
 paydown) ✓ · Phase 8 (redaction-hardening cleanup — REDACT-09, REDACT-10, DOCS-05, HYG-04) ✓. All 23
 requirements are Complete except **GATE-02**, which is milestone-standing and is checked at
@@ -75,6 +88,8 @@ parked. Both are deferred *by design* under build-in-consumer-then-promote (rule
 consumer needs either today, and building them now would mean designing against imagined
 requirements.
 
+</details>
+
 ## Origin
 
 Extracted from `WeatherBot` over Phases 22–27 (in-place seam un-braiding), then physically
@@ -123,15 +138,21 @@ This document evolves at phase transitions and milestone boundaries.
 
 ---
 
-_Last updated: 2026-08-18 — Phase 8 (redaction-hardening cleanup, Track C) complete: all 4 v0.2.0
-phases now executed and verified (215 tests passed, import-hygiene 10 passed, doc-drift 5 passed,
+_Last updated: 2026-08-18 after v0.2.0 milestone — SHIPPED. Certified (safety-net pass produced the
+missing Phase 7/8 Gate-1 agentic self-UATs; integration clean, 218 pytest / 10 import-hygiene /
+pyright 12-12), Gate-2 human UAT signed off for all four phases (all `signed-off-with-gap`), audit
+`tech_debt` (22/22 requirements, no blockers). Granular history frozen on keeper `milestone/v0.2.0`;
+`main` carries one `feat: v0.2.0` squash, tagged `v0.2.0`. Remaining human-gated close-out (per
+`ECOSYSTEM.md` §3): `git push` (main FF + keeper + tag), WeatherBot repin `0.1.2 → 0.2.0`, and
+deletion of WeatherBot's app-local `_redact.py` in favor of the hub import — none performed._
+
+_Prior: 2026-08-18 — Phase 8 (redaction-hardening cleanup, Track C) complete: all 4 v0.2.0
+phases executed and verified (215 tests passed, import-hygiene 10 passed, doc-drift 5 passed,
 ruff clean, pyright gate green). REDACT-09 (WR-02 accept ratified with a rationale-retention gate),
 REDACT-10 (`on_error` hook + guide contract), DOCS-05 (two prose gates), and HYG-04 (pyright `basic`
 adopted, `get_type_hints` assertions kept as belt-and-suspenders — settled by observed experiment,
 not reasoning) all closed on proven GATE-02 RED-first ancestry. Security audit: 31/31 threats
-closed, 0 open. Nyquist-compliant. GATE-02 stays unchecked (milestone-standing). The human-gated
-v0.2.0 close-out (version bump, tag, WeatherBot repin) is surfaced in `STATE.md` and awaits the
-human — nothing in it has been performed._
+closed, 0 open. Nyquist-compliant._
 
 _Prior: 2026-07-29 — Milestone v0.2.0 (Redaction promotion + hardening debt) started. v0.1.2 "Hub hardening" shipped: all 4 phases complete, 19/19 requirements satisfied, tagged `v0.1.2` (`60698b1`), repinned into WeatherBot and deployed live on `yahir-mint`. Retrospective audit (`.planning/v0.1.2-MILESTONE-AUDIT.md`) returned `tech_debt` — no blockers, 9 open items, which (minus the parked EXT points) are this milestone's scope alongside the PC-01 promotion. GATE-01 green at handoff: 80 passed, 8 import-hygiene, ruff clean._
 

@@ -2,10 +2,9 @@
 gsd_state_version: 1.0
 milestone: v0.2.0
 milestone_name: Redaction promotion + hardening debt
-current_phase: 08
-status: completed
+status: Awaiting next milestone
 stopped_at: Phase 8 added (Redaction-hardening cleanup) — not yet planned
-last_updated: "2026-08-18T13:53:23.784Z"
+last_updated: "2026-08-18T22:29:15.287Z"
 last_activity: 2026-08-18
 last_activity_desc: Phase 08 complete
 progress:
@@ -14,6 +13,7 @@ progress:
   total_plans: 19
   completed_plans: 19
   percent: 100
+current_phase: 08
 current_phase_name: redaction-hardening-cleanup
 ---
 
@@ -21,11 +21,10 @@ current_phase_name: redaction-hardening-cleanup
 
 ## Current Position
 
-Phase: 08
-Plan: Not started
-Status: All phases complete
-Progress: [#######___] 75% (3/4 phases)
-Last activity: 2026-08-18 — Phase 08 complete
+Phase: Milestone v0.2.0 complete
+Plan: —
+Status: Awaiting next milestone
+Last activity: 2026-08-18 — Milestone v0.2.0 completed and archived
 
 ## Milestone Shape
 
@@ -262,3 +261,7 @@ modified by that plan.
 ## Blockers
 
 None.
+
+## Operator Next Steps
+
+- Start the next milestone with /gsd-new-milestone
