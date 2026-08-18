@@ -1,0 +1,1 @@
+{"content":"pyright supports typeCheckingMode=basic via [tool.pyright] in pyproject.toml (pyrightconfig.json takes precedence if both present). No native baseline/grandfather mechanism exists; --outputjson emits structured diagnostics for scripting.","source":"web","provider":"webfetch","confidence":"MEDIUM","fetched_at":"2026-08-18T04:05:39.530Z","ttl":86400000,"kind":"docs"}

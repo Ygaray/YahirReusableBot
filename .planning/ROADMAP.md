@@ -452,7 +452,7 @@ discuss time whether they are corrected or annotated.
 prose or an unenforced stopgap — before the milestone completes and repins. Track C.
 **Requirements:** REDACT-09 (WR-02), REDACT-10 (WR-03), DOCS-05 (T-06-16 residual), HYG-04 (static type checker)
 **Depends on:** Phase 7
-**Plans:** 0 plans — run `/gsd-plan-phase 8` to break down
+**Plans:** 5 plans
 
 Source of record: `.planning/v0.2.0-MILESTONE-AUDIT.md` (tech-debt review) plus the three phase
 `*-SECURITY.md` findings. Accepted-risks and the parked EXT points are deliberately **excluded** —
@@ -490,9 +490,36 @@ Success criteria:
   SURF-02's narrowed `on_online` annotation; the `get_type_hints` stopgap is retired or kept as
   belt-and-suspenders, decided explicitly.
 
-Plans (not yet broken down):
+Plans:
 
-- [ ] TBD — run `/gsd-plan-phase 8` to break down (discuss-phase first to settle the three decisions above).
+- [ ] 08-01-PLAN.md — REDACT-09: ratify the WR-02 reflection residual as ACCEPTED (D-02), gate the
+  close-vs-accept rationale on the live `__repr__` docstring, and date the settlement to Phase 8.
+  No new residual pinning test — the Phase-5 pair is already green (08-RESEARCH.md Pitfall 1)
+
+- [ ] 08-02-PLAN.md — REDACT-10 (code half): the optional `on_error` hook RED-first, then wired into
+  the existing `except re.error` branch behind `on_redaction`'s swallow-and-continue guard. Payload
+  decided at plan time as the raised error only, never the withheld payload, with a standing no-leak
+  gate on it. Fail-closed behavior itself unchanged (D-01)
+
+- [ ] 08-03-PLAN.md — REDACT-10 (doc half) + DOCS-05: the section 7 malformed-pattern contract gate
+  RED, then the paragraph, then D-04's two prose gates (changed-writes telemetry, reconfigure
+  discipline) with non-vacuity self-proofs and a test enforcing the anchor-collision constraint
+
+- [ ] 08-04-PLAN.md — HYG-04: blocking human legitimacy checkpoint on `pyright` (SUS verdict), then
+  RED-first unit tests for the diff logic, then pyright `basic` with an explicit mode key, a
+  source-only include scope, the hand-rolled baseline gate, and the committed baseline (D-03)
+
+- [ ] 08-05-PLAN.md — Phase gate: D-03's retire-vs-keep settled as KEEP on an observed experiment,
+  the stale HYG-04 stopgap wording corrected, GATE-02 RED-first ancestry derived from git trees,
+  DOCS-05's no-RED-commit disposition recorded, the four checkboxes flipped, and the v0.2.0
+  human-gated close-out re-surfaced
+
+**Sequencing constraint — these five plans are strictly serial, waves 1 through 5.** Every plan
+except 08-05 commits a deliberately-RED test, and every plan's verify runs the full suite. Per the
+standing decision in `STATE.md` ("plans within a phase are sequenced so a deliberately-RED test never
+overlaps a sibling plan's full-suite gate", hard-won in Phases 1–3), none of them may run in
+parallel. 08-02 and 08-03 additionally share the REDACT-10 requirement across a code/doc split, and
+08-03 depends on the `on_error` hook existing before the guide can describe it.
 
 ### Human-gated close-out — surfaced, never performed autonomously (`ECOSYSTEM.md` §3)
 
