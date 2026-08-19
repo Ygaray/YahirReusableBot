@@ -24,7 +24,7 @@ consume it:
 
   | Consumer | Repo | Dev checkout | Pins hub at | Deploy host |
   |----------|------|--------------|-------------|-------------|
-  | WeatherBot | `github.com/Ygaray/WeatherBot` | `/home/yahir/Projects/WeatherBot` | `v0.1.2` | `yahir-mint` (systemd) |
+  | WeatherBot | `github.com/Ygaray/WeatherBot` | `/home/yahir/Projects/WeatherBot` | `v0.2.0` | `yahir-mint` (systemd) |
   | ReminderBot | _(planned)_ | `/home/yahir/Projects/ReminderBot` | — | — |
 
   _(Keep this table current — a new consumer adds a row; a repin updates the "Pins hub at"
