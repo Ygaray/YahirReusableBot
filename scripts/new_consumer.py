@@ -54,9 +54,41 @@ def import_root(bot_name: str) -> str:
     return re.sub(r"[^a-z0-9]", "", bot_name.lower())
 
 
+def bot_slug(bot_name: str) -> str:
+    """Unit/status-file name: CamelCase split into words, joined with '-' (GsdAlertBot -> gsd-alert-bot)."""
+    words = re.sub(r"(?<=[a-z0-9])(?=[A-Z])", " ", bot_name)
+    return re.sub(r"[^a-z0-9]+", "-", words.lower()).strip("-")
+
+
+def unit_file(slug: str, target: Path) -> str:
+    return f"""\
+[Unit]
+Description={slug} (YahirReusableBot consumer)
+After=network-online.target
+
+[Service]
+Type=notify
+WorkingDirectory={target}
+# The venv entry point (not a uv wrapper): the process is named `{slug}` (earlyoom --avoid can match it).
+ExecStart={target}/.venv/bin/{slug} run
+Restart=on-failure
+RestartSec=5
+
+[Install]
+WantedBy=default.target
+"""
+
+
+def adopt_line(bot: str, project: str, slug: str) -> str:
+    return f"yahir-tn adopt {slug} --project {project} --unit {slug}.service"
+
+
 # ---------------------------------------------------------------- templates
 
-def pyproject(name_pkg: str, imp: str, bot: str, hub_url: str, pin: str, hub_dir: str) -> str:
+def pyproject(name_pkg: str, imp: str, bot: str, hub_url: str, pin: str, hub_dir: str,
+              slug: str | None = None) -> str:
+    slug = slug or imp
+    extra = f'\n{slug} = "{imp}.cli:main"' if slug != imp else ""
     return f"""\
 [project]
 name = "{name_pkg}"
@@ -74,7 +106,7 @@ requires = ["hatchling"]
 build-backend = "hatchling.build"
 
 [project.scripts]
-{imp} = "{imp}.cli:main"
+{imp} = "{imp}.cli:main"{extra}
 
 [tool.hatch.build.targets.wheel]
 packages = ["{imp}"]
@@ -156,6 +188,18 @@ command specs, render, marker, etc.
 Anything reusable you build lives in `{imp}/_promotable/` (hub-clean) until promoted.
 """
 
+# Status for the usage-dashboard Bots tab (hub >= 0.3.0). Sketch of the wiring:
+#
+#   from yahir_reusable_bot.lifecycle import StatusReporter
+#   from yahir_reusable_bot.channels import ReportingChannel
+#   reporter = StatusReporter("<slug>", scope="user", hub_version=<hub version>, patterns=<your redaction patterns>)
+#   reporter.start()
+#   channel = ReportingChannel(channel, reporter.record_delivery)
+#   engine = SchedulerEngine(scheduler, on_job_result=reporter.record_job)
+#   client = build_client(on_message=..., view=..., on_connection=reporter.mark_discord)
+#   ... once healthy: reporter.running()   ... on shutdown: reporter.stopping()
+
+
 
 def build_runtime():  # noqa: D401 - stub
     raise NotImplementedError("wire the hub mechanisms here — see the hub's EXTENSION-GUIDE.md")
@@ -224,12 +268,15 @@ def main() -> None:
     ap.add_argument("--pin", help="hub tag to pin (default: latest hub tag)")
     ap.add_argument("--create-remote", choices=["public", "private"],
                     help="also create the GitHub repo via gh and push")
+    ap.add_argument("--slug", help="unit/status name (default: CamelCase -> kebab)")
+    ap.add_argument("--register", action="store_true", help="also run the yahir-tn adopt line")
     args = ap.parse_args()
 
     bot = args.bot_name
     imp = import_root(bot)
     if not imp:
         sys.exit("FATAL: bot name has no alphanumerics.")
+    slug = args.slug or bot_slug(bot)
     pin = args.pin or hub_latest_tag()
     hub_url = hub_remote_url()
     owner = hub_url.rstrip("/").split("/")[-2]
@@ -251,7 +298,7 @@ def main() -> None:
     name_pkg = re.sub(r"[^a-z0-9]+", "-", bot.lower()).strip("-")
     rel_hub = os.path.relpath(HUB_ROOT, target)  # consumer -> hub, correct wherever the hub lives
     (target / "pyproject.toml").write_text(
-        pyproject(name_pkg, imp, bot, hub_url, pin, str(HUB_ROOT)))
+        pyproject(name_pkg, imp, bot, hub_url, pin, str(HUB_ROOT), slug))
     (target / "CLAUDE.md").write_text(claude_md(bot, imp, hub_url, pin, rel_hub))
     (target / ".gitignore").write_text(GITIGNORE)
     (target / "README.md").write_text(f"# {bot}\n\nA bot on the yahir_reusable_bot infrastructure. "
@@ -259,6 +306,8 @@ def main() -> None:
     (pkg / "__init__.py").write_text("")
     (pkg / "cli.py").write_text(CLI_STUB)
     (pkg / "wiring.py").write_text(wiring_stub(imp))
+    (target / "packaging").mkdir(exist_ok=True)
+    (target / "packaging" / f"{slug}.service").write_text(unit_file(slug, target))
     (pkg / "_promotable" / "__init__.py").write_text("")
     (pkg / "_promotable" / "README.md").write_text(PROMOTABLE_README)
     (target / "tests" / "__init__.py").write_text("")
@@ -277,10 +326,22 @@ def main() -> None:
            "--source", str(target), "--remote", "origin", cwd=target)
         print(f"  ✓ created {args.create_remote} GitHub repo {owner}/{bot} (origin set)")
 
+    if args.register:
+        try:
+            out = sh(os.path.expanduser("~/.local/bin/yahir-tn"), "adopt", slug,
+                     "--project", bot, "--unit", f"{slug}.service")
+            print(out)
+        except (subprocess.CalledProcessError, OSError) as e:
+            print(f"  ! yahir-tn adopt failed (install the unit first, then re-run it): "
+                  f"{getattr(e, 'stderr', None) or e}")
+
     print(f"""
 Done. Next:
   cd {target}
   uv sync                         # resolves the hub from the pin
+  install -m 644 packaging/{slug}.service ~/.config/systemd/user/ && systemctl --user daemon-reload && systemctl --user enable --now {slug}
+  {adopt_line(bot, bot, slug)}      # registers it with yahir-tn (restart buttons on the dashboard)
+  # earlyoom: ask the operator to add `{slug}` to earlyoom --avoid (needs sudo)
   # start the GSD project:  /gsd-new-project
   # co-dev on the hub live:  uv pip install -e {HUB_ROOT}   (revert: uv sync --frozen)
 
