@@ -26,6 +26,7 @@ consume it:
   |----------|------|--------------|-------------|-------------|
   | WeatherBot | `github.com/Ygaray/WeatherBot` | `/home/yahir/Projects/WeatherBot` | `v0.2.0` | `yahir-mint` (systemd) |
   | ReminderBot | _(planned)_ | `/home/yahir/Projects/ReminderBot` | — | — |
+  | GsdAlertBot | `github.com/Ygaray/GSD-alert-bot` | `/home/yahir/Projects/yahir-agentic-tools/GSD-alert-bot` | `v0.2.0` | `yahir-mint` (systemd) |
 
   _(Keep this table current — a new consumer adds a row; a repin updates the "Pins hub at"
   cell. It is best-effort, not authoritative — the authoritative pin is each consumer's

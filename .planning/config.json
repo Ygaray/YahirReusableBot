@@ -14,7 +14,8 @@
     "build_command": "uv run python -c 'import yahir_reusable_bot'",
     "uat_driver_playbook": ".planning/AGENT-LIBRARY-TESTING.md",
     "milestone_mode": "mixed",
-    "_milestone_run_active": false
+    "_milestone_run_active": false,
+    "run_lessons_enabled": true
   },
   "_note": "Module GSD project, initialized at v0.1.0 import (Phase 28 split from WeatherBot). Records EXT-01 (durable JobStore) and EXT-02 (2nd Channel adapter) as deferred extension points.",
   "graphify": {
