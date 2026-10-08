@@ -23,11 +23,13 @@ from .identity import (
 )
 from .ready_gate import ReadyGate, ReadyOutcome
 from .sdnotify import SystemdNotifier
+from .status import StatusReporter
 
 __all__ = [
     "ReadyGate",
     "ReadyOutcome",
     "SystemdNotifier",
+    "StatusReporter",
     "HealthResult",
     "Severity",
     "LifecycleIdentity",
