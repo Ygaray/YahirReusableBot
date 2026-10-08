@@ -99,3 +99,54 @@ def test_build_client_reports_connection_events():
 
     asyncio.run(fire())
     assert seen == [True, False, True]
+
+
+class Rich(Channel):
+    """A channel with an extra delivery method and a plain attribute, like an app channel."""
+    name = "rich"
+    marker = "inner-attr"
+
+    def __init__(self, result=None, exc=None):
+        self.result, self.exc, self.calls = result, exc, []
+
+    def send(self, text):
+        return DeliveryResult(ok=True)
+
+    def send_briefing(self, text, extra):
+        self.calls.append((text, extra))
+        if self.exc:
+            raise self.exc
+        return self.result
+
+    def describe(self):
+        return "plain method"
+
+
+def test_record_names_extra_delivery_methods():
+    seen = []
+    inner = Rich(DeliveryResult(ok=False, detail="HTTP 500"))
+    ch = ReportingChannel(inner, seen.append, record=("send_briefing",))
+    assert ch.send_briefing("hi", extra=1) == DeliveryResult(ok=False, detail="HTTP 500")
+    assert inner.calls == [("hi", 1)] and seen == [DeliveryResult(ok=False, detail="HTTP 500")]
+
+
+def test_recorded_method_reports_a_raise_then_reraises():
+    seen = []
+    ch = ReportingChannel(Rich(exc=TimeoutError("slow")), seen.append, record=("send_briefing",))
+    with pytest.raises(TimeoutError):
+        ch.send_briefing("hi", None)
+    assert seen == [DeliveryResult(ok=False, detail="TimeoutError: slow")]
+
+
+def test_other_attributes_pass_through_unrecorded():
+    seen = []
+    ch = ReportingChannel(Rich(), seen.append)
+    assert ch.describe() == "plain method" and ch.marker == "inner-attr"
+    assert seen == []
+    with pytest.raises(AttributeError):
+        ch.no_such_attribute
+
+
+def test_record_rejects_names_the_inner_channel_lacks():
+    with pytest.raises(AttributeError, match="send_nothing"):
+        ReportingChannel(Rich(), lambda r: None, record=("send_nothing",))

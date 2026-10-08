@@ -262,11 +262,18 @@ from yahir_reusable_bot.channels import ReportingChannel
 
 reporter = StatusReporter("<slug>", scope="user", patterns=<your redaction patterns>)
 reporter.start(loop=<the bot's main asyncio loop>)         # first write + heartbeat; the loop makes a hang visible
-channel = ReportingChannel(channel, reporter.record_delivery)
+channel = ReportingChannel(channel, reporter.record_delivery)   # + record=("send_briefing",) for extra delivery methods
 engine = SchedulerEngine(scheduler, on_job_result=reporter.record_job)
 client = build_client(on_message=..., view=..., on_connection=reporter.mark_discord)
 # once healthy: reporter.running()      on graceful shutdown: reporter.stopping()
 ```
+
+**A bot with no asyncio loop** (e.g. a main thread parked on an Event, work on scheduler threads —
+WeatherBot's shape): do **not** call `start()`. Its timer thread would keep beating even while the
+scheduler is stalled. Instead write the first status with `reporter.heartbeat()` at startup and call
+`reporter.heartbeat()` from the bot's own recurring scheduler job, constructing the reporter with
+`interval_s=` equal to that job's period (readers mark it stale after 3 x `interval_s`, so a stalled
+scheduler goes red). Its `last_job` will usually name that heartbeat job.
 
 Guarantees:
 
@@ -285,7 +292,8 @@ Guarantees:
 - **`stopping()`** on graceful shutdown records `state: stopped`, so a deliberate stop is
   distinguishable from a crash.
 - `ReportingChannel` re-raises channel exceptions after recording them; observer failures in any hook
-  are swallowed.
+  are swallowed. `record=("method", ...)` observes extra delivery methods (each must return a
+  `DeliveryResult`) the same way as `send`; any other attribute passes through to the wrapped channel.
 
 ---
 

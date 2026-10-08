@@ -4,29 +4,50 @@ Wrap a bot's real channel at its composition root: ``ReportingChannel(channel, r
 A send that raises is reported as ``DeliveryResult(ok=False, detail="<Type>: <msg>")`` and then re-raised
 unchanged, so retry logic above it behaves exactly as before. An observer that itself fails is ignored —
 reporting must never break delivery.
+
+An app channel may deliver through more than ``send`` (e.g. a ``send_briefing(text, extra)``): name those
+methods in ``record=`` and each is proxied and observed exactly like ``send``. Every other attribute
+passes through to the wrapped channel unobserved, so the wrapper is a drop-in for the app's channel.
 """
 
 from __future__ import annotations
 
-from typing import Callable
+from typing import Any, Callable, Iterable
 
 from .base import Channel, DeliveryResult
 
 
 class ReportingChannel(Channel):
-    def __init__(self, inner: Channel, on_result: Callable[[DeliveryResult], None]) -> None:
+    def __init__(self, inner: Channel, on_result: Callable[[DeliveryResult], None], *,
+                 record: Iterable[str] = ()) -> None:
         self._inner = inner
         self._on_result = on_result
         self.name = inner.name
+        for method in record:
+            if method == "send":
+                continue
+            target = getattr(inner, method)  # AttributeError names the missing method
+            setattr(self, method, self._observed(target))
 
     def send(self, text: str) -> DeliveryResult:
-        try:
-            result = self._inner.send(text)
-        except Exception as exc:
-            self._observe(DeliveryResult(ok=False, detail=f"{type(exc).__name__}: {exc}"))
-            raise
-        self._observe(result)
-        return result
+        return self._observed(self._inner.send)(text)
+
+    def __getattr__(self, attr: str) -> Any:
+        # Only reached for attributes this wrapper doesn't define: defer to the wrapped channel.
+        if attr.startswith("_"):
+            raise AttributeError(attr)
+        return getattr(self._inner, attr)
+
+    def _observed(self, deliver: Callable[..., DeliveryResult]) -> Callable[..., DeliveryResult]:
+        def call(*args: Any, **kwargs: Any) -> DeliveryResult:
+            try:
+                result = deliver(*args, **kwargs)
+            except Exception as exc:
+                self._observe(DeliveryResult(ok=False, detail=f"{type(exc).__name__}: {exc}"))
+                raise
+            self._observe(result)
+            return result
+        return call
 
     def _observe(self, result: DeliveryResult) -> None:
         try:
