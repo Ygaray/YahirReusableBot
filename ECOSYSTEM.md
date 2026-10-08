@@ -270,8 +270,11 @@ Every consumer bot follows this, so the usage-dashboard Bots tab shows it with n
 3. **earlyoom**: the operator adds `<slug>` to earlyoom's `--avoid` (sudo).
 4. **Status**: wire a `StatusReporter` in `build_runtime()` (`lifecycle.StatusReporter`; see
    EXTENSION-GUIDE §8). It writes `$XDG_STATE_HOME/yahir-bots/<slug>.json` (schema_version 1) every
-   60 s from its own daemon thread (no scheduler wiring needed) and on each event; a bot that stops
-   writing for 3 minutes shows red. Writing is best-effort and never raises into the bot. Errors always
+   60 s (timed by its own daemon thread; no scheduler wiring needed) and on each event. Pass the bot's
+   event loop — `reporter.start(loop=<the bot's main asyncio loop>)` — so a hung loop stops the
+   heartbeat; without a loop only process death is detected. A heartbeat older than 3 minutes shows
+   red. `mark_discord(True)` also promotes `starting` to `running`; `hub_version` defaults from
+   package metadata. Writing is best-effort and never raises into the bot. Errors always
    pass a built-in baseline redaction (Discord webhook URLs and bot tokens, Bearer/Authorization values,
    `token=`/`key=`/`secret=` values), then the bot's own patterns, and are capped at 300 chars; no
    message content is recorded.

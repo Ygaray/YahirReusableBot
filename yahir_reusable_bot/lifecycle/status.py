@@ -5,14 +5,20 @@ same directory, then ``os.replace`` — every ``interval_s`` seconds and immedia
 Readers (the usage-dashboard Bots tab) treat a heartbeat older than 3 x ``interval_s`` as stale, so a
 hung or SIGKILLed bot is visible even though its file survives it.
 
+Heartbeat: pass the bot's event loop to ``start(loop=...)`` and each beat is posted onto that loop
+(``call_soon_threadsafe``), so a blocked or deadlocked loop stops beating and the dashboard marks it
+stale. Without a loop the timer thread beats directly and only process death is detected.
+
 Best-effort like :class:`SystemdNotifier`: an ``OSError`` while writing is swallowed, never raised —
-status reporting must not be load-bearing for liveness. Error strings pass through
-:func:`redact_secrets` with the bot's own patterns and are capped at 300 characters; no message
-content is ever recorded. stdlib only.
+status reporting must not be load-bearing for liveness. Error strings pass through the built-in
+``BASELINE_PATTERNS`` first, then the bot's own patterns (via :func:`redact_secrets`), then are capped
+at 300 characters; no message content is ever recorded. stdlib only.
 """
 
 from __future__ import annotations
 
+import asyncio
+import importlib.metadata
 import json
 import os
 import re
@@ -77,6 +83,12 @@ class StatusReporter:
         self._lock = threading.Lock()
         self._stop = threading.Event()
         self._thread: threading.Thread | None = None
+        self._beat_loop: asyncio.AbstractEventLoop | None = None
+        if hub_version is None:
+            try:
+                hub_version = importlib.metadata.version("yahir-reusable-bot")
+            except importlib.metadata.PackageNotFoundError:
+                hub_version = None
         now = clock().isoformat()
         self._status: dict[str, Any] = {
             "schema_version": SCHEMA_VERSION, "bot": bot, "unit": unit or f"{bot}.service", "scope": scope,
@@ -90,8 +102,15 @@ class StatusReporter:
         return self._dir / f"{self._status['bot']}.json"
 
     # -- lifecycle ---------------------------------------------------------
-    def start(self) -> None:
-        """Write the first status and start the heartbeat loop (a daemon thread)."""
+    def start(self, loop: asyncio.AbstractEventLoop | None = None) -> None:
+        """Write the first status and start the heartbeat timer (a daemon thread).
+
+        With ``loop``, each beat is posted onto that loop, so a hung loop stops beating and goes
+        stale. Without it the thread beats directly (process death only). A second call is a no-op.
+        """
+        if self._thread is not None:
+            return
+        self._beat_loop = loop
         self._update()
         self._thread = threading.Thread(target=self._loop, name="status-heartbeat", daemon=True)
         self._thread.start()
@@ -110,7 +129,13 @@ class StatusReporter:
     def _loop(self) -> None:
         while not self._stop.wait(self._interval_s):
             try:
-                self.heartbeat()
+                loop = self._beat_loop
+                if loop is None:
+                    self.heartbeat()
+                elif not loop.is_closed():
+                    loop.call_soon_threadsafe(self.heartbeat)
+            except RuntimeError:  # loop closed under us: the bot is dying, missing beats is correct
+                pass
             except Exception:  # one bad tick must never end the loop
                 _log.debug("status_heartbeat_failed", exc_info=True)
 
@@ -120,7 +145,10 @@ class StatusReporter:
             prev = status["discord"]
             if prev is not None and prev["connected"] == connected:
                 return {}
-            return {"discord": {"connected": connected, "since": self._clock().isoformat()}}
+            out: dict[str, Any] = {"discord": {"connected": connected, "since": self._clock().isoformat()}}
+            if connected and status["state"] == "starting":
+                out["state"] = "running"  # mitigation: a bot that never calls running() still goes green
+            return out
 
         self._update(_compute=change)
 

@@ -222,3 +222,108 @@ def test_serialization_failure_never_raises(tmp_path, monkeypatch):
     monkeypatch.setattr(status_mod.json, "dumps", lambda *a, **k: (_ for _ in ()).throw(TypeError("x")))
     r.start()
     r.stopping()
+
+
+# -- hung-loop detection, hub_version default, starting -> running ------------------------------
+import asyncio
+import importlib.metadata
+import threading
+import time
+
+
+def test_unrun_loop_stops_the_heartbeat(tmp_path):
+    loop = asyncio.new_event_loop()
+    r, clock = reporter(tmp_path, interval_s=0.01)
+    r.start(loop=loop)
+    try:
+        clock.t = T0 + timedelta(seconds=30)
+        time.sleep(0.2)  # many ticks; none can run because the loop never runs
+        assert read(r)["heartbeat_at"] == T0.isoformat()
+    finally:
+        r.stopping()
+        loop.close()
+
+
+def test_running_loop_keeps_the_heartbeat(tmp_path):
+    loop = asyncio.new_event_loop()
+    t = threading.Thread(target=loop.run_forever, daemon=True)
+    t.start()
+    r, clock = reporter(tmp_path, interval_s=0.01)
+    r.start(loop=loop)
+    try:
+        clock.t = T0 + timedelta(seconds=30)
+        deadline = time.time() + 3
+        while read(r)["heartbeat_at"] == T0.isoformat() and time.time() < deadline:
+            time.sleep(0.01)
+        assert read(r)["heartbeat_at"] == clock.t.isoformat()
+    finally:
+        r.stopping()
+        loop.call_soon_threadsafe(loop.stop)
+        t.join(3)
+        loop.close()
+
+
+def test_no_loop_heartbeats_directly(tmp_path):
+    r, clock = reporter(tmp_path, interval_s=0.01)
+    r.start()
+    try:
+        clock.t = T0 + timedelta(seconds=30)
+        deadline = time.time() + 3
+        while read(r)["heartbeat_at"] == T0.isoformat() and time.time() < deadline:
+            time.sleep(0.01)
+        assert read(r)["heartbeat_at"] == clock.t.isoformat()
+    finally:
+        r.stopping()
+
+
+def test_closed_loop_does_not_raise_and_skips_beats(tmp_path):
+    loop = asyncio.new_event_loop()
+    loop.close()
+    r, clock = reporter(tmp_path, interval_s=0.01)
+    r.start(loop=loop)
+    try:
+        clock.t = T0 + timedelta(seconds=30)
+        time.sleep(0.1)
+        assert r._thread.is_alive()
+        assert read(r)["heartbeat_at"] == T0.isoformat()
+    finally:
+        r.stopping()
+
+
+def test_second_start_is_a_noop(tmp_path):
+    r, _ = reporter(tmp_path)
+    r.start()
+    first = r._thread
+    r.start()
+    assert r._thread is first
+    r.stopping()
+
+
+def test_hub_version_defaults_from_package_metadata(tmp_path, monkeypatch):
+    monkeypatch.setattr(importlib.metadata, "version", lambda name: "9.9.9" if name == "yahir-reusable-bot" else "x")
+    r = StatusReporter("b", state_dir=tmp_path)
+    assert r._status["hub_version"] == "9.9.9"
+
+
+def test_hub_version_none_when_not_installed(tmp_path, monkeypatch):
+    def boom(name):
+        raise importlib.metadata.PackageNotFoundError(name)
+
+    monkeypatch.setattr(importlib.metadata, "version", boom)
+    assert StatusReporter("b", state_dir=tmp_path)._status["hub_version"] is None
+
+
+def test_mark_discord_true_promotes_starting_to_running_only(tmp_path):
+    r, _ = reporter(tmp_path)
+    r.mark_discord(True)
+    assert read(r)["state"] == "running"
+    r.stopping()
+    r.mark_discord(False)
+    r.mark_discord(True)
+    assert read(r)["state"] == "stopped"
+
+
+def test_mark_discord_false_leaves_starting(tmp_path):
+    r, _ = reporter(tmp_path)
+    r.mark_discord(False)
+    assert read(r)["state"] == "starting"

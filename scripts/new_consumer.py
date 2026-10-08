@@ -192,8 +192,8 @@ Anything reusable you build lives in `{imp}/_promotable/` (hub-clean) until prom
 #
 #   from yahir_reusable_bot.lifecycle import StatusReporter
 #   from yahir_reusable_bot.channels import ReportingChannel
-#   reporter = StatusReporter("<slug>", scope="user", hub_version=<hub version>, patterns=<your redaction patterns>)
-#   reporter.start()
+#   reporter = StatusReporter("<slug>", scope="user", patterns=<your redaction patterns>)
+#   reporter.start(loop=<the bot's main asyncio loop>)   # loop => a hung bot goes stale
 #   channel = ReportingChannel(channel, reporter.record_delivery)
 #   engine = SchedulerEngine(scheduler, on_job_result=reporter.record_job)
 #   client = build_client(on_message=..., view=..., on_connection=reporter.mark_discord)

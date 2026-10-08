@@ -260,8 +260,8 @@ stub carries the same):
 from yahir_reusable_bot.lifecycle import StatusReporter
 from yahir_reusable_bot.channels import ReportingChannel
 
-reporter = StatusReporter("<slug>", scope="user", hub_version=<hub version>, patterns=<your redaction patterns>)
-reporter.start()                                            # first write + heartbeat thread
+reporter = StatusReporter("<slug>", scope="user", patterns=<your redaction patterns>)
+reporter.start(loop=<the bot's main asyncio loop>)         # first write + heartbeat; the loop makes a hang visible
 channel = ReportingChannel(channel, reporter.record_delivery)
 engine = SchedulerEngine(scheduler, on_job_result=reporter.record_job)
 client = build_client(on_message=..., view=..., on_connection=reporter.mark_discord)
@@ -270,12 +270,15 @@ client = build_client(on_message=..., view=..., on_connection=reporter.mark_disc
 
 Guarantees:
 
-- **Heartbeat** runs on the reporter's own daemon thread (`interval_s`, default 60 s); no scheduler
-  wiring is needed. Readers treat a heartbeat older than 3 x `interval_s` as stale, so a hung or
-  SIGKILLed bot shows red even though its file survives.
+- **Heartbeat** is timed by the reporter's own daemon thread (`interval_s`, default 60 s); no
+  scheduler wiring is needed. Pass the bot's event loop to `start(loop=...)` and each beat is posted
+  onto that loop, so a hung loop stops beating. Readers treat a heartbeat older than 3 x
+  `interval_s` as stale and show red. Without a loop only process death (SIGKILL) is detected.
+- **`hub_version`** defaults from the installed package metadata; do not pass it.
+- `mark_discord(True)` also promotes `state` from `starting` to `running` (never touches `stopped`).
 - **Best-effort writes:** atomic (temp file + `os.replace`, file mode 0600), and any write error is
   swallowed and logged at debug. Status reporting never raises into the bot.
-- **Redaction:** every error string first passes a built-in baseline that is always applied (Discord
+- **Redaction:** every error string first passes the built-in baseline that is always applied (Discord
   webhook URLs, Discord bot tokens, `Bearer` values, `Authorization` header values, and
   `token=` / `key=` / `secret=` style values), then the bot's own `patterns`.
 - **300-character cap** on every recorded error string. No message content is ever recorded.
