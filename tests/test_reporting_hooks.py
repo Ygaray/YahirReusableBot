@@ -150,3 +150,20 @@ def test_other_attributes_pass_through_unrecorded():
 def test_record_rejects_names_the_inner_channel_lacks():
     with pytest.raises(AttributeError, match="send_nothing"):
         ReportingChannel(Rich(), lambda r: None, record=("send_nothing",))
+
+
+def test_record_validates_names():
+    with pytest.raises(TypeError, match="tuple of method names"):
+        ReportingChannel(Rich(), lambda r: None, record="send_briefing")
+    with pytest.raises(TypeError, match="marker"):
+        ReportingChannel(Rich(), lambda r: None, record=("marker",))       # not callable
+    with pytest.raises(ValueError, match="_inner"):
+        ReportingChannel(Rich(), lambda r: None, record=("_inner",))       # private
+
+
+def test_recorded_method_forwards_kwargs_and_survives_a_failing_observer():
+    def bad(_):
+        raise ValueError("observer bug")
+    inner = Rich(DeliveryResult(ok=True))
+    ch = ReportingChannel(inner, bad, record=("send_briefing",))
+    assert ch.send_briefing(text="t", extra={"k": 1}).ok and inner.calls == [("t", {"k": 1})]

@@ -275,7 +275,8 @@ Every consumer bot follows this, so the usage-dashboard Bots tab shows it with n
    event loop — `reporter.start(loop=<the bot's main asyncio loop>)` — so a hung loop stops the
    heartbeat; without a loop only process death is detected. A bot with no asyncio loop never calls
    `start()`: it calls `reporter.heartbeat()` from its own recurring job and sets `interval_s` to that
-   period (EXTENSION-GUIDE §8). A heartbeat older than 3 × `interval_s` shows red. `mark_discord(True)` also promotes `starting` to `running`; `hub_version` defaults from
+   period (EXTENSION-GUIDE §8). A heartbeat older than 3 × `interval_s` shows red.
+   `mark_discord(True)` also promotes `starting` to `running`; `hub_version` defaults from
    package metadata. Writing is best-effort and never raises into the bot. Errors always
    pass a built-in baseline redaction (Discord webhook URLs and bot tokens, Bearer/Authorization values,
    `token=`/`key=`/`secret=` values), then the bot's own patterns, and are capped at 300 chars; no

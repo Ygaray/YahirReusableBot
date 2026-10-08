@@ -8,6 +8,8 @@ reporting must never break delivery.
 An app channel may deliver through more than ``send`` (e.g. a ``send_briefing(text, extra)``): name those
 methods in ``record=`` and each is proxied and observed exactly like ``send``. Every other attribute
 passes through to the wrapped channel unobserved, so the wrapper is a drop-in for the app's channel.
+An app delivery method you do NOT name in ``record=`` still works but is never observed: name every
+method that delivers.
 """
 
 from __future__ import annotations
@@ -23,10 +25,16 @@ class ReportingChannel(Channel):
         self._inner = inner
         self._on_result = on_result
         self.name = inner.name
+        if isinstance(record, str):
+            raise TypeError(f"record= takes a tuple of method names, not the string {record!r}")
         for method in record:
             if method == "send":
                 continue
+            if method.startswith("_"):
+                raise ValueError(f"record= cannot name private attribute {method!r}")
             target = getattr(inner, method)  # AttributeError names the missing method
+            if not callable(target):
+                raise TypeError(f"record= names {method!r}, which is not a method of the wrapped channel")
             setattr(self, method, self._observed(target))
 
     def send(self, text: str) -> DeliveryResult:

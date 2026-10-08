@@ -273,7 +273,8 @@ WeatherBot's shape): do **not** call `start()`. Its timer thread would keep beat
 scheduler is stalled. Instead write the first status with `reporter.heartbeat()` at startup and call
 `reporter.heartbeat()` from the bot's own recurring scheduler job, constructing the reporter with
 `interval_s=` equal to that job's period (readers mark it stale after 3 x `interval_s`, so a stalled
-scheduler goes red). Its `last_job` will usually name that heartbeat job.
+scheduler goes red). If that job is also wired through `on_job_result`, `last_job` will usually
+name it.
 
 Guarantees:
 
