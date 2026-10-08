@@ -26,6 +26,8 @@ so any host (a different bot) binds its own callable through the identical hole
 
 from __future__ import annotations
 
+import functools
+import inspect
 from typing import Any, Callable
 
 import structlog
@@ -42,8 +44,9 @@ class SchedulerEngine:
     cannot drift across call sites.
     """
 
-    def __init__(self, scheduler: Any) -> None:
+    def __init__(self, scheduler: Any, *, on_job_result: Callable[[str, bool, str | None], None] | None = None) -> None:
         self._scheduler = scheduler
+        self._on_job_result = on_job_result
 
     def register(
         self,
@@ -73,6 +76,7 @@ class SchedulerEngine:
         as-is; no test pins this row (a recorded non-issue with no behavior
         delta is manual-only by design, see ``07-VALIDATION.md``).
         """
+        callback = self._observed(job_id, callback)
         self._scheduler.add_job(
             callback,
             trigger=trigger,
@@ -84,6 +88,45 @@ class SchedulerEngine:
             coalesce=True,
             max_instances=1,
         )
+
+    def _observed(self, job_id: str, callback: Callable[..., Any]) -> Callable[..., Any]:
+        """Wrap ``callback`` so the optional observer hears (job_id, ok, error); unchanged when none is set.
+
+        The wrapper re-raises, so the host scheduler's own error handling is untouched. An observer
+        that fails is ignored. Async callbacks get an async wrapper.
+        """
+        report = self._on_job_result
+        if report is None:
+            return callback
+
+        def tell(ok: bool, err: str | None) -> None:
+            try:
+                report(job_id, ok, err)
+            except Exception:
+                _log.debug("job observer failed", job_id=job_id)
+
+        if inspect.iscoroutinefunction(callback):
+            @functools.wraps(callback)
+            async def run_async(*a: Any, **kw: Any) -> Any:
+                try:
+                    out = await callback(*a, **kw)
+                except Exception as exc:
+                    tell(False, f"{type(exc).__name__}: {exc}")
+                    raise
+                tell(True, None)
+                return out
+            return run_async
+
+        @functools.wraps(callback)
+        def run(*a: Any, **kw: Any) -> Any:
+            try:
+                out = callback(*a, **kw)
+            except Exception as exc:
+                tell(False, f"{type(exc).__name__}: {exc}")
+                raise
+            tell(True, None)
+            return out
+        return run
 
     def remove(self, job_id: str) -> None:
         """Drop the job with this id; a no-op success if it is already gone.
