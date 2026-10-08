@@ -121,3 +121,104 @@ def test_write_failure_never_raises(tmp_path):
 def test_default_state_dir_honours_xdg(tmp_path, monkeypatch):
     monkeypatch.setenv("XDG_STATE_HOME", str(tmp_path))
     assert StatusReporter("x").path == tmp_path / "yahir-bots" / "x.json"
+
+
+# -- fix round 1 ---------------------------------------------------------------
+import pytest
+
+from yahir_reusable_bot.lifecycle import status as status_mod
+from yahir_reusable_bot.redact import register_patterns
+
+DISCORD_TOKEN = "M" + "a" * 23 + "." + "b" * 6 + "." + "c" * 30
+
+
+def test_baseline_patterns_pass_the_redos_vetting():
+    assert register_patterns(status_mod.BASELINE_PATTERNS) == status_mod.BASELINE_PATTERNS
+
+
+@pytest.mark.parametrize("raw,leak", [
+    ("POST https://discord.com/api/webhooks/123/SECRETX failed", "SECRETX"),
+    (f"login failed {DISCORD_TOKEN}", "c" * 30),
+    ("401 with Authorization: Bearer xyz123", "xyz123"),
+    ("header Bearer xyz123 rejected", "xyz123"),
+    ("GET /x?token=abc123&a=1 failed", "abc123"),
+    ("api_key=hunter2 bad", "hunter2"),
+    ("client_secret = hunter2", "hunter2"),
+])
+def test_default_reporter_redacts_credentials(tmp_path, raw, leak):
+    r, _ = reporter(tmp_path)
+    r.start()
+    try:
+        r.record_error(raw)
+        r.record_delivery(DeliveryResult(ok=False, detail=raw))
+        r.record_job("j", ok=False, error=raw)
+        text = r.path.read_text()
+        assert leak not in text
+        assert "<" in read(r)["last_error"]["message"]
+    finally:
+        r.stopping()
+
+
+def test_plain_message_passes_through(tmp_path):
+    r, _ = reporter(tmp_path)
+    r.start()
+    try:
+        r.record_error("HTTP 503 Service Unavailable")
+        assert read(r)["last_error"]["message"] == "HTTP 503 Service Unavailable"
+    finally:
+        r.stopping()
+
+
+def test_wrong_types_do_not_raise_and_still_write(tmp_path):
+    r, _ = reporter(tmp_path)
+    r.start()
+    try:
+        r.record_job(123, ok=False, error=object())
+        r.record_error(None)
+        assert read(r)["last_job"]["ok"] is False
+    finally:
+        r.stopping()
+
+
+def test_unprintable_error_gets_placeholder(tmp_path):
+    class Bad:
+        def __str__(self):
+            raise RuntimeError("no")
+
+    r, _ = reporter(tmp_path)
+    r.start()
+    try:
+        r.record_error(Bad())
+        assert read(r)["last_error"]["message"] == "<unprintable error>"
+    finally:
+        r.stopping()
+
+
+def test_heartbeat_loop_survives_a_failing_tick(tmp_path):
+    r, clock = reporter(tmp_path, interval_s=0.01)
+    calls = {"n": 0}
+    real = r.heartbeat
+
+    def flaky():
+        calls["n"] += 1
+        if calls["n"] == 1:
+            raise RuntimeError("boom")
+        real()
+
+    r.heartbeat = flaky
+    r.start()
+    try:
+        import time
+        deadline = time.time() + 3
+        while calls["n"] < 3 and time.time() < deadline:
+            time.sleep(0.01)
+        assert calls["n"] >= 3
+    finally:
+        r.stopping()
+
+
+def test_serialization_failure_never_raises(tmp_path, monkeypatch):
+    r, _ = reporter(tmp_path)
+    monkeypatch.setattr(status_mod.json, "dumps", lambda *a, **k: (_ for _ in ()).throw(TypeError("x")))
+    r.start()
+    r.stopping()

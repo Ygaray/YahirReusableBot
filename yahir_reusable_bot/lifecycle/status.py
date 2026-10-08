@@ -15,17 +15,36 @@ from __future__ import annotations
 
 import json
 import os
+import re
 import tempfile
 import threading
 from datetime import UTC, datetime
 from pathlib import Path
 from typing import Any, Callable, Sequence
 
+import structlog
+
 from ..channels import DeliveryResult
 from ..redact.core import RedactionPattern, redact_secrets
 
+_log = structlog.get_logger(__name__)
+
 SCHEMA_VERSION = 1
 ERROR_CAP = 300
+UNPRINTABLE = "<unprintable error>"
+
+# Always-on baseline: a status file must never carry a credential, whatever patterns the bot wires.
+# Order matters: webhook URLs first (their path embeds a token-shaped segment), then bot tokens,
+# then header / key=value forms. All are linear-time (no nested quantifiers).
+BASELINE_PATTERNS: tuple[RedactionPattern, ...] = (
+    RedactionPattern(re.compile(r"https://(?:\w+\.)?discord(?:app)?\.com/api/webhooks/\S+"), "<webhook>"),
+    RedactionPattern(re.compile(r"[\w-]{23,28}\.[\w-]{6,7}\.[\w-]{27,}"), "<token>"),
+    RedactionPattern(re.compile(r"Bearer\s+\S+", re.IGNORECASE), "Bearer <token>"),
+    RedactionPattern(re.compile(r"(Authorization\s*[:=]\s*)\S+(?:[ \t]+\S+)?", re.IGNORECASE), r"\1<redacted>"),
+    RedactionPattern(
+        re.compile(r"\b((?:[\w-]*(?:token|key|secret))\s*=\s*)[^\s&;,]+", re.IGNORECASE), r"\1<redacted>"
+    ),
+)
 
 
 def _utcnow() -> datetime:
@@ -90,37 +109,52 @@ class StatusReporter:
 
     def _loop(self) -> None:
         while not self._stop.wait(self._interval_s):
-            self.heartbeat()
+            try:
+                self.heartbeat()
+            except Exception:  # one bad tick must never end the loop
+                _log.debug("status_heartbeat_failed", exc_info=True)
 
     # -- events --------------------------------------------------------------
     def mark_discord(self, connected: bool) -> None:
-        with self._lock:
-            prev = self._status["discord"]
-        if prev is not None and prev["connected"] == connected:
-            self._update()
-            return
-        self._update(discord={"connected": connected, "since": self._clock().isoformat()})
+        def change(status: dict[str, Any]) -> dict[str, Any]:
+            prev = status["discord"]
+            if prev is not None and prev["connected"] == connected:
+                return {}
+            return {"discord": {"connected": connected, "since": self._clock().isoformat()}}
+
+        self._update(_compute=change)
 
     def record_delivery(self, result: DeliveryResult) -> None:
         self._update(last_delivery={"at": self._clock().isoformat(), "ok": result.ok,
                                     "error": None if result.ok else self._clean(result.detail or "delivery failed")})
 
     def record_job(self, name: str, ok: bool, error: str | None = None) -> None:
-        self._update(last_job={"name": name, "at": self._clock().isoformat(), "ok": ok,
+        self._update(last_job={"name": name if isinstance(name, str) else self._clean(name), "at": self._clock().isoformat(), "ok": ok,
                                "error": self._clean(error) if error else None})
 
     def record_error(self, message: str) -> None:
         self._update(last_error={"at": self._clock().isoformat(), "message": self._clean(message)})
 
     # -- internals -------------------------------------------------------------
-    def _clean(self, text: str) -> str:
-        return redact_secrets(text, self._patterns)[:ERROR_CAP]
+    def _clean(self, text: Any) -> str:
+        try:
+            if not isinstance(text, str):
+                text = str(text)
+            return redact_secrets(text, (*BASELINE_PATTERNS, *self._patterns))[:ERROR_CAP]
+        except Exception:
+            return UNPRINTABLE
 
-    def _update(self, **fields: Any) -> None:
-        with self._lock:
-            self._status.update(fields, heartbeat_at=self._clock().isoformat())
-            snapshot = json.dumps(self._status)
-            try:
+    def _update(self, _compute: Callable[[dict[str, Any]], dict[str, Any]] | None = None, **fields: Any) -> None:
+        """Merge ``fields`` (or the result of ``_compute`` run under the lock) and rewrite the file.
+
+        Never raises: status reporting must not be load-bearing for the bot.
+        """
+        try:
+            with self._lock:
+                if _compute is not None:
+                    fields = {**fields, **_compute(self._status)}
+                self._status.update(fields, heartbeat_at=self._clock().isoformat())
+                snapshot = json.dumps(self._status, default=str)
                 self._dir.mkdir(mode=0o700, parents=True, exist_ok=True)
                 fd, tmp = tempfile.mkstemp(dir=self._dir, prefix=".tmp-", suffix=".json")
                 try:
@@ -131,5 +165,5 @@ class StatusReporter:
                 except BaseException:
                     Path(tmp).unlink(missing_ok=True)
                     raise
-            except OSError:
-                pass  # best-effort, like SystemdNotifier: never let status writing crash the bot
+        except Exception:
+            _log.debug("status_write_failed", exc_info=True)
