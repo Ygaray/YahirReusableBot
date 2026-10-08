@@ -1,0 +1,329 @@
+import json
+import os
+import stat
+from datetime import UTC, datetime, timedelta
+
+from yahir_reusable_bot.channels import DeliveryResult
+from yahir_reusable_bot.lifecycle import StatusReporter
+from yahir_reusable_bot.redact.core import RedactionPattern
+
+T0 = datetime(2026, 10, 8, 15, 0, tzinfo=UTC)
+
+
+class Clock:
+    def __init__(self):
+        self.t = T0
+
+    def __call__(self):
+        return self.t
+
+
+def reporter(tmp_path, **kw):
+    clock = kw.pop("clock", Clock())
+    return StatusReporter("test-bot", state_dir=tmp_path / "yahir-bots", hub_version="0.3.0", clock=clock, **kw), clock
+
+
+def read(r):
+    return json.loads(r.path.read_text())
+
+
+def test_start_writes_the_v1_shape_with_private_modes(tmp_path):
+    r, _ = reporter(tmp_path)
+    r.start()
+    try:
+        data = read(r)
+        assert data == {
+            "schema_version": 1, "bot": "test-bot", "unit": "test-bot.service", "scope": "user",
+            "hub_version": "0.3.0", "pid": os.getpid(), "started_at": T0.isoformat(), "heartbeat_at": T0.isoformat(),
+            "interval_s": 60, "state": "starting", "discord": None, "last_delivery": None, "last_job": None,
+            "last_error": None,
+        }
+        assert stat.S_IMODE(r.path.stat().st_mode) == 0o600
+        assert stat.S_IMODE(r.path.parent.stat().st_mode) == 0o700
+    finally:
+        r.stopping()
+
+
+def test_events_write_immediately(tmp_path):
+    r, clock = reporter(tmp_path)
+    r.start()
+    try:
+        r.running()
+        clock.t = T0 + timedelta(seconds=5)
+        r.mark_discord(True)
+        r.record_delivery(DeliveryResult(ok=False, detail="HTTP 503"))
+        r.record_job("drain-spool", ok=True)
+        data = read(r)
+        assert data["state"] == "running"
+        assert data["discord"] == {"connected": True, "since": (T0 + timedelta(seconds=5)).isoformat()}
+        assert data["last_delivery"] == {"at": (T0 + timedelta(seconds=5)).isoformat(), "ok": False, "error": "HTTP 503"}
+        assert data["last_job"] == {"name": "drain-spool", "at": (T0 + timedelta(seconds=5)).isoformat(), "ok": True, "error": None}
+        assert data["heartbeat_at"] == (T0 + timedelta(seconds=5)).isoformat()
+    finally:
+        r.stopping()
+
+
+def test_discord_since_only_moves_on_a_change(tmp_path):
+    r, clock = reporter(tmp_path)
+    r.start()
+    try:
+        r.mark_discord(True)
+        clock.t = T0 + timedelta(minutes=1)
+        r.mark_discord(True)
+        assert read(r)["discord"]["since"] == T0.isoformat()
+    finally:
+        r.stopping()
+
+
+def test_errors_are_redacted_and_capped(tmp_path):
+    import re
+    hook = RedactionPattern(pattern=re.compile(r"https://discord\.com/api/webhooks/\S+"), replacement="<webhook>")
+    r, _ = reporter(tmp_path, patterns=[hook])
+    r.start()
+    try:
+        r.record_error("POST https://discord.com/api/webhooks/123/SECRET failed " + "x" * 400)
+        msg = read(r)["last_error"]["message"]
+        assert "SECRET" not in msg and msg.startswith("POST <webhook> failed") and len(msg) == 300
+        r.record_delivery(DeliveryResult(ok=False, detail="https://discord.com/api/webhooks/1/TOKEN"))
+        assert read(r)["last_delivery"]["error"] == "<webhook>"
+    finally:
+        r.stopping()
+
+
+def test_stopping_writes_stopped_and_heartbeat_ticks(tmp_path):
+    r, clock = reporter(tmp_path, interval_s=60)
+    r.start()
+    clock.t = T0 + timedelta(seconds=60)
+    r.heartbeat()  # what the background loop calls each interval
+    assert read(r)["heartbeat_at"] == (T0 + timedelta(seconds=60)).isoformat()
+    r.stopping()
+    assert read(r)["state"] == "stopped"
+
+
+def test_atomic_write_leaves_no_temp_files(tmp_path):
+    r, _ = reporter(tmp_path)
+    r.start()
+    for i in range(20):
+        r.record_job(f"j{i}", ok=True)
+    r.stopping()
+    assert sorted(p.name for p in r.path.parent.iterdir()) == ["test-bot.json"]
+
+
+def test_write_failure_never_raises(tmp_path):
+    blocker = tmp_path / "yahir-bots"
+    blocker.write_text("a file where the dir should be")
+    r = StatusReporter("test-bot", state_dir=blocker, clock=Clock())
+    r.start()          # must not raise
+    r.record_job("j", ok=False, error="e")
+    r.stopping()
+
+
+def test_default_state_dir_honours_xdg(tmp_path, monkeypatch):
+    monkeypatch.setenv("XDG_STATE_HOME", str(tmp_path))
+    assert StatusReporter("x").path == tmp_path / "yahir-bots" / "x.json"
+
+
+# -- fix round 1 ---------------------------------------------------------------
+import pytest
+
+from yahir_reusable_bot.lifecycle import status as status_mod
+from yahir_reusable_bot.redact import register_patterns
+
+DISCORD_TOKEN = "M" + "a" * 23 + "." + "b" * 6 + "." + "c" * 30
+
+
+def test_baseline_patterns_pass_the_redos_vetting():
+    assert register_patterns(status_mod.BASELINE_PATTERNS) == status_mod.BASELINE_PATTERNS
+
+
+@pytest.mark.parametrize("raw,leak", [
+    ("POST https://discord.com/api/webhooks/123/SECRETX failed", "SECRETX"),
+    (f"login failed {DISCORD_TOKEN}", "c" * 30),
+    ("401 with Authorization: Bearer xyz123", "xyz123"),
+    ("header Bearer xyz123 rejected", "xyz123"),
+    ("GET /x?token=abc123&a=1 failed", "abc123"),
+    ("api_key=hunter2 bad", "hunter2"),
+    ("client_secret = hunter2", "hunter2"),
+])
+def test_default_reporter_redacts_credentials(tmp_path, raw, leak):
+    r, _ = reporter(tmp_path)
+    r.start()
+    try:
+        r.record_error(raw)
+        r.record_delivery(DeliveryResult(ok=False, detail=raw))
+        r.record_job("j", ok=False, error=raw)
+        text = r.path.read_text()
+        assert leak not in text
+        assert "<" in read(r)["last_error"]["message"]
+    finally:
+        r.stopping()
+
+
+def test_plain_message_passes_through(tmp_path):
+    r, _ = reporter(tmp_path)
+    r.start()
+    try:
+        r.record_error("HTTP 503 Service Unavailable")
+        assert read(r)["last_error"]["message"] == "HTTP 503 Service Unavailable"
+    finally:
+        r.stopping()
+
+
+def test_wrong_types_do_not_raise_and_still_write(tmp_path):
+    r, _ = reporter(tmp_path)
+    r.start()
+    try:
+        r.record_job(123, ok=False, error=object())
+        r.record_error(None)
+        assert read(r)["last_job"]["ok"] is False
+    finally:
+        r.stopping()
+
+
+def test_unprintable_error_gets_placeholder(tmp_path):
+    class Bad:
+        def __str__(self):
+            raise RuntimeError("no")
+
+    r, _ = reporter(tmp_path)
+    r.start()
+    try:
+        r.record_error(Bad())
+        assert read(r)["last_error"]["message"] == "<unprintable error>"
+    finally:
+        r.stopping()
+
+
+def test_heartbeat_loop_survives_a_failing_tick(tmp_path):
+    r, clock = reporter(tmp_path, interval_s=0.01)
+    calls = {"n": 0}
+    real = r.heartbeat
+
+    def flaky():
+        calls["n"] += 1
+        if calls["n"] == 1:
+            raise RuntimeError("boom")
+        real()
+
+    r.heartbeat = flaky
+    r.start()
+    try:
+        import time
+        deadline = time.time() + 3
+        while calls["n"] < 3 and time.time() < deadline:
+            time.sleep(0.01)
+        assert calls["n"] >= 3
+    finally:
+        r.stopping()
+
+
+def test_serialization_failure_never_raises(tmp_path, monkeypatch):
+    r, _ = reporter(tmp_path)
+    monkeypatch.setattr(status_mod.json, "dumps", lambda *a, **k: (_ for _ in ()).throw(TypeError("x")))
+    r.start()
+    r.stopping()
+
+
+# -- hung-loop detection, hub_version default, starting -> running ------------------------------
+import asyncio
+import importlib.metadata
+import threading
+import time
+
+
+def test_unrun_loop_stops_the_heartbeat(tmp_path):
+    loop = asyncio.new_event_loop()
+    r, clock = reporter(tmp_path, interval_s=0.01)
+    r.start(loop=loop)
+    try:
+        clock.t = T0 + timedelta(seconds=30)
+        time.sleep(0.2)  # many ticks; none can run because the loop never runs
+        assert read(r)["heartbeat_at"] == T0.isoformat()
+    finally:
+        r.stopping()
+        loop.close()
+
+
+def test_running_loop_keeps_the_heartbeat(tmp_path):
+    loop = asyncio.new_event_loop()
+    t = threading.Thread(target=loop.run_forever, daemon=True)
+    t.start()
+    r, clock = reporter(tmp_path, interval_s=0.01)
+    r.start(loop=loop)
+    try:
+        clock.t = T0 + timedelta(seconds=30)
+        deadline = time.time() + 3
+        while read(r)["heartbeat_at"] == T0.isoformat() and time.time() < deadline:
+            time.sleep(0.01)
+        assert read(r)["heartbeat_at"] == clock.t.isoformat()
+    finally:
+        r.stopping()
+        loop.call_soon_threadsafe(loop.stop)
+        t.join(3)
+        loop.close()
+
+
+def test_no_loop_heartbeats_directly(tmp_path):
+    r, clock = reporter(tmp_path, interval_s=0.01)
+    r.start()
+    try:
+        clock.t = T0 + timedelta(seconds=30)
+        deadline = time.time() + 3
+        while read(r)["heartbeat_at"] == T0.isoformat() and time.time() < deadline:
+            time.sleep(0.01)
+        assert read(r)["heartbeat_at"] == clock.t.isoformat()
+    finally:
+        r.stopping()
+
+
+def test_closed_loop_does_not_raise_and_skips_beats(tmp_path):
+    loop = asyncio.new_event_loop()
+    loop.close()
+    r, clock = reporter(tmp_path, interval_s=0.01)
+    r.start(loop=loop)
+    try:
+        clock.t = T0 + timedelta(seconds=30)
+        time.sleep(0.1)
+        assert r._thread.is_alive()
+        assert read(r)["heartbeat_at"] == T0.isoformat()
+    finally:
+        r.stopping()
+
+
+def test_second_start_is_a_noop(tmp_path):
+    r, _ = reporter(tmp_path)
+    r.start()
+    first = r._thread
+    r.start()
+    assert r._thread is first
+    r.stopping()
+
+
+def test_hub_version_defaults_from_package_metadata(tmp_path, monkeypatch):
+    monkeypatch.setattr(importlib.metadata, "version", lambda name: "9.9.9" if name == "yahir-reusable-bot" else "x")
+    r = StatusReporter("b", state_dir=tmp_path)
+    assert r._status["hub_version"] == "9.9.9"
+
+
+def test_hub_version_none_when_not_installed(tmp_path, monkeypatch):
+    def boom(name):
+        raise importlib.metadata.PackageNotFoundError(name)
+
+    monkeypatch.setattr(importlib.metadata, "version", boom)
+    assert StatusReporter("b", state_dir=tmp_path)._status["hub_version"] is None
+
+
+def test_mark_discord_true_promotes_starting_to_running_only(tmp_path):
+    r, _ = reporter(tmp_path)
+    r.mark_discord(True)
+    assert read(r)["state"] == "running"
+    r.stopping()
+    r.mark_discord(False)
+    r.mark_discord(True)
+    assert read(r)["state"] == "stopped"
+
+
+def test_mark_discord_false_leaves_starting(tmp_path):
+    r, _ = reporter(tmp_path)
+    r.mark_discord(False)
+    assert read(r)["state"] == "starting"

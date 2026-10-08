@@ -22,6 +22,7 @@ module under the rule of three (build-in-consumer-then-promote).
 | Command registration (`registry` / `bind`) | SEAM-06 (P26) | **implemented** | host registers specs; CLI / Discord / help derive | — |
 | Panel `SelectedContext[I]` | SEAM-07 (P27) | **implemented** | generic holder + injected `render` | — |
 | `RedactingWriter` / `redaction_processor` | SEAM-08 (P06) | **implemented** | the rendered-text sink, its redaction counter, the wiring self-check, and the optional event-mapping processor | a safe pattern-builder helper, per-pattern replacement beyond the template mechanism and partial masking, config-driven pattern loading, a chain-builder helper for processor ordering, and an unwrap convention for a consumer proxy nested around the writer |
+| Status reporting | SEAM-09 | **implemented** | `lifecycle.StatusReporter` + `channels.ReportingChannel` + `SchedulerEngine(on_job_result=)` + `build_client(on_connection=)` | — |
 
 ---
 
@@ -243,6 +244,48 @@ warning), `redaction_processor` (optional event-mapping scrub). **Deferred:** a 
 pattern-builder helper, per-pattern replacement beyond the template mechanism and partial masking,
 config-driven pattern loading, a chain-builder helper for processor ordering, and an unwrap
 convention for a consumer proxy nested around the writer.
+
+---
+
+## 8. Status reporting (SEAM-09, implemented)
+
+**Source:** `yahir_reusable_bot/lifecycle/status.py`, `channels/reporting.py`, `scheduler/engine.py`, `discord/gateway.py`
+
+A bot reports liveness and its last outcomes to `$XDG_STATE_HOME/yahir-bots/<slug>.json`
+(schema_version 1) so the usage-dashboard Bots tab can show it. The hub owns the file contract;
+every observer hook is opt-in and does nothing when unwired. Sketch (the scaffolder's `wiring.py`
+stub carries the same):
+
+```python
+from yahir_reusable_bot.lifecycle import StatusReporter
+from yahir_reusable_bot.channels import ReportingChannel
+
+reporter = StatusReporter("<slug>", scope="user", patterns=<your redaction patterns>)
+reporter.start(loop=<the bot's main asyncio loop>)         # first write + heartbeat; the loop makes a hang visible
+channel = ReportingChannel(channel, reporter.record_delivery)
+engine = SchedulerEngine(scheduler, on_job_result=reporter.record_job)
+client = build_client(on_message=..., view=..., on_connection=reporter.mark_discord)
+# once healthy: reporter.running()      on graceful shutdown: reporter.stopping()
+```
+
+Guarantees:
+
+- **Heartbeat** is timed by the reporter's own daemon thread (`interval_s`, default 60 s); no
+  scheduler wiring is needed. Pass the bot's event loop to `start(loop=...)` and each beat is posted
+  onto that loop, so a hung loop stops beating. Readers treat a heartbeat older than 3 x
+  `interval_s` as stale and show red. Without a loop only process death (SIGKILL) is detected.
+- **`hub_version`** defaults from the installed package metadata; do not pass it.
+- `mark_discord(True)` also promotes `state` from `starting` to `running` (never touches `stopped`).
+- **Best-effort writes:** atomic (temp file + `os.replace`, file mode 0600), and any write error is
+  swallowed and logged at debug. Status reporting never raises into the bot.
+- **Redaction:** every error string first passes the built-in baseline that is always applied (Discord
+  webhook URLs, Discord bot tokens, `Bearer` values, `Authorization` header values, and
+  `token=` / `key=` / `secret=` style values), then the bot's own `patterns`.
+- **300-character cap** on every recorded error string. No message content is ever recorded.
+- **`stopping()`** on graceful shutdown records `state: stopped`, so a deliberate stop is
+  distinguishable from a crash.
+- `ReportingChannel` re-raises channel exceptions after recording them; observer failures in any hook
+  are swallowed.
 
 ---
 

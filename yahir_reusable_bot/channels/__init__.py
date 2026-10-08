@@ -9,5 +9,6 @@ a SUBSET surface by design (D-04): the concrete channel implementations and the
 from __future__ import annotations
 
 from .base import Channel, DeliveryResult
+from .reporting import ReportingChannel
 
-__all__ = ["Channel", "DeliveryResult"]
+__all__ = ["Channel", "DeliveryResult", "ReportingChannel"]

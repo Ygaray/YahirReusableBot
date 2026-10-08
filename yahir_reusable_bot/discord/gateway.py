@@ -76,6 +76,7 @@ def build_client(
     *,
     on_message: OnMessage,
     view: discord.ui.View,
+    on_connection: Callable[[bool], None] | None = None,
 ) -> discord.Client:
     """Construct the gateway :class:`discord.Client` with minimal intents + injected handlers.
 
@@ -91,6 +92,8 @@ def build_client(
     already-pinned panel's button/select callbacks purely by their static ``custom_id`` after
     a restart, with no boot-time scan. ``view`` is constructed by the caller (the app builds
     its panel with its own cosmetics injected) — so this function imports no app code.
+
+    ``on_connection`` (optional) hears True on ready/resume and False on disconnect — wire a StatusReporter's ``mark_discord`` here.
     """
     intents = discord.Intents.none()
     intents.guilds = True
@@ -98,6 +101,14 @@ def build_client(
     intents.message_content = True  # privileged
 
     client = discord.Client(intents=intents)
+
+    def _connection(up: bool) -> None:
+        if on_connection is None:
+            return
+        try:
+            on_connection(up)
+        except Exception:
+            _log.debug("connection observer failed")
 
     @client.event
     async def setup_hook() -> None:
@@ -123,6 +134,15 @@ def build_client(
             )
         else:
             _log.info("inbound bot ready", user=str(client.user))
+        _connection(True)
+
+    @client.event
+    async def on_resumed() -> None:
+        _connection(True)
+
+    @client.event
+    async def on_disconnect() -> None:
+        _connection(False)
 
     # Capture the injected app handler BEFORE the @client.event below rebinds the name
     # ``on_message`` in this scope (the event MUST be named ``on_message`` for discord.py to
