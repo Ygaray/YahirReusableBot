@@ -253,6 +253,32 @@ This repo is a **consumer** in a multi-repo bot ecosystem. It depends on the sha
   Litmus: "could a different bot reuse this with zero domain assumptions?"
 ```
 
+
+## 9. Bot convention: running + status (hub ≥ 0.3.0)
+
+Every consumer bot follows this, so the usage-dashboard Bots tab shows it with no per-bot work:
+
+1. **User unit `<slug>.service`** (`new_consumer.py` writes `packaging/<slug>.service`): `Type=notify`,
+   `ExecStart=<repo>/.venv/bin/<slug> run` (venv entry point, never `uv run` — the process is named
+   `<slug>` so earlyoom `--avoid` can match it), `Restart=on-failure`, `WantedBy=default.target`.
+   The scaffolder keeps the `<imp>` console script and adds a `<slug>` one for the unit.
+   Because the unit is `Type=notify`, `systemctl --user enable --now <slug>` only succeeds once the bot
+   is wired: it must signal READY via the hub's `SystemdNotifier` / `ReadyGate`.
+2. **Register with yahir-tn** — deliberate, never automatic: `yahir-tn adopt <slug> --project <Bot>
+   --unit <slug>.service` (printed by `new_consumer.py`; `--register` runs it). Gives start/stop/restart
+   on the dashboard.
+3. **earlyoom**: the operator adds `<slug>` to earlyoom's `--avoid` (sudo).
+4. **Status**: wire a `StatusReporter` in `build_runtime()` (`lifecycle.StatusReporter`; see
+   EXTENSION-GUIDE §8). It writes `$XDG_STATE_HOME/yahir-bots/<slug>.json` (schema_version 1) every
+   60 s from its own daemon thread (no scheduler wiring needed) and on each event; a bot that stops
+   writing for 3 minutes shows red. Writing is best-effort and never raises into the bot. Errors always
+   pass a built-in baseline redaction (Discord webhook URLs and bot tokens, Bearer/Authorization values,
+   `token=`/`key=`/`secret=` values), then the bot's own patterns, and are capped at 300 chars; no
+   message content is recorded.
+
+The status-file contract is owned here (hub); the usage-dashboard is its reader and joins it to
+`yahir-tn ps` rows on (unit, scope). yahir-tn's `ps --json` is not involved.
+
 ---
 
 *Canonical ecosystem doctrine. Lives in the hub; mirrored by a pointer block in each consumer's

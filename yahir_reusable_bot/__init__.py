@@ -9,7 +9,7 @@ smoke test, and an AST signature litmus) and re-run by every subsequent phase.
 
 The subpackages — ``channels`` (the channel-agnostic delivery abstraction),
 ``reliability`` (retry/backoff primitives), and ``ports`` (host-supplied adapter
-seams) — are scaffolded empty here; the real relocated code lands in later plans.
+seams) — are fully implemented; see EXTENSION-GUIDE.md for each seam.
 """
 
 from __future__ import annotations
