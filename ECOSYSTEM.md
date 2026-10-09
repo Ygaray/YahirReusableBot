@@ -24,7 +24,7 @@ consume it:
 
   | Consumer | Repo | Dev checkout | Pins hub at | Deploy host |
   |----------|------|--------------|-------------|-------------|
-  | WeatherBot | `github.com/Ygaray/WeatherBot` | `/home/yahir/Projects/WeatherBot` | `v0.3.0` | `yahir-mint` (systemd) |
+  | WeatherBot | `github.com/Ygaray/WeatherBot` | `/home/yahir/Projects/WeatherBot` | `v0.3.1` | `yahir-mint` (systemd user unit) |
   | ReminderBot | _(planned)_ | `/home/yahir/Projects/ReminderBot` | — | — |
   | GsdAlertBot | `github.com/Ygaray/GSD-alert-bot` | `/home/yahir/Projects/yahir-agentic-tools/GSD-alert-bot` | `v0.2.0` | `yahir-mint` (systemd) |
 
